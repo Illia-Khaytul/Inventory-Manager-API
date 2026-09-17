@@ -80,6 +80,29 @@ public class GlobalErrorHandlerTests {
     }
 
     @Test
+    @DisplayName("Should return 400 Bad Request when receiving wrong request parameter type")
+    void shouldReturn400_whenWrongRequestType() throws Exception {
+        //Arrange
+        String value = "not a long";
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                patch("/dummy/{id}", value)
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                ErrorResponse response = deserializeErrorResponse(result);
+                Map<String, Object> data = response.data();
+
+                assertErrorResponse(response, HttpStatus.BAD_REQUEST, "Invalid request parameter type");
+                assertThat(data.get("parameter")).isEqualTo("id");
+                assertThat(data.get("receivedValue")).isEqualTo(value);
+                assertThat(data.get("requiredType")).isEqualTo("long");
+            });
+    }
+
+    @Test
     @DisplayName("Should return 400 Bad Request when receiving an unreadable request body")
     void shouldReturn400_whenUnreadableRequestBody() throws Exception{
         //Act and Assert
@@ -91,6 +114,28 @@ public class GlobalErrorHandlerTests {
             )
             .andExpect(status().isBadRequest())
             .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.BAD_REQUEST, "Malformed request body"));
+    }
+
+    @Test
+    @DisplayName("Should return 415 Unsupported Media Type when receiving request body of an unsupported media type")
+    void shouldReturn415_whenUnsupportedRequestBodyType() throws Exception {
+        //Act and Assert
+        mockMvc
+            .perform(
+                post("/dummy")
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .content("plain text")
+            )
+            .andExpect(status().isUnsupportedMediaType())
+            .andExpect(result -> {
+                ErrorResponse response = deserializeErrorResponse(result);
+                Map<String, Object> data = response.data();
+
+                assertErrorResponse(response, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported request media type");
+                assertThat(data.get("received")).isEqualTo("text");
+                //noinspection unchecked
+                assertThat((List<String>) data.get("supported")).contains(MediaType.APPLICATION_JSON_VALUE);
+            });
     }
 
     @Test
