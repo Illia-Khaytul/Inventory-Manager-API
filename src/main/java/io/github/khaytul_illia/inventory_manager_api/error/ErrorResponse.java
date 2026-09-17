@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api.exception;
+package io.github.khaytul_illia.inventory_manager_api.error;
 
 import org.springframework.http.HttpStatus;
 
