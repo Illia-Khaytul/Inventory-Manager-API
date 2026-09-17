@@ -50,7 +50,7 @@ public class GlobalErrorHandler {
             errors.put(error.getMethodParameter().getParameterName(), messages);
         });
 
-        log.info("Caught {}: {} - {}", e.getClass(), e.getMessage(), errors);
+        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), errors);
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
