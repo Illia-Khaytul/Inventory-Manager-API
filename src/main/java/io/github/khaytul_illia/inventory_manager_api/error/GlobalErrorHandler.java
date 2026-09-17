@@ -3,12 +3,15 @@ package io.github.khaytul_illia.inventory_manager_api.error;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.ArrayList;
@@ -59,6 +62,23 @@ public class GlobalErrorHandler {
         );
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse methodArgumentTypeMismatchHandler(MethodArgumentTypeMismatchException e){
+        Map<String, Object> data = new HashMap<>();
+        data.put("parameter", e.getParameter().getParameterName());
+        data.put("receivedValue", e.getValue());
+        data.put("requiredType", e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : null);
+
+        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.BAD_REQUEST,
+            "Invalid request parameter type",
+            data
+        );
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse httpMessageNotReadableHandler(HttpMessageNotReadableException e){
@@ -67,6 +87,22 @@ public class GlobalErrorHandler {
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
             "Malformed request body"
+        );
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ErrorResponse httpMediaTypeNotSupportedHandler(HttpMediaTypeNotSupportedException e){
+        Map<String, Object> data = new HashMap<>();
+        data.put("received", e.getContentType() != null ? e.getContentType().getType() : null);
+        data.put("supported", e.getSupportedMediaTypes().stream().map(MediaType::toString).toList());
+
+        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+            "Unsupported request media type",
+            data
         );
     }
 
