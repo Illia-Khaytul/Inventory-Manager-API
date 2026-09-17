@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: inventory-manager-api
+  profiles:
+    active: dev
+  mvc:
+    servlet:
+      path: /api/v1
+  data:
+    web:
+      pageable:
+        max-size: 100
+  web:
+    format:
+      date: iso
+      date-time: iso
+      time: iso
+
+logging:
+  level:
+    root: INFO

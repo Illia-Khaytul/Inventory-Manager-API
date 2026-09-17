@@ -1,0 +1,22 @@
+spring:
+  # datasource generated automatically by Spring Docker Compose
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    enabled: true
+  override-with-generic-response: false
+
+logging:
+  level:
+    'io.github.khaytul_illia.inventory_manager_api': DEBUG

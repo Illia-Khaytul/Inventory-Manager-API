@@ -1,0 +1,22 @@
+spring:
+  mvc:
+    servlet:
+      path: /
+  # datasource generated automatically for Testcontainers
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+logging:
+  level:
+    'io.github.khaytul_illia.inventory_manager_api': INFO
