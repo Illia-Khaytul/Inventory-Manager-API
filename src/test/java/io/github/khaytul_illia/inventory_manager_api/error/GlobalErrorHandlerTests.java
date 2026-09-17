@@ -90,7 +90,7 @@ public class GlobalErrorHandlerTests {
                     .content("not a json")
             )
             .andExpect(status().isBadRequest())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.BAD_REQUEST, "Unreadable http message"));
+            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.BAD_REQUEST, "Malformed request body"));
     }
 
     @Test

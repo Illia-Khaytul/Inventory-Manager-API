@@ -66,7 +66,7 @@ public class GlobalErrorHandler {
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
-            "Unreadable http message"
+            "Malformed request body"
         );
     }
 
