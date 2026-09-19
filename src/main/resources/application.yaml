@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: inventory-manager-api
+    security:
+      jwt:
+        private_key_source: classpath:security/jwt/jwt_private_key.pem
+        public_key_source: classpath:security/jwt/jwt_public_key.pem
   profiles:
     active: dev
   mvc:
