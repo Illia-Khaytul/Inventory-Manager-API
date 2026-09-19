@@ -59,8 +59,8 @@ public class JwtRsaPemKeyConfig {
             byte[] keyBytes = is.readAllBytes();
 
             return new String(keyBytes)
-                .replace("-----BEGIN [^-]+ KEY-----", "")
-                .replace("-----END [^-]+ KEY-----", "")
+                .replaceAll("-----BEGIN [^-]+ KEY-----", "")
+                .replaceAll("-----END [^-]+ KEY-----", "")
                 .replaceAll("\\s", "");
         }
     }

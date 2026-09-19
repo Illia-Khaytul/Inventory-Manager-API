@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.security.jwt;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -29,12 +30,18 @@ public class JwtConfig {
 
     @Bean
     public JwtEncoder jwtEncoder(RSAPrivateKey privateKey, RSAPublicKey publicKey){
-        return NimbusJwtEncoder.withKeyPair(publicKey, privateKey).build();
+        return NimbusJwtEncoder
+            .withKeyPair(publicKey, privateKey)
+            .algorithm(SignatureAlgorithm.RS512)
+            .build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder(RSAPublicKey publicKey){
-        return NimbusJwtDecoder.withPublicKey(publicKey).build();
+        return NimbusJwtDecoder
+            .withPublicKey(publicKey)
+            .signatureAlgorithm(SignatureAlgorithm.RS512)
+            .build();
     }
 
 }
