@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.security;
 
+import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,10 @@ public class SecurityConfig {
     @ConditionalOnWebApplication
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
-        JwtAuthenticationConverter jwtAuthenticationConverter
+        JwtAuthenticationConverter jwtAuthenticationConverter,
+        AuthenticationErrorHandler authenticationErrorHandler,
+        AuthorizationErrorHandler authorizationErrorHandler,
+        JwtAuthenticationErrorHandler jwtAuthenticationErrorHandler
     ){
         http
             .authorizeHttpRequests(request -> request
@@ -28,6 +32,11 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable)
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                .authenticationEntryPoint(jwtAuthenticationErrorHandler)
+            )
+            .exceptionHandling(handling -> handling
+                .authenticationEntryPoint(authenticationErrorHandler)
+                .accessDeniedHandler(authorizationErrorHandler)
             );
 
         return http.build();
