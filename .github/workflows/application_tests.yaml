@@ -18,5 +18,10 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Create JWT encryption keys
+        run: |
+          mkdir -p src/main/resources/security/jwt
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out src/main/resources/security/jwt/jwt_private_key.pem -outpubkey src/main/resources/security/jwt/jwt_public_key.pem
+
       - name: Run tests
         run: ./mvnw verify -B
