@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
+import io.github.khaytul_illia.inventory_manager_api.DummyController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

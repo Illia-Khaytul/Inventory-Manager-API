@@ -1,8 +1,7 @@
-package io.github.khaytul_illia.inventory_manager_api.error;
+package io.github.khaytul_illia.inventory_manager_api;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import org.hibernate.validator.constraints.Length;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +25,7 @@ public class DummyController {
     }
 
     @GetMapping(path = "")
-    public void dummyPatch(){
+    public void dummyGet(){
         dummyOperation();
     }
 
