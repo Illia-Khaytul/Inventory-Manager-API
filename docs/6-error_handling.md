@@ -84,3 +84,42 @@ Notes:
 Catches any other unexpected exceptions and logs their stack trace.
 
 `message` = Something went wrong
+
+## 4. Security exception handling
+
+All exceptions return a custom message as to not reveal any sensitive information included in the default one.
+Additional information is not added to the error response as to not increase complexity by analyzing the internal exception details.
+
+### 4.1. JWT authentication error handler `JwtAuthenticationErrorHandler`
+
+`InvalidBearerTokenException` -> 401 Unauthorized
+
+Invalid or expired access token.
+
+`message` = Invalid or expired access token
+
+`OAuth2AuthenticationException` -> 401 Unauthorized
+
+Malformed or unresolvable access token.
+
+`message` = Access token cannot be resolved
+
+`AuthenticationServiceException` -> 500 Internal Server Error
+
+Unexpected authentication service error.
+This exception happens rarely and cannot be reproduced easily, but it is thrown by the OAuth2 bearer token authentication filter.
+Due to being unexpected it should be logged and handled appropriately.
+
+`message` = Something went wrong during authentication
+
+### 4.2. General authentication error handler `AuthenticationErrorHandler`
+
+Any `AuthenticationException` -> 401 Unauthorized
+
+`message` = Authentication required to access this resource
+
+### 4.3. Permission error handler `AuthorizationErrorHandler`
+
+Any `AccessDeniedException` -> 403 Forbidden
+
+`message` = Forbidden from accessing this resource
