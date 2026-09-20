@@ -44,6 +44,7 @@ It also separates the users into customer and operator roles for operation autho
 
 - Java 21+
 - Maven 3.9.19
+- OpenSSL 3
 - Docker Engine
 - PostgreSQL 18 (for production)
 
@@ -92,6 +93,45 @@ git clone git clone git@github.com:Illia-Khaytul/Inventory-Manager-API.git
 If running the project from an IDE, make sure it has annotation processing enabled.
 
 Go to the official MapStruct [IDE support](https://mapstruct.org/documentation/ide-support/) page for details.
+
+**JWT encoding keys:**
+
+This project uses JWT authentication with a custom RSA key pair. 
+The keys are loaded from `.pem` files in the classpath on application startup.
+They have to be manually generated as they are excluded from git versioning.
+
+First create a `security/jwt` directory under the [resources](/src/main/resources) folder. 
+Navigate into it from your terminal.
+
+Generate the private key using OpenSSL:
+
+```cmd
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out jwt_private_key.pem
+```
+
+Then extract the public key:
+
+```cmd
+openssl rsa -in jwt_private_key.pem -pubout -out jwt_public_key.pem
+```
+
+*Note: The property `rsa_keygen_bits:4096` specifies that the private key must be 4096 bits long. 
+This is not a requirement and can be changed as necessary. 
+Still 4096 is the recommended value.* 
+
+The application loads them by those exact names under that exact path.
+Make sure that the `.pem` files are located under `/resources/security/jwt` and are named `jwt_private_key.pem` for the private key and `jwt_public_key.pem` for the public one.
+
+If using this project for personal reasons, the key source locations can be modified in the [properties](/src/main/resources/application.yaml) file following Spring's Resource property syntax:
+
+```yaml
+spring:
+  application:
+    security:
+      jwt:
+        private_key_source: 'classpath:security/jwt/jwt_private_key.pem'
+        public_key_source: 'classpath:security/jwt/jwt_public_key.pem'
+```
 
 ### Run for Development
 
