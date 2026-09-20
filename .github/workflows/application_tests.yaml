@@ -21,7 +21,7 @@ jobs:
       - name: Create JWT encryption keys
         run: |
           mkdir -p src/main/resources/security/jwt
-          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:512 -out src/main/resources/security/jwt/jwt_private_key.pem
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out src/main/resources/security/jwt/jwt_private_key.pem
           openssl rsa -in src/main/resources/security/jwt/jwt_private_key.pem -pubout -out src/main/resources/security/jwt/jwt_public_key.pem
 
       - name: Run tests
