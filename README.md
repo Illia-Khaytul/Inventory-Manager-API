@@ -103,10 +103,16 @@ They have to be manually generated as they are excluded from git versioning.
 First create a `security/jwt` directory under the [resources](/src/main/resources) folder. 
 Navigate into it from your terminal.
 
-Then generate the RSA key pair using OpenSSL:
+Generate the private key using OpenSSL:
 
 ```cmd
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out jwt_private_key.pem -outpubkey jwt_public_key.pem
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out jwt_private_key.pem
+```
+
+Then extract the public key:
+
+```cmd
+openssl rsa -in jwt_private_key.pem -pubout -out jwt_public_key.pem
 ```
 
 *Note: The property `rsa_keygen_bits:4096` specifies that the private key must be 4096 bits long. 
