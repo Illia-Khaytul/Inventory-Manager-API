@@ -6,4 +6,8 @@ public class UserSessionLimitExceededException extends RuntimeException {
         super(message);
     }
 
+    public UserSessionLimitExceededException(String message, Object... args) {
+        super(String.format(message, args));
+    }
+
 }
