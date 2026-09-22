@@ -37,7 +37,6 @@ public class AuthService {
         RefreshTokenRepository refreshTokenRepository,
         AuthenticationManager authenticationManager,
         AuthUtils authUtils
-
     ) {
         this.maxOpenUserSessions = maxOpenUserSessions;
 
