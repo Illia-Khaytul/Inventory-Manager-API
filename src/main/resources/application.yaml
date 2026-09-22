@@ -6,6 +6,7 @@ spring:
     name: inventory-manager-api
     security:
       user_sessions:
+        limit: 10
         lifetime: 5184000 #60 days
       jwt:
         private_key_source: classpath:security/jwt/jwt_private_key.pem

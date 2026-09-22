@@ -18,12 +18,18 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "JWT authentication")
 public class AuthController {
 
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
     @PostMapping(path = "/login")
     @ResponseStatus(HttpStatus.OK)
     public AccessTokenResponse login(
         @RequestBody @Valid LoginRequest request
     ){
-        return null;
+        return authService.login(request);
     }
 
     @PostMapping(path = "/refresh-access")

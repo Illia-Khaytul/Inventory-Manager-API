@@ -13,4 +13,17 @@ public record AccessTokenResponse(
     String accessToken,
     String refreshToken
 ) {
+
+    public AccessTokenResponse(Jwt jwt, String refreshToken){
+        this(
+            jwt.getIssuer().toString(),
+            jwt.getIssuedAt(),
+            jwt.getExpiresAt(),
+            jwt.getSubject(),
+            jwt.getClaim("roles"),
+            jwt.getTokenValue(),
+            refreshToken
+        );
+    }
+
 }

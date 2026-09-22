@@ -11,28 +11,28 @@ import java.util.List;
 
 public class AppUserDetails implements UserDetails {
 
-    private final String username;
-    private final String password;
-    private final User.UserRole role;
+    private final User user;
 
     public AppUserDetails(User user) {
-        this.username = user.getUsername();
-        this.password = user.getPassword();
-        this.role = user.getRole();
+        this.user = user;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
     @Override
     public @Nullable String getPassword() {
-        return password;
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return username;
+        return user.getUsername();
+    }
+
+    public User getUser(){
+        return user;
     }
 }
