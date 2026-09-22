@@ -5,9 +5,13 @@ spring:
   application:
     name: inventory-manager-api
     security:
+      user_sessions:
+        lifetime: 5184000 #60 days
       jwt:
         private_key_source: classpath:security/jwt/jwt_private_key.pem
         public_key_source: classpath:security/jwt/jwt_public_key.pem
+        lifetime: 900 #15 minutes
+        issuer: http://localhost:8080/api/v1
   profiles:
     active: dev
   mvc:
