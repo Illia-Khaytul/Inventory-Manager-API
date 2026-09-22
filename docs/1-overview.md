@@ -54,8 +54,9 @@ General:
 
 `User` for credentials and role persistence.
 
-`RefreshToken` for active session management and access renewal.
-Requires family id to group all refresh tokens by session.
+`UserSession` for active session management.
+
+`RefreshToken` for session access renewal and refresh token use tracking.
 
 `Product` for persisting product data.
 Has auditing fields.
@@ -67,7 +68,9 @@ Requires auditing (for filling ordering) and status (DRAFT, SUBMITTED, COMPLETED
 
 **Relationships:**
 
-`User` - one to many - `RefreshToken`
+`User` - one to many - `UserSession`
+
+`UserSession` - one to many - `RefreshToken`
 
 `User` - one to many - `Order`
 
