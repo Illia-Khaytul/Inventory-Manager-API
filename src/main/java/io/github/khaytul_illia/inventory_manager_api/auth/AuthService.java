@@ -65,7 +65,7 @@ public class AuthService {
 
         log.debug("Checking if user has not reached maximum open session limit");
 
-        if(sessionRepository.countByUserId(user.getId()) >= maxOpenUserSessions){
+        if(sessionRepository.countOpenUserSessions(user.getId()) >= maxOpenUserSessions){
             throw new UserSessionLimitExceededException("Maximum amount of user sessions opened (%s)", maxOpenUserSessions);
         }
 

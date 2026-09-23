@@ -33,8 +33,8 @@ public class UserSessionRepositoryTests {
     private TestEntityManager entityManager;
     
     @Nested
-    @DisplayName("countByUserId test")
-    class CountByUserIdTests{
+    @DisplayName("countOpenUserSessions test")
+    class CountOpenUserSessionsTests{
 
         @ParameterizedTest
         @MethodSource("provideUserSessions")
@@ -48,9 +48,9 @@ public class UserSessionRepositoryTests {
             entityManager.persist(owner);
             entityManager.flush();
             entityManager.clear();
-            
+
             //Act
-            int actualAmount = sessionRepository.countByUserId(owner.getId());
+            int actualAmount = sessionRepository.countOpenUserSessions(owner.getId());
             
             //Assert
             assertThat(actualAmount).isEqualTo(expectedAmount);

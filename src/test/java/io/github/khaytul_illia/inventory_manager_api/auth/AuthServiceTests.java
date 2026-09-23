@@ -88,7 +88,7 @@ public class AuthServiceTests {
 
             when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
-            when(sessionRepository.countByUserId(user.getId()))
+            when(sessionRepository.countOpenUserSessions(user.getId()))
                 .thenReturn(openedSessions);
 
             //Act and Assert
@@ -97,7 +97,7 @@ public class AuthServiceTests {
                 .hasMessage(String.format("Maximum amount of user sessions opened (%s)", maxOpenUserSessions));
 
             verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(sessionRepository).countByUserId(user.getId());
+            verify(sessionRepository).countOpenUserSessions(user.getId());
         }
 
         @Test
@@ -116,7 +116,7 @@ public class AuthServiceTests {
 
             when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
-            when(sessionRepository.countByUserId(user.getId()))
+            when(sessionRepository.countOpenUserSessions(user.getId()))
                 .thenReturn(0);
             when(authUtils.buildUserSession(any(Instant.class), any(User.class)))
                 .thenReturn(session);
@@ -149,7 +149,7 @@ public class AuthServiceTests {
             assertThat(response.refreshToken()).hasSize(36);
 
             verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(sessionRepository).countByUserId(user.getId());
+            verify(sessionRepository).countOpenUserSessions(user.getId());
             verify(authUtils).buildUserSession(any(Instant.class), any(User.class));
             verify(sessionRepository).save(session);
             verify(authUtils).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
