@@ -24,9 +24,9 @@ import static org.mockito.Mockito.*;
 @DisplayName("AuthUtils tests")
 public class AuthUtilsTests {
 
-    private int userSessionLifetime = 3600;
-    private int accessTokenLifetime = 900;
-    private String accessTokenIssuer = "http://localhost:8080/api/v1";
+    private final int userSessionLifetime = 3600;
+    private final int accessTokenLifetime = 900;
+    private final String accessTokenIssuer = "http://localhost:8080/api/v1";
     @Mock
     private UserRepository userRepository;
     @Mock
