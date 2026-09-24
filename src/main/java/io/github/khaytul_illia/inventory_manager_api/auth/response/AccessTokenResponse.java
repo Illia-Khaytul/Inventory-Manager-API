@@ -20,7 +20,7 @@ public record AccessTokenResponse(
             jwt.getIssuedAt(),
             jwt.getExpiresAt(),
             jwt.getSubject(),
-            jwt.getClaim("roles"),
+            jwt.getClaimAsString("roles"),
             jwt.getTokenValue(),
             refreshToken
         );
