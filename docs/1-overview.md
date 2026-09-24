@@ -1,13 +1,13 @@
 # Overview
 
 ## 1. Index
-1. [Overview](/docs/1-overview.md) (this)
-2. [Entities](/docs/2-entities.md)
-3. [Security](/docs/3-security.md)
-4. [Api Contract](/docs/4-api_contract.md)
-5. [Operations](/docs/5-operations.md)
-6. [Error Handling](/docs/6-error_handling.md)
-7. [Testing](/docs/7-testing.md)
+1. [Overview](1-overview.md) (this)
+2. [Entities](2-entities.md)
+3. [Security](3-security.md)
+4. [Api Contract](4-api_contract.md)
+5. [Operations](5-operations.md)
+6. [Error Handling](6-error_handling.md)
+7. [Testing](7-testing.md)
 
 ## 2. Goals
 
