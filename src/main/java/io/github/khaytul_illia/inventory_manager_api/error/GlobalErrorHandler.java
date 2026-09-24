@@ -1,10 +1,13 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
+import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,6 +25,28 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalErrorHandler {
+
+    @ExceptionHandler(UserSessionLimitExceededException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse userSessionLimitExceededHandler(UserSessionLimitExceededException e){
+        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.FORBIDDEN,
+            e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(FailedLoginAuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse failedLoginAuthenticationHandler(FailedLoginAuthenticationException e){
+        log.info("Caught {}: {} - With cause {}: {}", e.getClass().getName(), e.getMessage(), e.getCause().getClass().getName(), e.getCause().getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.UNAUTHORIZED,
+            e.getMessage()
+        );
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

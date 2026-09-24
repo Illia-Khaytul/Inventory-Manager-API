@@ -1,9 +1,13 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
+
+    @Query("select count(us.id) from UserSession us where us.user.id = :userId and us.valid = true and us.expiresAt > current_timestamp")
+    int countOpenUserSessions(Long userId);
 
 }

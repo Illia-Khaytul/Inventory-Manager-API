@@ -20,6 +20,8 @@ It is less type safe, but doesn't require additional code for special cases.
 
 Exceptions captured and handled by the handlers.
 
+- `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
+- `FailedLoginAuthenticationException`: when user authentication during login failed.
 - `MethodArgumentNotValidException`: when `@Validated` validation fails. 
 - `HandlerMethodValidationException`: when `@Valid` validation fails.
 - `MethodArgumentTypeMismatchException`: when the received parameter type does not match the expected type.
@@ -31,6 +33,16 @@ Exceptions captured and handled by the handlers.
 
 All exceptions not thrown manually (not from the written code) return a custom generic message as to not expose sensitive information in their message on accident. 
 Any useful information is manually included in the `data` field.
+
+**UserSessionLimitExceededException handler** -> 403 Forbidden
+
+The user session limit is a business rule. 
+Trying to surpass it should return a forbidden operation status code.
+
+**FailedLoginAuthenticationException handler** -> 401 Unauthorized
+
+Used to symbolize any authentication failure during login.
+It wraps the actual exception for logging and returns a generic message.
 
 **MethodArgumentNotValidException handler** -> 400 Bad Request
 

@@ -72,7 +72,39 @@ The project follows a domain oriented structure:
 - `openapi` for OpenApi configuration and related data.
 - `common` for components used in multiple places but not related to one.
 
-## 6. Getting Started
+## 6. Application Properties
+
+**Max user session limit:** `spring.application.security.user_sessions.limit`
+
+The maximum amount of open sessions a user can have at once.
+
+**User session lifetime:** `spring.application.security.user_sessions.lifetime`
+
+Defines how long can a session remain open in seconds.
+
+Sessions are usually long-lived, so the current value is 60 days (5184000 seconds).
+
+**RSA key sources:** `spring.application.security.jwt.private/public_key_source`
+
+The URIs of the private and public keys used for access token (JWT) encoding/decoding.
+
+Must follow Spring's Resource property format.
+In this case the key pair is stored as `.pem` files in the classpath (`classpath:` prefix).
+
+**Access token lifetime:** `spring.application.security.jwt.lifetime`
+
+Defines how long is an access token valid for in seconds.
+
+Access tokens are usually short-lived, so the current value is only 15 minutes (900 seconds).
+
+**Access token issuer:** `spring.application.security.jwt.issuer`
+
+The issuer of the access token (this application).
+
+The current value is `localhost:8080` (local) for development purposes.
+It should be changed to the production domain name or server URI for deployment in the [production properties](src/main/resources/application-prod.yaml) file under the same path.
+
+## 7. Getting Started
 
 **Repository:**
 
@@ -100,7 +132,7 @@ This project uses JWT authentication with a custom RSA key pair.
 The keys are loaded from `.pem` files in the classpath on application startup.
 They have to be manually generated as they are excluded from git versioning.
 
-First create a `security/jwt` directory under the [resources](/src/main/resources) folder. 
+First create a `security/jwt` directory under the [resources](src/main/resources) folder. 
 Navigate into it from your terminal.
 
 Generate the private key using OpenSSL:
@@ -122,7 +154,7 @@ Still 4096 is the recommended value.*
 The application loads them by those exact names under that exact path.
 Make sure that the `.pem` files are located under `/resources/security/jwt` and are named `jwt_private_key.pem` for the private key and `jwt_public_key.pem` for the public one.
 
-If using this project for personal reasons, the key source locations can be modified in the [properties](/src/main/resources/application.yaml) file following Spring's Resource property syntax:
+If using this project for personal reasons, the key source locations can be modified in the [properties](src/main/resources/application.yaml) file following Spring's Resource property syntax:
 
 ```yaml
 spring:
@@ -242,13 +274,13 @@ Surround the property with `"` so maven doesn't read it as a lifecycle stage.
 
 The application will be available at `http://localhost:8080/api/v1` after initialization.
 
-## 7. API Documentation
+## 8. API Documentation
 
 This project uses SpringDoc to automatically generate a documentation for the API based on the exposed endpoints.
 
 The documentation is available at `http://localhost:8080/api/v1/swagger-ui/index.html` for the `dev` profile.
 
-## 8. Security
+## 9. Security
 
 The application uses JWT for authentication and rotating, single use, opaque refresh tokens for JWT renewal.
 All endpoints except user registration, login, access refresh and product viewing will require authentication.
@@ -259,7 +291,7 @@ Customers will be able to view products and create and track their orders, but n
 
 Passwords and refresh tokens are encoded before being persisted.
 
-## 9. Run Tests
+## 10. Run Tests
 
 Includes unit tests for individual components, slice tests for the web and database layer (controllers and repositories), integration tests for component coordination, and end-to-end tests for full application workflow.
 
@@ -278,6 +310,6 @@ Or just the unit and slice tests:
 mvn test
 ```
 
-## 10. Design Documentation
+## 11. Design Documentation
 
-The design documentation is located at the [docs](/docs/1-overview.md) folder.
+The design documentation is located at the [docs](docs/1-overview.md) folder.
