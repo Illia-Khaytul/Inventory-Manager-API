@@ -1,16 +1,31 @@
 package io.github.khaytul_illia.inventory_manager_api.openapi;
 
+import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
+import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.time.Instant;
+import java.util.Map;
+
 @Configuration
 @Profile("dev")
 public class OpenApiConfig {
+
+    public static final Instant fixedTime = Instant.parse("2026-09-24T10:33:00Z");
 
     @Bean
     public OpenAPI openApi(){
@@ -45,13 +60,64 @@ public class OpenApiConfig {
     }
 
     private Components assembleComponents(){
-        return new Components()
+        Components components = new Components()
             .addSecuritySchemes(
                 "JWT authentication",
                 new SecurityScheme()
                     .type(SecurityScheme.Type.HTTP)
                     .scheme("bearer")
                     .bearerFormat("JWT")
+            );
+
+        AuthEndpointResponseProvider.provideAuthEndpointResponses().forEach(components::addResponses);
+
+        addSchema(components, ErrorResponse.class);
+        addSchema(components, AccessTokenResponse.class);
+
+        return components;
+    }
+
+    public static void addSchema(Components components, Class<?> schemaClass){
+        ResolvedSchema resolvedSchema = ModelConverters.getInstance()
+            .resolveAsResolvedSchema(new AnnotatedType(schemaClass).resolveAsRef(true));
+
+        if (resolvedSchema.referencedSchemas != null) {
+            resolvedSchema.referencedSchemas.forEach(components::addSchemas);
+        }
+    }
+
+    public static ErrorResponse formatErrorResponse(ErrorResponse response){
+        return new ErrorResponse(
+            fixedTime,
+            response.status(),
+            response.message(),
+            response.data()
+        );
+    }
+
+    public static ApiResponse buildApiResponse(String schemaName, String description){
+        return buildApiResponse(schemaName, description, Map.of());
+    }
+
+    public static ApiResponse buildApiResponse(String schemaName, String description, Example example){
+        return buildApiResponse(schemaName, description, Map.of("default", example));
+    }
+
+    public static ApiResponse buildApiResponse(String schemaName, String description, Map<String, Example> examples) {
+        MediaType mediaType = new MediaType()
+            .schema(new Schema<>().$ref("#/components/schemas/" + schemaName));
+
+        if(examples != null && !examples.isEmpty()) {
+            examples.forEach(mediaType::addExamples);
+        }
+
+        return new ApiResponse()
+            .description(description)
+            .content(new Content()
+                .addMediaType(
+                    org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+                    mediaType
+                )
             );
     }
 

@@ -3,6 +3,9 @@ package io.github.khaytul_illia.inventory_manager_api.auth;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +29,23 @@ public class AuthController {
 
     @PostMapping(path = "/login")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Log in and receive access to the application",
+        description = """
+            Authenticates the user by the provided credentials and opens a new user session, returning access and refresh tokens.
+            - Returns with 200 OK on successful login.
+            - Returns with 400 Bad Request if the login request has invalid fields.
+            - Returns with 401 Unauthorized if credential authentication fails.
+            - Returns with 403 Forbidden if the user has already opened a maximum amount of sessions.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/auth_login_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/auth_login_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_login_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/auth_login_403")
+    })
     public AccessTokenResponse login(
         @RequestBody @Valid LoginRequest request
     ){
