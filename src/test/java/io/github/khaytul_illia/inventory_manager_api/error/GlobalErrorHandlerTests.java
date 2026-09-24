@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,6 +12,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,6 +45,46 @@ public class GlobalErrorHandlerTests {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Test
+    @DisplayName("Should return 403 Forbidden when caught UserSessionLimitExceededException")
+    void shouldReturn403_whenUserSessionLimitExceededException() throws Exception {
+        //Arrange
+        UserSessionLimitExceededException exception = new UserSessionLimitExceededException("message");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isForbidden())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.FORBIDDEN, exception.getMessage());
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 401 Unauthorized when caught BadCredentialsException")
+    void shouldReturn401_whenBadCredentialsException() throws Exception {
+        //Arrange
+        BadCredentialsException exception = new BadCredentialsException("message");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isUnauthorized())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
+            });
+    }
 
     @ParameterizedTest
     @MethodSource("provideInvalidIdValue")
