@@ -17,7 +17,7 @@ Authenticates the user with the provided credentials and opens a new user sessio
 **Receives:** `login request`
 
 **Steps:**
-1. Authenticate the user with provided credentials. Throws `BadCredentialsException`.
+1. Authenticate the user with provided credentials. Throws `FailedLoginAuthenticationException`.
 2. Check if user has not reached the maximum open sessions limit. Throws `UserSessionLimitExceededException`.
 3. Create new open user session, refresh (UUID) and access (JWT) tokens.
 4. Persist the new session and the refresh token.

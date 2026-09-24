@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.auth;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import io.github.khaytul_illia.inventory_manager_api.security.login.AppUserDetails;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
@@ -71,7 +72,7 @@ public class AuthServiceTests {
 
             //Act and Assert
             assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(BadCredentialsException.class)
+                .isInstanceOf(FailedLoginAuthenticationException.class)
                 .hasMessage("Invalid credentials")
                 .hasCause(exception);
 

@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
+import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
@@ -36,10 +37,10 @@ public class GlobalErrorHandler {
         );
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
+    @ExceptionHandler(FailedLoginAuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorResponse badCredentialsHandler(BadCredentialsException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+    public ErrorResponse failedLoginAuthenticationHandler(FailedLoginAuthenticationException e){
+        log.info("Caught {}: {} - With cause {}: {}", e.getClass().getName(), e.getMessage(), e.getCause().getClass().getName(), e.getCause().getMessage());
 
         return new ErrorResponse(
             HttpStatus.UNAUTHORIZED,

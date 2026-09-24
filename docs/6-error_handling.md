@@ -21,7 +21,7 @@ It is less type safe, but doesn't require additional code for special cases.
 Exceptions captured and handled by the handlers.
 
 - `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
-- `BadCredentialsException`: when user authentication during login failed.
+- `FailedLoginAuthenticationException`: when user authentication during login failed.
 - `MethodArgumentNotValidException`: when `@Validated` validation fails. 
 - `HandlerMethodValidationException`: when `@Valid` validation fails.
 - `MethodArgumentTypeMismatchException`: when the received parameter type does not match the expected type.
@@ -39,7 +39,7 @@ Any useful information is manually included in the `data` field.
 The user session limit is a business rule. 
 Trying to surpass it should return a forbidden operation status code.
 
-**BadCredentialsException handler** -> 401 Unauthorized
+**FailedLoginAuthenticationException handler** -> 401 Unauthorized
 
 Used to symbolize any authentication failure during login.
 It wraps the actual exception for logging and returns a generic message.

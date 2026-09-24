@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -67,10 +68,10 @@ public class GlobalErrorHandlerTests {
     }
 
     @Test
-    @DisplayName("Should return 401 Unauthorized when caught BadCredentialsException")
-    void shouldReturn401_whenBadCredentialsException() throws Exception {
+    @DisplayName("Should return 401 Unauthorized when caught FailedLoginAuthenticationException")
+    void shouldReturn401_whenFailedLoginAuthenticationException() throws Exception {
         //Arrange
-        BadCredentialsException exception = new BadCredentialsException("message");
+        FailedLoginAuthenticationException exception = new FailedLoginAuthenticationException(new BadCredentialsException("message"));
 
         doThrow(exception)
             .when(dummyController).dummyOperation();
