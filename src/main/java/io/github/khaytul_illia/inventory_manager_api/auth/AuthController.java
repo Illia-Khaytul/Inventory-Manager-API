@@ -54,6 +54,21 @@ public class AuthController {
 
     @PostMapping(path = "/refresh-access")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Refresh access to an open user session",
+        description = """
+            Checks for provided refresh token reuse or session invalidation and marks it as used, then generates a new one for the same session and returns it with a new access token.
+            - Returns with 200 OK on successful access refresh.
+            - Returns with 400 Bad Request if the refresh token request has invalid fields.
+            - Returns with 401 Unauthorized if the refresh token is used, or the session is invalid or expired.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/auth_refresh_access_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/auth_refresh_access_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_refresh_access_401")
+    })
     public AccessTokenResponse refreshAccess(
         @RequestBody @Valid RefreshTokenRequest request
     ){
