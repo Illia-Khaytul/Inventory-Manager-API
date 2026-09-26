@@ -1,9 +1,11 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -45,6 +47,28 @@ public class GlobalErrorHandler {
         return new ErrorResponse(
             HttpStatus.UNAUTHORIZED,
             e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse invalidRefreshTokenHandler(InvalidRefreshTokenException e){
+        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), e.getDetails());
+
+        return new ErrorResponse(
+            HttpStatus.UNAUTHORIZED,
+            e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse optimisticLockingFailureHandler(OptimisticLockingFailureException e){
+        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.CONFLICT,
+            "Concurrent modification error"
         );
     }
 

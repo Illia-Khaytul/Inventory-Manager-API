@@ -17,6 +17,7 @@ public class AuthEndpointResponseProvider {
     public static Map<String, ApiResponse> provideAuthEndpointResponses(){
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideLoginResponses());
+        responses.putAll(provideRefreshAccessResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "auth_" + entry.getKey(),
@@ -72,6 +73,47 @@ public class AuthEndpointResponseProvider {
                 "ErrorResponse",
                 "User already opened a maximum number of sessions",
                 new Example().value(login403Response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideRefreshAccessResponses() {
+        ErrorResponse refreshAccess400ResponseBlankCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "refreshToken", "cannot be blank"
+            ))
+        );
+        ErrorResponse refreshAccess400ResponseSizeCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "refreshToken", "size must be between 0 and 50"
+            ))
+        );
+        ErrorResponse refreshAccess401response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired", Map.of())
+        );
+
+        return Map.of(
+            "refresh_access_success",
+            buildApiResponse(
+                "AccessTokenResponse",
+                "Successfully refreshed access"
+            ),
+            "refresh_access_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid refresh token request parameters",
+                Map.of(
+                    "Null or empty",
+                    new Example().value(refreshAccess400ResponseBlankCase).summary("Refresh token request had null or blank values"),
+                    "Invalid size",
+                    new Example().value(refreshAccess400ResponseSizeCase).summary("Refresh token request had parameters of an invalid size")
+                )
+            ),
+            "refresh_access_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Refresh token was used, or session was invalid or expired",
+                new Example().value(refreshAccess401response)
             )
         );
     }
