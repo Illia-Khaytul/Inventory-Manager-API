@@ -57,7 +57,7 @@ public class AuthController {
     public AccessTokenResponse refreshAccess(
         @RequestBody @Valid RefreshTokenRequest request
     ){
-        return null;
+        return authService.refreshAccess(request);
     }
 
     @PostMapping(path = "/logout")

@@ -1,6 +1,5 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +29,7 @@ public class RefreshToken {
     @Column(nullable = false)
     private boolean used;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private UserSession session;
 
