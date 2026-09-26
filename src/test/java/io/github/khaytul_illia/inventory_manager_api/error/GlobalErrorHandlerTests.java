@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -84,6 +86,46 @@ public class GlobalErrorHandlerTests {
             .andExpect(status().isUnauthorized())
             .andExpect(result -> {
                 assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 401 Unauthorized when caught InvalidRefreshTokenException")
+    void shouldReturn401_whenInvalidRefreshTokenException() throws Exception {
+        //Arrange
+        InvalidRefreshTokenException exception = new InvalidRefreshTokenException("message", List.of());
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isUnauthorized())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 409 Conflict when caught OptimisticLockingFailureException")
+    void shouldReturn409_whenOptimisticLockingFailureException() throws Exception {
+        //Arrange
+        OptimisticLockingFailureException exception = new OptimisticLockingFailureException("message");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isConflict())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.CONFLICT, "Concurrent modification error");
             });
     }
 

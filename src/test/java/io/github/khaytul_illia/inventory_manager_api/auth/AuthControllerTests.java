@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
+import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
@@ -163,6 +164,108 @@ public class AuthControllerTests {
                 .andExpect(jsonPath("$.data.password").value(passwordMessage));
 
             verify(authService, never()).login(any(LoginRequest.class));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("refreshAccess endpoint tests")
+    class RefreshAccessTests{
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 200 OK when successfully refreshed access")
+        void shouldReturn200_whenSuccessfulRefreshAccess() throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+            Instant now = Instant.now();
+            AccessTokenResponse response = new AccessTokenResponse(
+                "issuer",
+                now,
+                now.plusSeconds(900),
+                "username",
+                "CUSTOMER",
+                "access token",
+                "new refresh token"
+            );
+
+            when(authService.refreshAccess(any(RefreshTokenRequest.class)))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/refresh-access")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issuer").value(response.issuer()))
+                .andExpect(jsonPath("$.issuedAt").value(response.issuedAt().toString()))
+                .andExpect(jsonPath("$.expiresAt").value(response.expiresAt().toString()))
+                .andExpect(jsonPath("$.subject").value(response.subject()))
+                .andExpect(jsonPath("$.role").value(response.role()))
+                .andExpect(jsonPath("$.accessToken").value(response.accessToken()))
+                .andExpect(jsonPath("$.refreshToken").value(response.refreshToken()));
+
+            verify(authService).refreshAccess(any(RefreshTokenRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return 200 OK when accessed with no authentication")
+        void shouldReturn200_whenNoAuthentication() throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+            Instant now = Instant.now();
+            AccessTokenResponse response = new AccessTokenResponse(
+                "issuer",
+                now,
+                now.plusSeconds(900),
+                "username",
+                "CUSTOMER",
+                "access token",
+                "new refresh token"
+            );
+
+            when(authService.refreshAccess(any(RefreshTokenRequest.class)))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/refresh-access")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isOk());
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            nullValues = "NULL",
+            quoteCharacter = '"',
+            textBlock = """
+            NULL, must not be blank
+            "", must not be blank
+            "   ", must not be blank
+            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 50
+            """)
+        @WithMockUser
+        @DisplayName("Should return 400 Bad Request when invalid refresh token request fields")
+        void shouldReturn400_whenInvalidRefreshTokenRequest(
+            String refreshToken,
+            String refreshTokenMessage
+        ) throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/refresh-access")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.refreshToken").value(refreshTokenMessage));
         }
 
     }
