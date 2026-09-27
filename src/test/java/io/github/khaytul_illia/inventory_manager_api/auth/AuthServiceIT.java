@@ -14,7 +14,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -68,9 +72,11 @@ public class AuthServiceIT {
 
     @BeforeEach
     void beforeEach(){
-        user = userRepository.save(new User(null, "username", encodedPassword, User.UserRole.CUSTOMER));
-        session = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
-        refreshToken = refreshTokenRepository.save(new RefreshToken(null, hashedTokenValue, now, false, session, null));
+        transactionTemplate.executeWithoutResult(status -> {
+            user = userRepository.save(new User(null, "username", encodedPassword, User.UserRole.CUSTOMER));
+            session = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
+            refreshToken = refreshTokenRepository.save(new RefreshToken(null, hashedTokenValue, now, false, session, null));
+        });
     }
 
     @AfterEach
@@ -189,6 +195,37 @@ public class AuthServiceIT {
             assertThat(sessionRepository.count()).isEqualTo(1);
             assertThat(refreshTokenRepository.count()).isEqualTo(2);
             assertThat(refreshTokenRepository.findById(refreshToken.getId()).orElseThrow().isUsed()).isTrue();
+        }
+
+    }
+
+    @Nested
+    @DisplayName("logout integration tests")
+    class LogoutIT{
+
+        private final RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
+
+        @AfterEach
+        void afterEach(){
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+
+        @Test
+        @DisplayName("Should invalidate user session when refresh token belongs to authenticated user")
+        void shouldInvalidateSession_whenRefreshTokenBelongsToAuthenticatedUser(){
+            //Arrange
+            Jwt jwt = mock(Jwt.class);
+            Authentication authentication = new TestingAuthenticationToken(jwt, "password", User.UserRole.CUSTOMER.name());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            when(jwt.getSubject())
+                .thenReturn(user.getUsername());
+
+            //Act
+            authService.logout(request);
+
+            //Assert
+            assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse();
         }
 
     }
