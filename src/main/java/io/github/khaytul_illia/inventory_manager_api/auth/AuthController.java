@@ -80,7 +80,7 @@ public class AuthController {
     public void logout(
         @RequestBody @Valid RefreshTokenRequest request
     ){
-
+        authService.logout(request);
     }
 
     @PostMapping(path = "/logout-all")

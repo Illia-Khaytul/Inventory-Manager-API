@@ -6,6 +6,7 @@ import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenRe
 import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.login.AppUserDetails;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,6 +36,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuthenticationManager authenticationManager;
     private final AuthUtils authUtils;
+    private final SecurityUtils securityUtils;
 
     public AuthService(
         @Value("${spring.application.security.user_sessions.limit}")
@@ -41,7 +44,7 @@ public class AuthService {
         UserSessionRepository sessionRepository,
         RefreshTokenRepository refreshTokenRepository,
         AuthenticationManager authenticationManager,
-        AuthUtils authUtils
+        AuthUtils authUtils, SecurityUtils securityUtils
     ) {
         this.maxOpenUserSessions = maxOpenUserSessions;
 
@@ -49,6 +52,7 @@ public class AuthService {
         this.refreshTokenRepository = refreshTokenRepository;
         this.authenticationManager = authenticationManager;
         this.authUtils = authUtils;
+        this.securityUtils = securityUtils;
     }
 
     @Transactional
@@ -142,6 +146,35 @@ public class AuthService {
         log.info("Access for session with id {} successfully refreshed", session.getId());
 
         return new AccessTokenResponse(jwt, newRefreshTokenValue);
+    }
+
+    public void logout(RefreshTokenRequest request){
+        log.info("Logout attempt");
+
+        log.debug("Loading the refresh token by value");
+
+        String hashedTokenValue = authUtils.hashTokenValue(request.refreshToken());
+        Optional<RefreshToken> foundRefreshToken = refreshTokenRepository.findByTokenValue(hashedTokenValue);
+        if(foundRefreshToken.isEmpty()){
+            return;
+        }
+
+        RefreshToken refreshToken = foundRefreshToken.get();
+        UserSession session = refreshToken.getSession();
+        User user = session.getUser();
+
+        log.debug("Checking if the found session belongs to the authenticated user");
+
+        String authenticatedUserUsername = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        if(!user.getUsername().equals(authenticatedUserUsername)){
+            return;
+        }
+
+        log.debug("Invalidating user session");
+
+        sessionRepository.invalidateSessionById(session.getId());
+
+        log.info("Successfully logged out of session with id {}", session.getId());
     }
 
 }

@@ -6,6 +6,7 @@ import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenRe
 import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.login.AppUserDetails;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,8 @@ public class AuthServiceTests {
     private AuthenticationManager authenticationManager;
     @Mock
     private AuthUtils authUtils;
+    @Mock
+    private SecurityUtils securityUtils;
     private AuthService authService;
 
     @BeforeEach
@@ -58,7 +61,8 @@ public class AuthServiceTests {
             sessionRepository,
             refreshTokenRepository,
             authenticationManager,
-            authUtils
+            authUtils,
+            securityUtils
         );
     }
 
