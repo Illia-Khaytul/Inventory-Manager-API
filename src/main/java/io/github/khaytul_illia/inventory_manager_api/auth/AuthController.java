@@ -102,7 +102,7 @@ public class AuthController {
     @PostMapping(path = "/logout-all")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logoutAll(){
-
+        authService.logoutAll();
     }
 
 }

@@ -18,4 +18,9 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
     @Query("update UserSession us set us.valid = false where us.id = :sessionId")
     void invalidateSessionById(Long sessionId);
 
+    @Transactional
+    @Modifying
+    @Query("update UserSession us set us.valid = false where us.user.username = :username")
+    void invalidateAllUserSessions(String username);
+
 }
