@@ -30,6 +30,7 @@ Exceptions captured and handled by the handlers.
 - `HttpMessageNotReadableException`: when the request content does not match its content type format.
 - `HttpMediaTypeNotSupportedException`: when the request content type is not supported by the endpoint.
 - `NoResourceFoundException`: when the request does not point to any exposed endpoint.
+- `IllegalStateException`: when something in the application didn't work or isn't configured as intended. 
 
 ## 3. Global exception handling
 
@@ -103,7 +104,7 @@ Notes:
 
 **Generic exception handler** -> 500 Internal Server Error
 
-Catches any other unexpected exceptions and logs their stack trace.
+Catches `IllegalStateException` and any other unexpected exceptions and logs their stack trace.
 
 `message` = Something went wrong
 
