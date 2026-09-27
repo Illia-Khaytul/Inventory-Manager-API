@@ -230,4 +230,35 @@ public class AuthServiceIT {
 
     }
 
+    @Nested
+    @DisplayName("logoutAll integration tests")
+    class LogoutAllIT{
+
+        @AfterEach
+        void afterEach(){
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+
+        @Test
+        @DisplayName("Should invalidate all owned user sessions")
+        void shouldInvalidateAllUserSessions(){
+            //Arrange
+            Jwt jwt = mock(Jwt.class);
+            Authentication authentication = new TestingAuthenticationToken(jwt, "password", User.UserRole.CUSTOMER.name());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserSession differentSession = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
+
+            when(jwt.getSubject())
+                .thenReturn(user.getUsername());
+
+            //Act
+            authService.logoutAll();
+
+            //Assert
+            assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse();
+            assertThat(sessionRepository.findById(differentSession.getId()).orElseThrow().isValid()).isFalse();
+        }
+
+    }
+
 }
