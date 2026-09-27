@@ -140,7 +140,7 @@ public class UserSessionRepositoryTests {
     @Nested
     @DisplayName("invalidateSessionById tests")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    class invalidateSessionByIdTests{
+    class InvalidateSessionByIdTests{
 
         @AfterEach
         void afterEach(){
@@ -232,7 +232,98 @@ public class UserSessionRepositoryTests {
         }
         
     }
-    
+
+    @Nested
+    @DisplayName("invalidateAllUserSessions tests")
+    class InvalidateAllUserSessionsTests{
+
+        private static final String username = "username";
+
+        @ParameterizedTest
+        @MethodSource("provideUserSessions")
+        @DisplayName("Should invalidate all user sessions")
+        void shouldInvalidateAllUserSessions(List<UserSession> targetSessions, List<UserSession> otherSessions){
+            //Arrange
+            targetSessions.forEach(session -> {
+                entityManager.persist(session.getUser());
+                entityManager.persist(session);
+            });
+            otherSessions.forEach(session -> {
+                entityManager.persist(session.getUser());
+                entityManager.persist(session);
+            });
+            entityManager.flush();
+            entityManager.clear();
+
+            //Act
+            sessionRepository.invalidateAllUserSessions(username);
+
+            //Assert
+            targetSessions.forEach(
+                session -> assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse()
+            );
+            otherSessions.forEach(
+                session -> assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isEqualTo(session.isValid())
+            );
+        }
+
+        /*
+                Test data provider methods
+         */
+
+        static Stream<Arguments> provideUserSessions(){
+            return Stream.of(
+                //Only valid owned sessions
+                provideValidOwnedSessions(),
+                //Valid and invalid owned sessions
+                provideValidAndInvalidOwnedSessions(),
+                //Valid owned and unowned sessions
+                provideValidOwnedAndUnownedSessions()
+            );
+        }
+
+        private static Arguments provideValidOwnedSessions(){
+            Instant now = Instant.now();
+            User user = buildUser(username);
+            UserSession validOwned1 = buildSession(true, now, user);
+            UserSession validOwned2 = buildSession(true, now, user);
+
+            return Arguments.of(
+                List.of(validOwned1, validOwned2),
+                List.of()
+            );
+        }
+
+        private static Arguments provideValidAndInvalidOwnedSessions(){
+            Instant now = Instant.now();
+            User user = buildUser(username);
+            UserSession validOwned = buildSession(true, now, user);
+            UserSession validExpiredOwned = buildSession(true, now.minusSeconds(36000), user);
+            UserSession invalidOwned = buildSession(false, now, user);
+
+            return Arguments.of(
+                List.of(validOwned, validExpiredOwned, invalidOwned),
+                List.of()
+            );
+        }
+
+        private static Arguments provideValidOwnedAndUnownedSessions(){
+            Instant now = Instant.now();
+            User targetUser = buildUser(username);
+            User otherUser = buildUser(username + "_other");
+            UserSession validOwned1 = buildSession(true, now, targetUser);
+            UserSession validOwned2 = buildSession(true, now, targetUser);
+            UserSession validUnowned1 = buildSession(true, now, otherUser);
+            UserSession validUnowned2 = buildSession(true, now, otherUser);
+
+            return Arguments.of(
+                List.of(validOwned1, validOwned2),
+                List.of(validUnowned1, validUnowned2)
+            );
+        }
+
+    }
+
     /*
             Helper methods
      */
