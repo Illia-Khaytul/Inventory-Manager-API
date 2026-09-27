@@ -76,7 +76,23 @@ Loads the user session by the provided refresh token, checks if it belongs to th
 - This logout operation is idempotent.
 It always returns the same (nothing) regardless of failure or success.
 This keeps the internal workings of the system hidden from outsiders.
-- Uses a security utility component that may throw `IllegalStateException` if the user is somehow unauthenticated or not authenticated via JWT access token (the configured method).
-If the user is somehow unauthenticated or authenticated incorrectly and still accessed a protected operation, then it is an application misconfiguration error.
-If the security utils component is used on an unprotected operation, then it is an unintended bug.
+- Uses a modifying query to keep the operation atomic.
+- No transaction on this operation. The only database modification operation is atomic.
+
+### 1.4. Logout all
+
+Invalidates all user sessions that belong to the authenticated user.
+
+**Receives:** nothing
+
+**Steps:**
+1. Invalidate all sessions owned by the authenticated user.
+
+**Returns:** nothing
+
+**Notes:**
+- This logout operation is idempotent.
+  It always returns the same (nothing) whether it closed any sessions or not.
+  This keeps the internal workings of the system hidden from outsiders.
+- Uses a modifying query to keep the operation atomic.
 - No transaction on this operation. The only database modification operation is atomic.
