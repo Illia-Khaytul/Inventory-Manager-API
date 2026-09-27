@@ -18,6 +18,7 @@ public class AuthEndpointResponseProvider {
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideLoginResponses());
         responses.putAll(provideRefreshAccessResponses());
+        responses.putAll(provideLogoutResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "auth_" + entry.getKey(),
@@ -114,6 +115,44 @@ public class AuthEndpointResponseProvider {
                 "ErrorResponse",
                 "Refresh token was used, or session was invalid or expired",
                 new Example().value(refreshAccess401response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideLogoutResponses() {
+        ErrorResponse logout400ResponseBlankCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "refreshToken", "cannot be blank"
+            ))
+        );
+        ErrorResponse logout400ResponseSizeCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "refreshToken", "size must be between 0 and 50"
+            ))
+        );
+        ErrorResponse logout401response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource", Map.of())
+        );
+
+        return Map.of(
+            "logout_success",
+            new ApiResponse().description("Successfully logged out"),
+            "logout_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid refresh token request parameters",
+                Map.of(
+                    "Null or empty",
+                    new Example().value(logout400ResponseBlankCase).summary("Refresh token request had null or blank values"),
+                    "Invalid size",
+                    new Example().value(logout400ResponseSizeCase).summary("Refresh token request had parameters of an invalid size")
+                )
+            ),
+            "logout_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "User tried accessing the endpoint without authentication",
+                new Example().value(logout401response)
             )
         );
     }

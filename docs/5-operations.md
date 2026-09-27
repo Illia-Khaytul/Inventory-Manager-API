@@ -57,4 +57,26 @@ Session invalidation must be committed regardless of that.
 When that happens it means that the token has probably been leaked and therefore the session should be closed.
 In any case that will always happen if the user tries resending the same request after receiving the error response.
 This functionality has not been implemented because it is outside the scope of this project, is extremely rare to occur naturally and the current token validity check already covers most of the invalidation cases.
-- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for loggin purposes. 
+- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for loggin purposes.
+
+### 1.3. Logout
+
+Loads the user session by the provided refresh token, checks if it belongs to the authenticated user and invalidates it.
+
+**Receives:** `refresh token request`
+
+**Steps:**
+1. Fetch the refresh token, it's session and user by the provided value. Returns if not found.
+2. Check if the user session belongs to the authenticated user. Returns if it doesn't belong.
+3. Invalidates the user session.
+
+**Returns:** nothing
+
+**Notes:**
+- This logout operation is idempotent.
+It always returns the same (nothing) regardless of failure or success.
+This keeps the internal workings of the system hidden from outsiders.
+- Uses a security utility component that may throw `IllegalStateException` if the user is somehow unauthenticated or not authenticated via JWT access token (the configured method).
+If the user is somehow unauthenticated or authenticated incorrectly and still accessed a protected operation, then it is an application misconfiguration error.
+If the security utils component is used on an unprotected operation, then it is an unintended bug.
+- No transaction on this operation. The only database modification operation is atomic.

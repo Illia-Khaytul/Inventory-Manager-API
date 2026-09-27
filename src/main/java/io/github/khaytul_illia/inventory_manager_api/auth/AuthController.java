@@ -77,10 +77,26 @@ public class AuthController {
 
     @PostMapping(path = "/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Logout and close a specific user session",
+        description = """
+            Finds a user session belonging to the authenticated user by provided refresh token value and invalidates it.
+            - Returns with 204 No Content on successful logout.
+            - Returns with 400 Bad Request if the refresh token request has invalid fields.
+            - Returns with 401 Unauthorized if the user is not authenticated.
+            
+            Note: This operation is idempotent and will return the same response (204 No content) regardless of its internal state.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/auth_logout_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/auth_logout_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_logout_401")
+    })
     public void logout(
         @RequestBody @Valid RefreshTokenRequest request
     ){
-
+        authService.logout(request);
     }
 
     @PostMapping(path = "/logout-all")
