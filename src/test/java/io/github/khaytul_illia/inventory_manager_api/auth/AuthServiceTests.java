@@ -32,8 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -354,6 +353,93 @@ public class AuthServiceTests {
                     List.of("Detected refresh token reuse", "Attempted access to an invalidated session", "Attempted access to an expired session")
                 )
             );
+        }
+
+    }
+
+    @Nested
+    @DisplayName("logout tests")
+    class LogoutTests{
+
+        private final String tokenValue = "refresh token value";
+        private final RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
+
+        @Test
+        @DisplayName("Should return nothing when refresh token is not found by token value")
+        void shouldReturnNothing_whenRefreshTokenNotFound(){
+            //Arrange
+            when(authUtils.hashTokenValue(tokenValue))
+                .thenReturn(tokenValue);
+            when(refreshTokenRepository.findByTokenValue(tokenValue))
+                .thenReturn(Optional.empty());
+
+            //Act
+            authService.logout(request);
+
+            //Assert
+            verify(authUtils).hashTokenValue(tokenValue);
+            verify(refreshTokenRepository).findByTokenValue(tokenValue);
+            verify(sessionRepository, never()).invalidateSessionById(anyLong());
+        }
+
+        @Test
+        @DisplayName("Should return nothing when user session does not belong to the authenticated user")
+        void shouldReturnNothing_whenSessionDoesNotBelongToAuthenticatedUser(){
+            //Arrange
+            Instant now = Instant.now();
+            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
+            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
+            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
+            Jwt jwt = mock(Jwt.class);
+
+            when(authUtils.hashTokenValue(tokenValue))
+                .thenReturn(tokenValue);
+            when(refreshTokenRepository.findByTokenValue(tokenValue))
+                .thenReturn(Optional.of(refreshToken));
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwt);
+            when(jwt.getSubject())
+                .thenReturn(user.getUsername() + "_different");
+
+            //Act
+            authService.logout(request);
+
+            //Assert
+            verify(authUtils).hashTokenValue(tokenValue);
+            verify(refreshTokenRepository).findByTokenValue(tokenValue);
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(sessionRepository, never()).invalidateSessionById(session.getId());
+        }
+
+        @Test
+        @DisplayName("Should return nothing and invalidate session when session belongs to authenticated user")
+        void shouldReturnNothingAndInvalidateSession_whenSessionBelongsToAuthenticatedUser(){
+            //Arrange
+            Instant now = Instant.now();
+            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
+            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
+            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
+            Jwt jwt = mock(Jwt.class);
+
+            when(authUtils.hashTokenValue(tokenValue))
+                .thenReturn(tokenValue);
+            when(refreshTokenRepository.findByTokenValue(tokenValue))
+                .thenReturn(Optional.of(refreshToken));
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwt);
+            when(jwt.getSubject())
+                .thenReturn(user.getUsername());
+            doNothing()
+                .when(sessionRepository).invalidateSessionById(session.getId());
+
+            //Act
+            authService.logout(request);
+
+            //Assert
+            verify(authUtils).hashTokenValue(tokenValue);
+            verify(refreshTokenRepository).findByTokenValue(tokenValue);
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(sessionRepository).invalidateSessionById(session.getId());
         }
 
     }
