@@ -130,7 +130,7 @@ public class GlobalErrorHandlerTests {
     }
 
     @ParameterizedTest
-    @MethodSource("provideInvalidIdValue")
+    @MethodSource("provideInvalidIdValues")
     @DisplayName("Should return 400 Bad Request when receiving invalid request parameters")
     void shouldReturn400_whenInvalidRequestParameters(
         long id,
@@ -236,11 +236,12 @@ public class GlobalErrorHandlerTests {
             .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, "Resource not found"));
     }
 
-    @Test
+    @ParameterizedTest
+    @MethodSource("provideUnexpectedExceptions")
     @DisplayName("Should return 500 Internal Server Error when an unexpected exception is thrown")
-    void shouldReturn500_whenUnexpectedException() throws Exception{
+    void shouldReturn500_whenUnexpectedException(RuntimeException exception) throws Exception{
         //Arrange
-        doThrow(new RuntimeException())
+        doThrow(exception)
             .when(dummyController).dummyOperation();
 
         //Act and Assert
@@ -256,7 +257,7 @@ public class GlobalErrorHandlerTests {
             Test data provider methods
      */
 
-    static Stream<Arguments> provideInvalidIdValue(){
+    static Stream<Arguments> provideInvalidIdValues(){
         return Stream.of(
             //Single violation on one field
             Arguments.of(
@@ -293,6 +294,15 @@ public class GlobalErrorHandlerTests {
                 new DummyController.DummyRequest(null, ""),
                 Map.of("value1", List.of("must not be null"), "value2", List.of("must not be empty", "size must be between 2 and 5"))
             )
+        );
+    }
+
+    static Stream<Arguments> provideUnexpectedExceptions(){
+        return Stream.of(
+            //Random RuntimeException
+            Arguments.of(new RuntimeException("runtime exception message")),
+            //IllegalStateException
+            Arguments.of(new IllegalStateException("this is not allowed"))
         );
     }
 

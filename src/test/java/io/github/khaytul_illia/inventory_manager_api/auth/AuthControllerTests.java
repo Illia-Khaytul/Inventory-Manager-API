@@ -27,6 +27,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -260,6 +261,85 @@ public class AuthControllerTests {
             //Act and Assert
             mockMvc.perform(
                     post("/auth/refresh-access")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.refreshToken").value(refreshTokenMessage));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("logout endpoint tests")
+    class LogoutTests{
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 204 No Content when logout is successful")
+        void shouldReturn204_whenSuccessfulLogout() throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+
+            doNothing().
+                when(authService).logout(any(RefreshTokenRequest.class));
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(result -> {
+                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
+                });
+
+            verify(authService).logout(any(RefreshTokenRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
+        void shouldReturn401_whenNoAuthentication() throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+
+            doNothing().
+                when(authService).logout(any(RefreshTokenRequest.class));
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            nullValues = "NULL",
+            quoteCharacter = '"',
+            textBlock = """
+            NULL, must not be blank
+            "", must not be blank
+            "   ", must not be blank
+            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 50
+            """)
+        @WithMockUser
+        @DisplayName("Should return 400 Bad Request when invalid refresh token request fields")
+        void shouldReturn400_whenInvalidRefreshTokenRequest(
+            String refreshToken,
+            String refreshTokenMessage
+        ) throws Exception{
+            //Arrange
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
