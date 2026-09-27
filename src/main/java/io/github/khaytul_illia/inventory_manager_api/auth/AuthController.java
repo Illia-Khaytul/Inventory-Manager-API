@@ -101,6 +101,20 @@ public class AuthController {
 
     @PostMapping(path = "/logout-all")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Logout and close all owned user sessions",
+        description = """
+            Invalidates all sessions belonging to the authenticated user.
+            - Returns with 204 No Content on successful logout.
+            - Returns with 401 Unauthorized if the user is not authenticated.
+            
+            Note: This operation is idempotent and will return the same response (204 No content) regardless of its internal state.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/auth_logout_success"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_logout_401")
+    })
     public void logoutAll(){
         authService.logoutAll();
     }
