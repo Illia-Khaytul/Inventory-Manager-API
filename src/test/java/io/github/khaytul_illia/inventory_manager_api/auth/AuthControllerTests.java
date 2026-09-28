@@ -350,4 +350,45 @@ public class AuthControllerTests {
 
     }
 
+    @Nested
+    @DisplayName("logoutAll endpoint tests")
+    class LogoutAllTests{
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 204 No Content when successfully logged out of all sessions")
+        void shouldReturn204_whenSuccessfulLogoutAll() throws Exception{
+            //Arrange
+            doNothing().
+                when(authService).logoutAll();
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/logout-all")
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(result -> {
+                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
+                });
+
+            verify(authService).logoutAll();
+        }
+
+        @Test
+        @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
+        void shouldReturn401_whenNoAuthentication() throws Exception{
+            //Arrange
+            doNothing().
+                when(authService).logoutAll();
+
+            //Act and Assert
+            mockMvc.perform(
+                    post("/auth/logout-all")
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+        }
+
+    }
+
 }

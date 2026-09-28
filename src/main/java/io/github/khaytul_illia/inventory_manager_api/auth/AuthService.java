@@ -12,7 +12,6 @@ import io.github.khaytul_illia.inventory_manager_api.user.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -149,7 +148,7 @@ public class AuthService {
     }
 
     public void logout(RefreshTokenRequest request){
-        log.info("Logout attempt");
+        log.info("Logout from session");
 
         log.debug("Loading the refresh token by value");
 
@@ -174,7 +173,17 @@ public class AuthService {
 
         sessionRepository.invalidateSessionById(session.getId());
 
-        log.info("Successfully logged out of session with id {}", session.getId());
+        log.info("Successfully logged out from session with id {}", session.getId());
+    }
+
+    public void logoutAll(){
+        log.info("Logout from all sessions");
+
+        String username = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+
+        sessionRepository.invalidateAllUserSessions(username);
+
+        log.info("Successfully logged out from all sessions for user '{}'", username);
     }
 
 }

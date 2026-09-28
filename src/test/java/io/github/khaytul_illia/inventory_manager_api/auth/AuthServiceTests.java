@@ -444,4 +444,32 @@ public class AuthServiceTests {
 
     }
 
+    @Nested
+    @DisplayName("logoutAll tests")
+    class LogoutAllTests{
+
+        @Test
+        @DisplayName("Should return nothing and invalidate all user sessions")
+        void shouldReturnNothingAndInvalidateAllUserSessions(){
+            //Arrange
+            String username = "username";
+            Jwt jwt = mock(Jwt.class);
+
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwt);
+            when(jwt.getSubject())
+                .thenReturn(username);
+            doNothing()
+                .when(sessionRepository).invalidateAllUserSessions(username);
+
+            //Act
+            authService.logoutAll();
+
+            //Assert
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(sessionRepository).invalidateAllUserSessions(username);
+        }
+
+    }
+
 }
