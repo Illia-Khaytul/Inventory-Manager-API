@@ -1,9 +1,14 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
 import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenFactory;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
@@ -41,15 +46,14 @@ public class AuthE2EIT {
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
-    private AuthUtils authUtils;
+    private TokenFactory tokenFactory;
 
     private final String username = "username";
     private final String password = "password";
-    private User user;
 
     @BeforeEach
     void beforeEach(){
-        user = userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
+        userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
     }
 
     @AfterEach
@@ -79,7 +83,7 @@ public class AuthE2EIT {
         String refreshAccessToken = refreshTokenResponse.accessToken();
         String refreshRefreshToken = refreshTokenResponse.refreshToken();
 
-        String hashedLoginRefreshToken = authUtils.hashTokenValue(loginRefreshToken);
+        String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
         UserSession session = loginRefreshTokenEntry.getSession();
 
@@ -113,7 +117,7 @@ public class AuthE2EIT {
 
         performSuccessfulRefreshAccess(refreshAccessRequest, loginAccessToken);
 
-        String hashedLoginRefreshToken = authUtils.hashTokenValue(loginRefreshToken);
+        String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
         UserSession session = loginRefreshTokenEntry.getSession();
 
@@ -157,8 +161,8 @@ public class AuthE2EIT {
 
         performLogout(logoutRequest, firstAccessToken);
 
-        String hashedFirstSessionToken = authUtils.hashTokenValue(firstSessionToken);
-        String hashedSecondSessionToken = authUtils.hashTokenValue(secondSessionToken);
+        String hashedFirstSessionToken = tokenFactory.hashTokenValue(firstSessionToken);
+        String hashedSecondSessionToken = tokenFactory.hashTokenValue(secondSessionToken);
 
         assertThat(sessionRepository.count()).isEqualTo(2);
         assertThat(refreshTokenRepository.findByTokenValue(hashedFirstSessionToken).orElseThrow().getSession().isValid()).isFalse();
@@ -192,8 +196,8 @@ public class AuthE2EIT {
         //Logout all
         performLogoutAll(firstAccessToken);
 
-        String hashedFirstSessionToken = authUtils.hashTokenValue(firstSessionToken);
-        String hashedSecondSessionToken = authUtils.hashTokenValue(secondSessionToken);
+        String hashedFirstSessionToken = tokenFactory.hashTokenValue(firstSessionToken);
+        String hashedSecondSessionToken = tokenFactory.hashTokenValue(secondSessionToken);
 
         assertThat(sessionRepository.count()).isEqualTo(2);
         assertThat(refreshTokenRepository.findByTokenValue(hashedFirstSessionToken).orElseThrow().getSession().isValid()).isFalse();
@@ -218,7 +222,7 @@ public class AuthE2EIT {
 
         performLogout(logoutRequest, loginAccessToken);
 
-        String hashedLoginRefreshToken = authUtils.hashTokenValue(loginRefreshToken);
+        String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
         UserSession session = loginRefreshTokenEntry.getSession();
 
@@ -253,7 +257,7 @@ public class AuthE2EIT {
 
         performLogout(logoutRequest, loginAccessToken);
 
-        String hashedLoginRefreshToken = authUtils.hashTokenValue(loginRefreshToken);
+        String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
         UserSession session = loginRefreshTokenEntry.getSession();
 

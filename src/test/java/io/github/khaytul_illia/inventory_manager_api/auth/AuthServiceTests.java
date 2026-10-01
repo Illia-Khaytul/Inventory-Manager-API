@@ -1,23 +1,22 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionService;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenService;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.login.AppUserDetails;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,11 +25,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,30 +36,16 @@ import static org.mockito.Mockito.*;
 @DisplayName("AuthService tests")
 public class AuthServiceTests {
 
-    private final int maxOpenUserSessions = 10;
     @Mock
-    private UserSessionRepository sessionRepository;
+    private UserSessionService sessionService;
     @Mock
-    private RefreshTokenRepository refreshTokenRepository;
+    private TokenService tokenService;
     @Mock
     private AuthenticationManager authenticationManager;
     @Mock
-    private AuthUtils authUtils;
-    @Mock
     private SecurityUtils securityUtils;
+    @InjectMocks
     private AuthService authService;
-
-    @BeforeEach
-    void beforeEach(){
-        authService = new AuthService(
-            maxOpenUserSessions,
-            sessionRepository,
-            refreshTokenRepository,
-            authenticationManager,
-            authUtils,
-            securityUtils
-        );
-    }
 
     @Nested
     @DisplayName("login tests")
@@ -72,8 +54,8 @@ public class AuthServiceTests {
         private final LoginRequest request = new LoginRequest("username", "password");
 
         @Test
-        @DisplayName("Should throw BadCredentialsException when user fails to authenticate")
-        void shouldThrowBadCredentialsException_whenUserFailsAuthentication(){
+        @DisplayName("Should throw FailedLoginAuthenticationException when user fails to authenticate")
+        void shouldThrowFailedLoginAuthenticationException_whenUserFailsAuthentication(){
             //Arrange
             AuthenticationException exception = new BadCredentialsException("Failed to authenticate");
 
@@ -89,83 +71,44 @@ public class AuthServiceTests {
             verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {10, 11})
-        @DisplayName("Should throw UserSessionLimitExceededException when user has already opened a max amount of sessions")
-        void shouldThrowUserSessionLimitExceededException_whenSessionLimitReached(int openedSessions){
-            //Arrange
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            AppUserDetails userDetails = new AppUserDetails(user);
-
-            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
-            when(sessionRepository.countOpenUserSessions(user.getId()))
-                .thenReturn(openedSessions);
-
-            //Act and Assert
-            assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(UserSessionLimitExceededException.class)
-                .hasMessage(String.format("Maximum amount of user sessions opened (%s)", maxOpenUserSessions));
-
-            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(sessionRepository).countOpenUserSessions(user.getId());
-        }
-
         @Test
         @DisplayName("Should create new session and return access and refresh tokens when user authenticated successfully")
-        void shouldCreateSessionAndReturnTokens_whenUserAuthenticatedSuccessfully() throws Exception {
+        void shouldCreateSessionAndReturnTokens_whenUserAuthenticatedSuccessfully() {
             //Arrange
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
+            User user = new User(1L, request.username(), request.password(), User.UserRole.CUSTOMER);
             AppUserDetails userDetails = new AppUserDetails(user);
             Instant now = Instant.now();
             UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
             String issuer = "http://localhost:8080/api/v1";
-            Instant expiresAt = now.plusSeconds(900);
-            String tokenValue = "access token value";
+            String accessTokenValue = "access token value";
+            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(
+                issuer,
+                now,
+                now.plusSeconds(900),
+                user.getUsername(),
+                user.getRole().name(),
+                accessTokenValue,
+                "refresh token value"
+            );
 
             when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
-            when(sessionRepository.countOpenUserSessions(user.getId()))
-                .thenReturn(0);
-            when(authUtils.buildUserSession(any(Instant.class), any(User.class)))
+            when(sessionService.createUserSession(user.getId()))
                 .thenReturn(session);
-            when(sessionRepository.save(session))
-                .thenReturn(session);
-            when(authUtils.buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class)))
-                .thenReturn(refreshToken);
-            when(refreshTokenRepository.save(refreshToken))
-                .thenReturn(refreshToken);
-            when(authUtils.buildAccessToken(any(Instant.class), any(User.class)))
-                .thenReturn(jwt);
-            when(jwt.getIssuer()).thenReturn(new URI(issuer).toURL());
-            when(jwt.getIssuedAt()).thenReturn(now);
-            when(jwt.getExpiresAt()).thenReturn(expiresAt);
-            when(jwt.getSubject()).thenReturn(user.getUsername());
-            when(jwt.getClaimAsString("roles")).thenReturn(user.getRole().name());
-            when(jwt.getTokenValue()).thenReturn(tokenValue);
+            when(tokenService.createAccessRefreshTokenPair(session))
+                .thenReturn(accessTokenResponse);
 
             //Act
             AccessTokenResponse response = authService.login(request);
 
             //Assert
             assertThat(response).isNotNull();
-            assertThat(response.issuer()).isEqualTo(issuer);
-            assertThat(response.issuedAt()).isEqualTo(now);
-            assertThat(response.expiresAt()).isEqualTo(expiresAt);
-            assertThat(response.subject()).isEqualTo(user.getUsername());
-            assertThat(response.role()).isEqualTo(user.getRole().name());
-            assertThat(response.accessToken()).isEqualTo(tokenValue);
-            assertThat(response.refreshToken()).hasSize(36);
+            assertThat(response.subject()).isEqualTo(accessTokenResponse.subject());
+            assertThat(response.issuedAt()).isEqualTo(accessTokenResponse.issuedAt());
 
             verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(sessionRepository).countOpenUserSessions(user.getId());
-            verify(authUtils).buildUserSession(any(Instant.class), any(User.class));
-            verify(sessionRepository).save(session);
-            verify(authUtils).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
-            verify(refreshTokenRepository).save(refreshToken);
-            verify(authUtils).buildAccessToken(any(Instant.class), any(User.class));
+            verify(sessionService).createUserSession(user.getId());
+            verify(tokenService).createAccessRefreshTokenPair(session);
         }
 
     }
@@ -174,185 +117,43 @@ public class AuthServiceTests {
     @DisplayName("refreshAccess tests")
     class RefreshAccessTests{
 
-        @Test
-        @DisplayName("Should throw InvalidRefreshTokenException when refresh token is not found")
-        void shouldThrowInvalidRefreshTokenException_whenRefreshTokenIsNotFound(){
-            //Arrange
-            String tokenValue = "refresh token value";
-            RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
-
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.empty());
-
-            //Act and Assert
-            assertThatThrownBy(() -> authService.refreshAccess(request))
-                .isInstanceOf(InvalidRefreshTokenException.class)
-                .hasMessage("Refresh token is used or session is invalid or expired")
-                .satisfies(e -> {
-                    InvalidRefreshTokenException exception = (InvalidRefreshTokenException) e;
-                    assertThat(exception.getDetails()).containsExactly("Refresh token does not exist");
-                });
-
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
-        }
-
-        @ParameterizedTest
-        @MethodSource("provideValidSessionInvalidRefreshTokens")
-        @DisplayName("Should throw InvalidRefreshTokenException when refresh token is used, or session is expired")
-        void shouldThrowInvalidRefreshTokenException_whenRefreshTokenIsInvalid(RefreshToken refreshToken, List<String> expectedDetails){
-            //Arrange
-            String tokenValue = refreshToken.getTokenValue();
-            RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
-
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.of(refreshToken));
-            doNothing()
-                .when(sessionRepository).invalidateSessionById(refreshToken.getSession().getId());
-
-            //Act and Assert
-            assertThatThrownBy(() -> authService.refreshAccess(request))
-                .isInstanceOf(InvalidRefreshTokenException.class)
-                .hasMessage("Refresh token is used or session is invalid or expired")
-                .satisfies(e -> {
-                    InvalidRefreshTokenException exception = (InvalidRefreshTokenException) e;
-                    assertThat(exception.getDetails()).containsExactlyInAnyOrderElementsOf(expectedDetails);
-                });
-
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
-            verify(sessionRepository).invalidateSessionById(refreshToken.getSession().getId());
-        }
-
-        @ParameterizedTest
-        @MethodSource("provideInvalidSessionRefreshTokens")
-        @DisplayName("Should throw InvalidRefreshTokenException when user session is invalid")
-        void shouldThrowInvalidRefreshTokenException_whenUserSessionIsInvalid(RefreshToken refreshToken, List<String> expectedDetails){
-            //Arrange
-            String tokenValue = refreshToken.getTokenValue();
-            RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
-
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.of(refreshToken));
-
-            //Act and Assert
-            assertThatThrownBy(() -> authService.refreshAccess(request))
-                .isInstanceOf(InvalidRefreshTokenException.class)
-                .hasMessage("Refresh token is used or session is invalid or expired")
-                .satisfies(e -> {
-                    InvalidRefreshTokenException exception = (InvalidRefreshTokenException) e;
-                    assertThat(exception.getDetails()).containsExactlyInAnyOrderElementsOf(expectedDetails);
-                });
-
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
-            verify(sessionRepository, never()).invalidateSessionById(refreshToken.getSession().getId());
-        }
+        private final RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
 
         @Test
-        @DisplayName("Should use refresh token and return new access and refresh tokens when provided refresh token is valid")
-        void shouldUseRefreshTokenAndReturnNewTokens_whenRefreshTokenIsValid() throws Exception {
+        @DisplayName("Should use refresh token and return new access and refresh tokens")
+        void shouldUseRefreshTokenAndReturnNewTokens() {
             //Arrange
-            String tokenValue = "refresh token value";
-            RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
             Instant now = Instant.now();
             User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
             UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            RefreshToken newRefreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
+            RefreshToken refreshToken = new RefreshToken(1L, request.refreshToken(), now, true, session, 1);
             String issuer = "http://localhost:8080/api/v1";
-            Instant expiresAt = now.plusSeconds(900);
             String accessTokenValue = "access token value";
+            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(
+                issuer,
+                now,
+                now.plusSeconds(900),
+                user.getUsername(),
+                user.getRole().name(),
+                accessTokenValue,
+                refreshToken.getTokenValue()
+            );
 
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.of(refreshToken));
-            when(authUtils.buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class)))
-                .thenReturn(newRefreshToken);
-            when(refreshTokenRepository.save(newRefreshToken))
-                .thenReturn(newRefreshToken);
-            when(authUtils.buildAccessToken(any(Instant.class), any(User.class)))
-                .thenReturn(jwt);
-            when(jwt.getIssuer()).thenReturn(new URI(issuer).toURL());
-            when(jwt.getIssuedAt()).thenReturn(now);
-            when(jwt.getExpiresAt()).thenReturn(expiresAt);
-            when(jwt.getSubject()).thenReturn(user.getUsername());
-            when(jwt.getClaimAsString("roles")).thenReturn(user.getRole().name());
-            when(jwt.getTokenValue()).thenReturn(accessTokenValue);
+            when(tokenService.useRefreshToken(request.refreshToken()))
+                .thenReturn(refreshToken);
+            when(tokenService.createAccessRefreshTokenPair(session))
+                .thenReturn(accessTokenResponse);
 
             //Act
             AccessTokenResponse response = authService.refreshAccess(request);
 
             //Assert
             assertThat(response).isNotNull();
-            assertThat(response.issuer()).isEqualTo(issuer);
-            assertThat(response.issuedAt()).isEqualTo(now);
-            assertThat(response.expiresAt()).isEqualTo(expiresAt);
-            assertThat(response.subject()).isEqualTo(user.getUsername());
-            assertThat(response.role()).isEqualTo(user.getRole().name());
-            assertThat(response.accessToken()).isEqualTo(accessTokenValue);
-            assertThat(response.refreshToken()).hasSize(36);
+            assertThat(response.subject()).isEqualTo(accessTokenResponse.subject());
+            assertThat(response.issuedAt()).isEqualTo(accessTokenResponse.issuedAt());
 
-            assertThat(refreshToken.isUsed()).isTrue();
-
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
-            verify(sessionRepository, never()).invalidateSessionById(refreshToken.getSession().getId());
-            verify(authUtils).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
-            verify(refreshTokenRepository).save(newRefreshToken);
-            verify(authUtils).buildAccessToken(any(Instant.class), any(User.class));
-        }
-
-        /*
-                Test data provider methods
-         */
-
-        static Stream<Arguments> provideValidSessionInvalidRefreshTokens(){
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession validSession = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            UserSession expiredSession = new UserSession(1L, true, now, now.minusSeconds(3600), user);
-
-            return Stream.of(
-                //Refresh token is used
-                Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, true, validSession, 1),
-                    List.of("Detected refresh token reuse")
-                ),
-                //Refresh token session is expired
-                Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, false, expiredSession, 1),
-                    List.of("Attempted access to an expired session")
-                )
-            );
-        }
-
-        static Stream<Arguments> provideInvalidSessionRefreshTokens(){
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession invalidSession = new UserSession(1L, false, now, now.plusSeconds(3600), user);
-            UserSession invalidAndExpiredSession = new UserSession(1L, false, now, now.minusSeconds(3600), user);
-
-            return Stream.of(
-                //Refresh token session is invalid
-                Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, false, invalidSession, 1),
-                    List.of("Attempted access to an invalidated session")
-                ),
-                //Refresh token is used and session is invalid and expired
-                Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, true, invalidAndExpiredSession, 1),
-                    List.of("Detected refresh token reuse", "Attempted access to an invalidated session", "Attempted access to an expired session")
-                )
-            );
+            verify(tokenService).useRefreshToken(request.refreshToken());
+            verify(tokenService).createAccessRefreshTokenPair(session);
         }
 
     }
@@ -361,25 +162,21 @@ public class AuthServiceTests {
     @DisplayName("logout tests")
     class LogoutTests{
 
-        private final String tokenValue = "refresh token value";
-        private final RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
+        private final RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
 
         @Test
         @DisplayName("Should return nothing when refresh token is not found by token value")
         void shouldReturnNothing_whenRefreshTokenNotFound(){
             //Arrange
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.empty());
+            when(tokenService.loadRefreshToken(request.refreshToken()))
+                .thenThrow(new InvalidRefreshTokenException("message", List.of()));
 
             //Act
             authService.logout(request);
 
             //Assert
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
-            verify(sessionRepository, never()).invalidateSessionById(anyLong());
+            verify(tokenService).loadRefreshToken(request.refreshToken());
+            verify(sessionService, never()).invalidateSession(anyLong());
         }
 
         @Test
@@ -392,10 +189,8 @@ public class AuthServiceTests {
             RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
             Jwt jwt = mock(Jwt.class);
 
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.of(refreshToken));
+            when(tokenService.loadRefreshToken(request.refreshToken()))
+                .thenReturn(refreshToken);
             when(securityUtils.getAuthenticatedUserAccessToken())
                 .thenReturn(jwt);
             when(jwt.getSubject())
@@ -405,10 +200,9 @@ public class AuthServiceTests {
             authService.logout(request);
 
             //Assert
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
+            verify(tokenService).loadRefreshToken(request.refreshToken());
             verify(securityUtils).getAuthenticatedUserAccessToken();
-            verify(sessionRepository, never()).invalidateSessionById(session.getId());
+            verify(sessionService, never()).invalidateSession(anyLong());
         }
 
         @Test
@@ -421,25 +215,22 @@ public class AuthServiceTests {
             RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
             Jwt jwt = mock(Jwt.class);
 
-            when(authUtils.hashTokenValue(tokenValue))
-                .thenReturn(tokenValue);
-            when(refreshTokenRepository.findByTokenValue(tokenValue))
-                .thenReturn(Optional.of(refreshToken));
+            when(tokenService.loadRefreshToken(request.refreshToken()))
+                .thenReturn(refreshToken);
             when(securityUtils.getAuthenticatedUserAccessToken())
                 .thenReturn(jwt);
             when(jwt.getSubject())
                 .thenReturn(user.getUsername());
             doNothing()
-                .when(sessionRepository).invalidateSessionById(session.getId());
+                .when(sessionService).invalidateSession(session.getId());
 
             //Act
             authService.logout(request);
 
             //Assert
-            verify(authUtils).hashTokenValue(tokenValue);
-            verify(refreshTokenRepository).findByTokenValue(tokenValue);
+            verify(tokenService).loadRefreshToken(request.refreshToken());
             verify(securityUtils).getAuthenticatedUserAccessToken();
-            verify(sessionRepository).invalidateSessionById(session.getId());
+            verify(sessionService).invalidateSession(anyLong());
         }
 
     }
@@ -460,14 +251,14 @@ public class AuthServiceTests {
             when(jwt.getSubject())
                 .thenReturn(username);
             doNothing()
-                .when(sessionRepository).invalidateAllUserSessions(username);
+                .when(sessionService).invalidateAllUserSessions(username);
 
             //Act
             authService.logoutAll();
 
             //Assert
             verify(securityUtils).getAuthenticatedUserAccessToken();
-            verify(sessionRepository).invalidateAllUserSessions(username);
+            verify(sessionService).invalidateAllUserSessions(username);
         }
 
     }

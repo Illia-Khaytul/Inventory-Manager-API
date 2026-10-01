@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api.auth;
+package io.github.khaytul_illia.inventory_manager_api.auth.session;
 
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import jakarta.persistence.*;

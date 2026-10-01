@@ -1,7 +1,7 @@
-package io.github.khaytul_illia.inventory_manager_api.auth;
+package io.github.khaytul_illia.inventory_manager_api.auth.token;
 
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
-import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
@@ -13,41 +13,24 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Component
-public class AuthUtils {
+public class TokenFactory {
 
-    private final int userSessionLifetime;
     private final int accessTokenLifetime;
     private final String accessTokenIssuer;
 
-    private final UserRepository userRepository;
     private final JwtEncoder jwtEncoder;
 
-    public AuthUtils(
-        @Value("${spring.application.security.user_sessions.lifetime}")
-        int userSessionLifetime,
+    public TokenFactory(
         @Value("${spring.application.security.jwt.lifetime}")
         int accessTokenLifetime,
         @Value("${spring.application.security.jwt.issuer}")
         String accessTokenIssuer,
-        UserRepository userRepository,
         JwtEncoder jwtEncoder
     ) {
-        this.userSessionLifetime = userSessionLifetime;
         this.accessTokenLifetime = accessTokenLifetime;
         this.accessTokenIssuer = accessTokenIssuer;
 
-        this.userRepository = userRepository;
         this.jwtEncoder = jwtEncoder;
-    }
-
-    public UserSession buildUserSession(Instant createdAt, User user){
-        UserSession session = new UserSession();
-        session.setValid(true);
-        session.setCreatedAt(createdAt);
-        session.setExpiresAt(createdAt.plusSeconds(userSessionLifetime));
-        session.setUser(userRepository.getReferenceById(user.getId()));
-
-        return session;
     }
 
     public RefreshToken buildRefreshToken(String tokenValue, Instant issuedAt, UserSession session){

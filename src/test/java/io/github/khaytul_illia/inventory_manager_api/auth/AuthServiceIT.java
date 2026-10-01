@@ -1,9 +1,14 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
 import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenFactory;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
@@ -37,7 +42,7 @@ import static org.mockito.Mockito.*;
 public class AuthServiceIT {
 
     @MockitoSpyBean
-    private AuthUtils authUtils;
+    private TokenFactory tokenFactory;
 
     @Autowired
     private AuthService authService;
@@ -62,7 +67,7 @@ public class AuthServiceIT {
 
     @BeforeEach
     void beforeEach(){
-        hashedTokenValue = authUtils.hashTokenValue(tokenValue);
+        hashedTokenValue = tokenFactory.hashTokenValue(tokenValue);
 
         transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
         transactionTemplate.executeWithoutResult(status -> {
@@ -92,7 +97,7 @@ public class AuthServiceIT {
         void shouldRollBackAllDatabaseChanges_whenCollidingRefreshTokens(){
             //Arrange
             doReturn(hashedTokenValue)
-                .when(authUtils).hashTokenValue(anyString());
+                .when(tokenFactory).hashTokenValue(anyString());
 
             //Act and Assert
             assertThatThrownBy(() -> authService.login(request))
@@ -108,7 +113,7 @@ public class AuthServiceIT {
         void shouldCreateSessionAndReturnTokenResponse_whenRefreshTokenIsUnique(){
             //Arrange
             doReturn(hashedTokenValue + "_unique")
-                .when(authUtils).hashTokenValue(anyString());
+                .when(tokenFactory).hashTokenValue(anyString());
 
             //Act
             AccessTokenResponse response = authService.login(request);
@@ -162,7 +167,7 @@ public class AuthServiceIT {
 
                 return invocation.callRealMethod();
             })
-                .when(authUtils).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
+                .when(tokenFactory).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
 
             //Act and Assert
             assertThatThrownBy(() -> authService.refreshAccess(request))
@@ -178,7 +183,7 @@ public class AuthServiceIT {
             //Arrange
             doCallRealMethod()
                 .doReturn(hashedTokenValue + "_unique")
-                .when(authUtils).hashTokenValue(anyString());
+                .when(tokenFactory).hashTokenValue(anyString());
 
             //Act
             AccessTokenResponse response = authService.refreshAccess(request);

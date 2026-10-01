@@ -48,6 +48,7 @@ public class UserRepositoryTests {
             User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
 
             entityManager.persistAndFlush(user);
+            entityManager.clear();
 
             //Act
             Optional<User> foundUser = userRepository.findByUsername(user.getUsername());

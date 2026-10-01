@@ -1,6 +1,7 @@
-package io.github.khaytul_illia.inventory_manager_api.auth;
+package io.github.khaytul_illia.inventory_manager_api.auth.token;
 
 import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;

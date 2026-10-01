@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api.auth;
+package io.github.khaytul_illia.inventory_manager_api.auth.token;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

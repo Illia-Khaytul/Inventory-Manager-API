@@ -1,5 +1,6 @@
-package io.github.khaytul_illia.inventory_manager_api.auth;
+package io.github.khaytul_illia.inventory_manager_api.auth.token;
 
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
