@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 public class AuthUtils {
@@ -61,6 +62,7 @@ public class AuthUtils {
 
     public Jwt buildAccessToken(Instant issuedAt, User user){
         JwtClaimsSet jwtClaims = JwtClaimsSet.builder()
+            .id(UUID.randomUUID().toString())
             .issuer(accessTokenIssuer)
             .issuedAt(issuedAt)
             .expiresAt(issuedAt.plusSeconds(accessTokenLifetime))

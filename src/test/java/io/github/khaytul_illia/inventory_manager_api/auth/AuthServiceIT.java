@@ -33,7 +33,6 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("AuthService integration tests")
 public class AuthServiceIT {
 
@@ -54,7 +53,6 @@ public class AuthServiceIT {
     private TransactionTemplate transactionTemplate;
 
     private final String password = "password";
-    private String encodedPassword;
     private final Instant now = Instant.now();
     private final String tokenValue = UUID.randomUUID().toString();
     private String hashedTokenValue;
@@ -62,18 +60,13 @@ public class AuthServiceIT {
     private UserSession session;
     private RefreshToken refreshToken;
 
-    @BeforeAll
-    void beforeAll(){
-        transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
-
-        encodedPassword = passwordEncoder.encode(password);
-        hashedTokenValue = authUtils.hashTokenValue(tokenValue);
-    }
-
     @BeforeEach
     void beforeEach(){
+        hashedTokenValue = authUtils.hashTokenValue(tokenValue);
+
+        transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
         transactionTemplate.executeWithoutResult(status -> {
-            user = userRepository.save(new User(null, "username", encodedPassword, User.UserRole.CUSTOMER));
+            user = userRepository.save(new User(null, "username", passwordEncoder.encode(password), User.UserRole.CUSTOMER));
             session = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
             refreshToken = refreshTokenRepository.save(new RefreshToken(null, hashedTokenValue, now, false, session, null));
         });
