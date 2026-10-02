@@ -20,17 +20,40 @@ It is less type safe, but doesn't require additional code for special cases.
 
 Exceptions captured and handled by the handlers.
 
+- `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
+- `FailedLoginAuthenticationException`: when user authentication during login failed.
+- `InvalidRefreshTokenException`: when the provided refresh token is not found or used, or its user session is invalid or expired.
+- `OptimisticLockingFailureException`: when a value is modified concurrently.
 - `MethodArgumentNotValidException`: when `@Validated` validation fails. 
 - `HandlerMethodValidationException`: when `@Valid` validation fails.
 - `MethodArgumentTypeMismatchException`: when the received parameter type does not match the expected type.
 - `HttpMessageNotReadableException`: when the request content does not match its content type format.
 - `HttpMediaTypeNotSupportedException`: when the request content type is not supported by the endpoint.
 - `NoResourceFoundException`: when the request does not point to any exposed endpoint.
+- `IllegalStateException`: when something in the application didn't work or isn't configured as intended. 
 
 ## 3. Global exception handling
 
 All exceptions not thrown manually (not from the written code) return a custom generic message as to not expose sensitive information in their message on accident. 
 Any useful information is manually included in the `data` field.
+
+**UserSessionLimitExceededException handler** -> 403 Forbidden
+
+The user session limit is a business rule. 
+Trying to surpass it should return a forbidden operation status code.
+
+**FailedLoginAuthenticationException handler** -> 401 Unauthorized
+
+Used to symbolize any authentication failure during login.
+It wraps the actual exception for logging and returns a generic message.
+
+**InvalidRefreshTokenException handler** -> 401 Unauthorized
+
+Returns a generic message for all 4 invalid cases, but still contains the specific messages for logging purposes.
+
+**OptimisticLockingFailureException handler** -> 409 Conflict
+
+`message` = Concurrent modification error
 
 **MethodArgumentNotValidException handler** -> 400 Bad Request
 
@@ -81,7 +104,7 @@ Notes:
 
 **Generic exception handler** -> 500 Internal Server Error
 
-Catches any other unexpected exceptions and logs their stack trace.
+Catches `IllegalStateException` and any other unexpected exceptions and logs their stack trace.
 
 `message` = Something went wrong
 

@@ -1,4 +1,8 @@
 spring:
+  application:
+    security:
+      jwt:
+        issuer: '' #fill in for production use
   docker:
     compose:
       enabled: false

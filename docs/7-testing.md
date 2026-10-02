@@ -38,7 +38,8 @@ Focus on the correct execution of custom and derived repository methods.
 
 ## 3. Integration tests
 
-Integration tests for execution flows that either cannot be tested in isolation or require multiple components working together.
+Integration tests for execution flows that either cannot be tested in isolation or require multiple components working together. 
+For example correct transactional behavior and successful database interactions.
 
 ## 4. End-to-end tests
 

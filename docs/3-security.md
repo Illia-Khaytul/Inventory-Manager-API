@@ -31,4 +31,4 @@ It is added to the filter chain's error handling.
 Permission (authorization) error handling is for cases when the user is not allowed to access a certain resource.
 It is also added to the filter chain's error handling.
 
-Details on the exact responses is provided in the [error handling](/docs/6-error_handling.md) docs.
+Details on the exact responses is provided in the [error handling](6-error_handling.md) docs.
