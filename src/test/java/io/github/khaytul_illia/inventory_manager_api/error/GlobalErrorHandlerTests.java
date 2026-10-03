@@ -1,9 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLoginAuthenticationException;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -106,6 +104,47 @@ public class GlobalErrorHandlerTests {
             .andExpect(status().isUnauthorized())
             .andExpect(result -> {
                 assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when caught InvalidPasswordException")
+    void shouldReturn400_whenInvalidPasswordException() throws Exception {
+        //Arrange
+        InvalidPasswordException exception = new InvalidPasswordException("message", List.of("error1", "error2"));
+        Map<String, List<String>> data = Map.of("errors", exception.getErrorMessages());
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                assertValidationErrorResponse(result, exception.getMessage(), data);
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 409 Conflict when caught DuplicateEntryException")
+    void shouldReturn409_whenDuplicateEntryException() throws Exception {
+        //Arrange
+        DuplicateEntryException exception = new DuplicateEntryException("message");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isConflict())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.CONFLICT, exception.getMessage());
             });
     }
 
