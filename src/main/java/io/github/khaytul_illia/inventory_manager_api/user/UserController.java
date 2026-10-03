@@ -18,12 +18,18 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "JWT authentication")
 public class UserController {
 
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createCustomer(
         @RequestBody @Valid CreateUserRequest request
     ){
-        return null;
+        return userService.createUser(request, User.UserRole.CUSTOMER);
     }
 
     @PostMapping(path = "/operators")
@@ -31,7 +37,7 @@ public class UserController {
     public UserResponse createOperator(
         @RequestBody @Valid CreateUserRequest request
     ){
-        return null;
+        return userService.createUser(request, User.UserRole.OPERATOR);
     }
 
     @PatchMapping(path = "/password/change")
