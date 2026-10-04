@@ -32,3 +32,15 @@ Permission (authorization) error handling is for cases when the user is not allo
 It is also added to the filter chain's error handling.
 
 Details on the exact responses is provided in the [error handling](6-error_handling.md) docs.
+
+## 2. Password validation
+
+Uses Passay to validate the provided password during registration.
+
+**Rules:**
+- Min size of 6 and max size of 50
+- No white spaces
+- At least 2 digits required
+
+The rules are simplistic as of now.
+Dictionary and blacklist rules may be added in the future to reinforce password security.

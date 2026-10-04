@@ -28,6 +28,38 @@ public class UserRepositoryTests {
     private TestEntityManager entityManager;
 
     @Nested
+    @DisplayName("existsByUsername tests")
+    class ExistsByUsernameTests{
+
+        @Test
+        @DisplayName("Should return false when user does not exist by username")
+        void shouldReturnFalse_whenUserDoesNotExist(){
+            //Act
+            boolean exists = userRepository.existsByUsername("not existent");
+
+            //Assert
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return true when user exists by username")
+        void shouldReturnTrue_whenUserExists(){
+            //Arrange
+            User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
+
+            entityManager.persistAndFlush(user);
+            entityManager.clear();
+
+            //Act
+            boolean exists = userRepository.existsByUsername(user.getUsername());
+
+            //Assert
+            assertThat(exists).isTrue();
+        }
+
+    }
+
+    @Nested
     @DisplayName("findByUsername tests")
     class FindByUsernameTests{
 
