@@ -104,7 +104,7 @@ Requires authentication.
 1. **Create customer** : creates a new user with the CUSTOMER role
 2. **Create operator** : creates a new user with the OPERATOR role
 3. **Change password** : changes the password of the accessing user
-4. **Delete user** : deletes the accessing user
+4. **Delete user** : idempotent deletion, deletes the accessing user
 
 **Request DTOs:**
 

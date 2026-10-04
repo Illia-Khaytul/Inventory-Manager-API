@@ -27,8 +27,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -290,7 +289,7 @@ public class UserControllerTests {
             "   ", "   ", must not be blank, must not be blank
             "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 50, size must be between 0 and 50
             """)
-        @WithMockUser(roles = "OPERATOR")
+        @WithMockUser
         @DisplayName("Should return 400 Bad Request when invalid password change request fields")
         void shouldReturn400_whenInvalidPasswordChangeRequest(
             String oldPassword,
@@ -311,6 +310,42 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
                 .andExpect(jsonPath("$.data.oldPassword").value(oldPasswordMessage))
                 .andExpect(jsonPath("$.data.newPassword").value(newPasswordMessage));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("deleteUser endpoint tests")
+    class DeleteUserTests{
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 204 No Content when successfully deleted authenticated user")
+        void shouldReturn204_whenSuccessfullyDeletedUser() throws Exception{
+            doNothing()
+                .when(userService).deleteUser();
+
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/users")
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(result -> {
+                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
+                });
+
+            verify(userService).deleteUser();
+        }
+
+        @Test
+        @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
+        void shouldReturn401_whenNoAuthentication() throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/users")
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
         }
 
     }

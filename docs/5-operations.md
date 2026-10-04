@@ -77,7 +77,8 @@ Loads the user session by the provided refresh token, checks if it belongs to th
 It always returns the same (nothing) regardless of failure or success.
 This keeps the internal workings of the system hidden from outsiders.
 - Uses a modifying query to keep the operation atomic.
-- No transaction on this operation. The only database modification operation is atomic.
+- Transactional operation because of the modifying query.
+The transaction required for the modifying query is located in an inner service method.
 
 ### 1.4. Logout all
 
@@ -95,7 +96,8 @@ Invalidates all user sessions that belong to the authenticated user.
   It always returns the same (nothing) whether it closed any sessions or not.
   This keeps the internal workings of the system hidden from outsiders.
 - Uses a modifying query to keep the operation atomic.
-- No transaction on this operation. The only database modification operation is atomic.
+- Transactional operation because of the modifying query. 
+The transaction required for the modifying query is located in an inner service method.
 
 ## 2. User operations
 
@@ -149,6 +151,25 @@ It is possible that the authenticated user gets deleted concurrently between bei
 A transaction ensures the user does not get re-inserted into the database after the password change in case that happens.
 - Uses the security utility component to load the authenticated user from the database.
 Throws `EntityNotFoundException` in case the user got deleted but the access token is still valid.
+
+### 2.3. Delete user
+
+Deletes the currently authenticated user.
+
+**Receives:** nothing
+
+**Steps:**
+1. Get authenticated user username.
+2. Delete user by username.
+
+**Returns:** nothing
+
+**Notes:**
+- Transactional operation because of the modifying delete query.
+- Uses a modifying query for user deletion to keep the operation atomic.
+- This delete operation is idempotent.
+It always returns the same (nothing) regardless of failure or success.
+In this case it is to keep the 204 returning operations consistent.
 
 
 ## Base operator seeder

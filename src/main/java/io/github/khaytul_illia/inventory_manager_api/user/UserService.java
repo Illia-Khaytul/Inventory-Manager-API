@@ -94,4 +94,15 @@ public class UserService {
         log.info("Password changed successfully for user with id {}", user.getId());
     }
 
+    @Transactional
+    public void deleteUser(){
+        log.info("Deleting user account");
+
+        String username = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+
+        userRepository.deleteByUsername(username);
+
+        log.info("Successfully deleted user '{}'", username);
+    }
+
 }
