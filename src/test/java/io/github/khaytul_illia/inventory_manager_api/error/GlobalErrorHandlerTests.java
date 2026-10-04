@@ -149,6 +149,26 @@ public class GlobalErrorHandlerTests {
     }
 
     @Test
+    @DisplayName("Should return 404 Not Found when caught EntityNotFoundException")
+    void shouldReturn404_whenEntityNotFoundException() throws Exception {
+        //Arrange
+        EntityNotFoundException exception = new EntityNotFoundException("message");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isNotFound())
+            .andExpect(result -> {
+                assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, exception.getMessage());
+            });
+    }
+
+    @Test
     @DisplayName("Should return 409 Conflict when caught OptimisticLockingFailureException")
     void shouldReturn409_whenOptimisticLockingFailureException() throws Exception {
         //Arrange
