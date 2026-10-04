@@ -84,7 +84,7 @@ public class UserService {
 
         User user = securityUtils.loadAuthenticatedUser();
         if(!passwordEncoder.matches(oldPassword, user.getPassword())){
-            throw new InvalidPasswordException("Invalid password change attempt", List.of("Provided old password must match existing old password"));
+            throw new InvalidPasswordException("Invalid password change attempt", List.of("Provided old password must match existing old password."));
         }
 
         log.debug("Changing user password");
