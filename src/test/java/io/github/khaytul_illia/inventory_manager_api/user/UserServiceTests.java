@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -173,6 +174,34 @@ public class UserServiceTests {
             verify(securityUtils).loadAuthenticatedUser();
             verify(passwordEncoder).matches(oldPassword, oldPassword);
             verify(passwordEncoder).encode(newPassword);
+        }
+
+    }
+
+    @Nested
+    @DisplayName("deleteUser tests")
+    class DeleteUserTests{
+
+        @Test
+        @DisplayName("Should delete the authenticated user account")
+        void shouldDeleteUserAccount(){
+            //Arrange
+            String username = "username";
+            Jwt jwt = mock(Jwt.class);
+
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwt);
+            when(jwt.getSubject())
+                .thenReturn(username);
+            doNothing()
+                .when(userRepository).deleteByUsername(username);
+
+            //Act
+            userService.deleteUser();
+
+            //Assert
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(userRepository).deleteByUsername(username);
         }
 
     }
