@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Component
 @ConditionalOnBooleanProperty(
-    name = "apring.application.base_operator.seeder.enable",
+    name = "spring.application.base_operator.seeder.enable",
     matchIfMissing = true
 )
 @Slf4j
