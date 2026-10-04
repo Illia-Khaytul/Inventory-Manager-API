@@ -118,8 +118,9 @@ Requires authentication.
 **Response DTOs:**
 
 `user response`:
+- Long `id`
 - String `username`
-- String `role`
+- UserRole `role`
 
 ### 2.1. Create customer
 
@@ -136,6 +137,7 @@ Does not require authentication.
 **Responses:**
 - 201 Created: new user with CUSTOMER role successfully created
 - 400 Bad Request: request validation failed, password is invalid
+- 409 Conflict: provided username is not unique
 
 ### 2.2. Create operator
 
@@ -154,6 +156,7 @@ Requires authentication as OPERATOR.
 - 400 Bad Request: request validation failed, password is invalid
 - 401 Unauthorized: not authenticated
 - 403 Forbidden: authenticated but not an OPERATOR
+- 409 Conflict: provided username is not unique
 
 ### 2.3. Change password
 

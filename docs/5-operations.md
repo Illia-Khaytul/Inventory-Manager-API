@@ -96,3 +96,57 @@ Invalidates all user sessions that belong to the authenticated user.
   This keeps the internal workings of the system hidden from outsiders.
 - Uses a modifying query to keep the operation atomic.
 - No transaction on this operation. The only database modification operation is atomic.
+
+## 2. User operations
+
+**Operations:**
+1. **Create user** : create customer and create operator endpoints
+2. **Change password** : change password endpoint
+3. **Delete user** : delete user endpoint
+
+### 2.1. Create user
+
+Creates a new user with the provided credentials and role.
+
+**Receives:** 
+- `create user request`
+- UserRole `role`
+
+**Steps:**
+1. Validate provided user password. Throws `InvalidPasswordException`.
+2. Check if provided username is unique (not taken). Throws `DuplicateEntryException`.
+3. Creates new user with provided credentials and role.
+4. Return newly created user data.
+
+**Returns:** `user response`
+
+**Notes:**
+- User password is encoded before persistence.
+- User response does not expose sensitive data (password).
+- Operation used by both create customer and create operator endpoints.
+Both do the exact same just with different roles and permissions.
+- Used by the base operator seeder to create the base OPERATOR user.
+
+
+## Base operator seeder
+
+Implements `CommandLineRunner` and executes once on application start.
+Is instantiated only when the `spring.application.base_operator.seeder.enable` property is set to `true`.
+
+Populates the database with the base OPERATOR user.
+
+**Receives (on initialization):** 
+- String `baseUsername`: required, not blank
+- String `basePassword`: required, not blank
+
+**Steps:**
+1. Checks if base operator already exists.
+If user exists but is not and OPERATOR, throws `IllegalStateException`.
+If exists and is OPERATOR, do nothing.
+2. Create base OPERATOR user (create user operation).
+
+**Returns:** nothing
+
+**Notes:**
+- Throws `IllegalStateException` on initialization if the base operator credentials are null or blank, and when a user with `baseUsername` exists but is not an OPERATOR.
+- Uses the create user operation to create the base OPERATOR user.
