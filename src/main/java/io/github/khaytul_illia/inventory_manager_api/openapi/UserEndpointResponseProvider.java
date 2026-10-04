@@ -22,6 +22,7 @@ public class UserEndpointResponseProvider {
         responses.putAll(provideCreateUserResponses());
         responses.putAll(provideCreateCustomerResponses());
         responses.putAll(provideCreateOperatorResponses());
+        responses.putAll(provideChangePasswordResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "users_" + entry.getKey(),
@@ -59,7 +60,7 @@ public class UserEndpointResponseProvider {
             "create_user_400",
             buildApiResponse(
                 "ErrorResponse",
-                "Invalid create user request parameter or password value",
+                "Invalid create user request parameters or password value",
                 Map.of(
                     "Null or empty",
                     new Example().value(createUser400ResponseBlankCase).description("Create user request had null or blank values"),
@@ -118,6 +119,75 @@ public class UserEndpointResponseProvider {
                 "ErrorResponse",
                 "Accessing with authentication but not an OPERATOR",
                 new Example().value(createOperator403Response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideChangePasswordResponses(){
+        ErrorResponse changePassword400ResponseBlankCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "oldPassword", "cannot be blank",
+                "newPassword", "cannot be blank"
+            ))
+        );
+        ErrorResponse changePassword400ResponseSizeCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "oldPassword", "size must be between 0 and 50",
+                "newPassword", "size must be between 0 and 50"
+            ))
+        );
+        ErrorResponse changePassword400ResponseInvalidPassword = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid password", Map.of(
+                "errors", List.of(
+                    "Password must be 6 or more characters in length.",
+                    "Password must contain 2 or more digit characters.",
+                    "Password contains a whitespace character."
+                )
+            ))
+        );
+        ErrorResponse changePassword401Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
+        );
+        ErrorResponse changePassword404Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.NOT_FOUND, "Authenticated user 'username' does not exist")
+        );
+        ErrorResponse changePassword409Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Concurrent modification error")
+        );
+
+        return Map.of(
+            "change_password_success",
+            new ApiResponse().description("Successfully changed user password"),
+            "change_password_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid password change request parameters or new password value",
+                Map.of(
+                    "Null or empty",
+                    new Example().value(changePassword400ResponseBlankCase).description("Password change request had null or blank values"),
+                    "Invalid size",
+                    new Example().value(changePassword400ResponseSizeCase).description("Password change request has parameters of an invalid size"),
+                    "Invalid password",
+                    new Example().value(changePassword400ResponseInvalidPassword).description("Provided new user password did not follow configured validation rules")
+                )
+            ),
+            "change_password_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing without authentication",
+                new Example().value(changePassword401Response)
+            ),
+            "change_password_404",
+            buildApiResponse(
+                "ErrorResponse",
+                "Authenticated user does not exist",
+                new Example().value(changePassword404Response)
+            ),
+            "change_password_409",
+            buildApiResponse(
+                "ErrorResponse",
+                "Authenticated user got deleted concurrently",
+                new Example().value(changePassword409Response)
             )
         );
     }

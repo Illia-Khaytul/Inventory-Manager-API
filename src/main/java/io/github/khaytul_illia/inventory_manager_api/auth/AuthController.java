@@ -61,13 +61,15 @@ public class AuthController {
             - Returns with 200 OK on successful access refresh.
             - Returns with 400 Bad Request if the refresh token request has invalid fields.
             - Returns with 401 Unauthorized if the refresh token is used, or the session is invalid or expired.
+            - Returns with 409 Conflict if the refresh token has been modified concurrently.
             """,
         security = {}
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", ref = "#/components/responses/auth_refresh_access_success"),
         @ApiResponse(responseCode = "400", ref = "#/components/responses/auth_refresh_access_400"),
-        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_refresh_access_401")
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/auth_refresh_access_401"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/auth_refresh_access_409")
     })
     public AccessTokenResponse refreshAccess(
         @RequestBody @Valid RefreshTokenRequest request

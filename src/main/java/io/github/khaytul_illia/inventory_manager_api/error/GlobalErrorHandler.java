@@ -84,6 +84,17 @@ public class GlobalErrorHandler {
         );
     }
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse entityNotFoundHandler(EntityNotFoundException e){
+        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+
+        return new ErrorResponse(
+            HttpStatus.NOT_FOUND,
+            e.getMessage()
+        );
+    }
+
     @ExceptionHandler(OptimisticLockingFailureException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse optimisticLockingFailureHandler(OptimisticLockingFailureException e){

@@ -66,6 +66,7 @@ Does not require authentication.
 - 200 OK: refresh token valid and new access token generated
 - 400 Bad Request: request validation failed
 - 401 Unauthorized: used, invalid or expired refresh token (can't use this token to gain access)
+- 409 Conflict: refresh token has been modified concurrently
 
 ### 1.3. Logout
 
@@ -173,6 +174,8 @@ Requires authentication.
 - 204 No Content: user password changed successfully
 - 400 Bad Request: request validation failed, password is invalid
 - 401 Unauthorized: not authenticated
+- 404 Not Found: authenticated user does not exist
+- 409 Conflict: authenticated user got deleted concurrently
 
 ### 2.4. Delete user
 
