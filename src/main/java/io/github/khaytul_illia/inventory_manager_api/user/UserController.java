@@ -106,6 +106,20 @@ public class UserController {
 
     @DeleteMapping(path = "")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Delete the authenticated user account",
+        description = """
+            Deletes the currently authenticated user.
+            - Returns with 204 No Content on successful user deletion.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            
+            Note: This operation is idempotent and will return the same response (204 No content) regardless of its internal state.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/users_delete_user_success"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/users_delete_user_401")
+    })
     public void deleteUser(){
         userService.deleteUser();
     }

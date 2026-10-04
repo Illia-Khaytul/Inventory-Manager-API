@@ -23,6 +23,7 @@ public class UserEndpointResponseProvider {
         responses.putAll(provideCreateCustomerResponses());
         responses.putAll(provideCreateOperatorResponses());
         responses.putAll(provideChangePasswordResponses());
+        responses.putAll(provideDeleteUserResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "users_" + entry.getKey(),
@@ -188,6 +189,23 @@ public class UserEndpointResponseProvider {
                 "ErrorResponse",
                 "Authenticated user got deleted concurrently",
                 new Example().value(changePassword409Response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideDeleteUserResponses(){
+        ErrorResponse deleteUser401Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
+        );
+
+        return Map.of(
+            "delete_user_success",
+            new ApiResponse().description("Successfully deleted user"),
+            "delete_user_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing without authentication",
+                new Example().value(deleteUser401Response)
             )
         );
     }
