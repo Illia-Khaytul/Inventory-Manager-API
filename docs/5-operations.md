@@ -127,6 +127,29 @@ Creates a new user with the provided credentials and role.
 Both do the exact same just with different roles and permissions.
 - Used by the base operator seeder to create the base OPERATOR user.
 
+### 2.2. Change password
+
+Changes the authenticated user password for the provided new one.
+
+**Receives:** `password change request`
+
+**Steps:**
+1. Check if new password is different from old password. Throws `InvalidPasswordException`.
+2. Validate provided new password. Throws `InvalidPasswordException`.
+3. Load authenticated user. Throws `EntityNotFoundException`.
+4. Check if provided old password matches existing new password. Throws `InvalidPasswordException`.
+5. Change user password to new one.
+
+**Returns:** nothing
+
+**Notes:**
+- Old password is required in the request to validate the password change operation.
+- Transactional operation.
+It is possible that the authenticated user gets deleted concurrently between being loaded and the password change.
+A transaction ensures the user does not get re-inserted into the database after the password change in case that happens.
+- Uses the security utility component to load the authenticated user from the database.
+Throws `EntityNotFoundException` in case the user got deleted but the access token is still valid.
+
 
 ## Base operator seeder
 
