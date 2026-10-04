@@ -91,7 +91,7 @@ public class UserServiceIT {
         void beforeEach(){
             Jwt jwtMock = mock(Jwt.class);
             SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken(jwtMock, password, User.UserRole.CUSTOMER.name())
+                new TestingAuthenticationToken(jwtMock, password, user.getRole().name())
             );
 
             when(jwtMock.getSubject())
@@ -129,6 +129,36 @@ public class UserServiceIT {
 
             //Assert
             assertThat(userRepository.findById(user.getId()).orElseThrow().getPassword()).isNotEqualTo(encodedPassword);
+        }
+
+    }
+
+    @Nested
+    @DisplayName("deleteUser integration tests")
+    class DeleteUserIT {
+
+        @AfterEach
+        void afterEach(){
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+
+        @Test
+        @DisplayName("Should delete authenticated user")
+        void shouldDeleteAuthenticatedUser(){
+            //Arrange
+            Jwt jwtMock = mock(Jwt.class);
+            SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken(jwtMock, password, user.getRole().name())
+            );
+
+            when(jwtMock.getSubject())
+                .thenReturn(user.getUsername());
+
+            //Act
+            userService.deleteUser();
+
+            //Assert
+            assertThat(userRepository.count()).isEqualTo(0);
         }
 
     }
