@@ -107,7 +107,7 @@ public class UserController {
     @DeleteMapping(path = "")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(){
-
+        userService.deleteUser();
     }
 
 }
