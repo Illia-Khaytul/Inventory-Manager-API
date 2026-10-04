@@ -1,4 +1,8 @@
 spring:
+  application:
+    base_operator:
+      seeder:
+        enable: false
   mvc:
     servlet:
       path: /

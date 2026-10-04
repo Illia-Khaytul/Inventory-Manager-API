@@ -1,6 +1,5 @@
 package io.github.khaytul_illia.inventory_manager_api.openapi;
 
-import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -40,10 +39,10 @@ public class AuthEndpointResponseProvider {
             ))
         );
         ErrorResponse login401response = formatErrorResponse(
-            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid credentials", Map.of())
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid credentials")
         );
         ErrorResponse login403Response = formatErrorResponse(
-            new ErrorResponse(HttpStatus.FORBIDDEN, "Maximum amount of user sessions opened (10)", Map.of())
+            new ErrorResponse(HttpStatus.FORBIDDEN, "Maximum amount of user sessions opened (10)")
         );
 
         return Map.of(
@@ -58,9 +57,9 @@ public class AuthEndpointResponseProvider {
                 "Invalid login request parameters",
                 Map.of(
                     "Null or empty",
-                    new Example().value(login400ResponseBlankCase).summary("Login request had null or blank values"),
+                    new Example().value(login400ResponseBlankCase).description("Login request had null or blank values"),
                     "Invalid size",
-                    new Example().value(login400ResponseSizeCase).summary("Login request had parameters of an invalid size")
+                    new Example().value(login400ResponseSizeCase).description("Login request had parameters of an invalid size")
                 )
             ),
             "login_401",
@@ -90,7 +89,10 @@ public class AuthEndpointResponseProvider {
             ))
         );
         ErrorResponse refreshAccess401response = formatErrorResponse(
-            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired", Map.of())
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired")
+        );
+        ErrorResponse refreshAccess409response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Concurrent modification error")
         );
 
         return Map.of(
@@ -105,9 +107,9 @@ public class AuthEndpointResponseProvider {
                 "Invalid refresh token request parameters",
                 Map.of(
                     "Null or empty",
-                    new Example().value(refreshAccess400ResponseBlankCase).summary("Refresh token request had null or blank values"),
+                    new Example().value(refreshAccess400ResponseBlankCase).description("Refresh token request had null or blank values"),
                     "Invalid size",
-                    new Example().value(refreshAccess400ResponseSizeCase).summary("Refresh token request had parameters of an invalid size")
+                    new Example().value(refreshAccess400ResponseSizeCase).description("Refresh token request had parameters of an invalid size")
                 )
             ),
             "refresh_access_401",
@@ -115,6 +117,12 @@ public class AuthEndpointResponseProvider {
                 "ErrorResponse",
                 "Refresh token was used, or session was invalid or expired",
                 new Example().value(refreshAccess401response)
+            ),
+            "refresh_access_409",
+            buildApiResponse(
+                "ErrorResponse",
+                "Refresh token was modified concurrently",
+                new Example().value(refreshAccess409response)
             )
         );
     }
@@ -131,7 +139,7 @@ public class AuthEndpointResponseProvider {
             ))
         );
         ErrorResponse logout401response = formatErrorResponse(
-            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource", Map.of())
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
         );
 
         return Map.of(
@@ -143,9 +151,9 @@ public class AuthEndpointResponseProvider {
                 "Invalid refresh token request parameters",
                 Map.of(
                     "Null or empty",
-                    new Example().value(logout400ResponseBlankCase).summary("Refresh token request had null or blank values"),
+                    new Example().value(logout400ResponseBlankCase).description("Refresh token request had null or blank values"),
                     "Invalid size",
-                    new Example().value(logout400ResponseSizeCase).summary("Refresh token request had parameters of an invalid size")
+                    new Example().value(logout400ResponseSizeCase).description("Refresh token request had parameters of an invalid size")
                 )
             ),
             "logout_401",

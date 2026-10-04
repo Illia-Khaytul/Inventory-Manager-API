@@ -286,7 +286,7 @@ public class AuthE2EIT {
             .returnResult(AccessTokenResponse.class).getResponseBody();
 
         assertThat(response).isNotNull();
-        assertThat(response.subject()).isEqualTo(username);
+        assertThat(response.subject()).isEqualTo(request.username());
         assertThat(response.accessToken()).isNotBlank();
         assertThat(response.refreshToken()).isNotBlank();
 

@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.openapi;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
+import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
@@ -70,9 +71,11 @@ public class OpenApiConfig {
             );
 
         AuthEndpointResponseProvider.provideAuthEndpointResponses().forEach(components::addResponses);
+        UserEndpointResponseProvider.provideUsersEndpointResponses().forEach(components::addResponses);
 
         addSchema(components, ErrorResponse.class);
         addSchema(components, AccessTokenResponse.class);
+        addSchema(components, UserResponse.class);
 
         return components;
     }

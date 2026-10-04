@@ -23,6 +23,9 @@ Exceptions captured and handled by the handlers.
 - `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
 - `FailedLoginAuthenticationException`: when user authentication during login failed.
 - `InvalidRefreshTokenException`: when the provided refresh token is not found or used, or its user session is invalid or expired.
+- `InvalidPasswordException`: when the provided password does not follow the configured validation rules.
+- `DuplicateEntryException`: when an entity with the provided parameter already exists.
+- `EntityNotFoundException`: when an entity does not exist.
 - `OptimisticLockingFailureException`: when a value is modified concurrently.
 - `MethodArgumentNotValidException`: when `@Validated` validation fails. 
 - `HandlerMethodValidationException`: when `@Valid` validation fails.
@@ -50,6 +53,18 @@ It wraps the actual exception for logging and returns a generic message.
 **InvalidRefreshTokenException handler** -> 401 Unauthorized
 
 Returns a generic message for all 4 invalid cases, but still contains the specific messages for logging purposes.
+
+**InvalidPasswordException handler** -> 400 Bad Request
+
+Contains a list of password validation error messages to return to the user as data.
+
+`data` = Password validation errors, mapped as:
+- String `errors`: key
+- List<String> `errorMessages`: value
+
+**DuplicateEntryException handler** -> 409 Conflict
+
+**EntityNotFoundException handler** -> 404 Not Found
 
 **OptimisticLockingFailureException handler** -> 409 Conflict
 

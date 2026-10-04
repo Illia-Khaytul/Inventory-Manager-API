@@ -74,6 +74,17 @@ The project follows a domain oriented structure:
 
 ## 6. Application Properties
 
+**Base operator seeder enable flag:** `spring.application.base_operator.seeder.enable`
+
+Whether to automatically create a base OPERATOR user or not.
+
+It is `true` by default.
+
+**Base operator credentials:** `spring.application.base_operator.username/password`
+
+Username and password the base operator will have. 
+Password must follow the configured validation rules.
+
 **Max user session limit:** `spring.application.security.user_sessions.limit`
 
 The maximum amount of open sessions a user can have at once.
@@ -165,6 +176,43 @@ spring:
         public_key_source: 'classpath:security/jwt/jwt_public_key.pem'
 ```
 
+**Base OPERATOR user:**
+
+Since only operators can create new operators, it is required to have at least one OPERATOR user in the database.
+The application automatically generates this base operator on startup by default.
+If this feature is not desired, it can be disabled via boolean property in the [properties](src/main/resources/application.yaml) file:
+
+```yaml
+spring:
+  application:
+    base_operator:
+      seeder:
+        enable: true
+```
+
+This property is `true` by default, but disabled for the `test` and `prod` profiles.
+
+The base operator's username and password are also defined as application properties:
+
+```yaml
+spring:
+  application:
+    base_operator:
+      username: ${BASE_OPERATOR_USERNAME}
+      password: ${BASE_OPERATOR_PASSWORD}
+```
+
+Their values are set from the environment variables, which must be configured when using this feature:
+
+```text
+BASE_OPERATOR_USERNAME=base_operator_username
+BASE_OPERATOR_PASSWORD=base_operator_password
+```
+
+Use this [example](.env.base_operator.example) as reference.
+
+*Note: The password must follow the configured password validation rules.*
+
 ### Run for Development
 
 **Docker:**
@@ -248,6 +296,16 @@ Use this [prod example](.env.prod.example) as reference for the right names and 
 
 Restart the IDE/terminal so it picks up the new variables.
 
+**Base OPERATOR user:**
+
+By default, the base OPERATOR user auto-generation feature is disabled.
+That means that the base operator will have to be inserted into the database manually.
+It can be enabled once again by changing the `seeder.enable` property to `true` in the [production properties](src/main/resources/application-prod.yaml) file.
+
+The base operator credentials are currently blank and must be set either directly or as environment variables.
+If their property fields are removed the credentials configured in the base application properties file will be used.
+It is not recommended to reuse the default credentials for security reasons.
+
 **Run the application:**
 
 Change the active profile to `prod` in the [properties](src/main/resources/application.yaml) file:
@@ -288,14 +346,21 @@ All endpoints except user registration, login, access refresh and product viewin
 Additionally, all users will be split by customer and operator roles.
 Operators will be able to manage products and view all orders, but not create their own orders.
 Customers will be able to view products and create and track their orders, but not manage products.
+Only operators can create other operators.
 
 Passwords and refresh tokens are encoded before being persisted.
+Passwords must also follow the configured validation rules:
+- Min size of 6 and max size of 50.
+- No white spaces.
+- At least 2 digits required.
 
 ## 10. Run Tests
 
 Includes unit tests for individual components, slice tests for the web and database layer (controllers and repositories), integration tests for component coordination, and end-to-end tests for full application workflow.
 
 Utilizes Testcontainers for tests against a real database.
+
+Automatic base operator generation is disabled to avoid database test data conflicts.
 
 To run the tests make sure Docker Engine is running.
 Use the `docker ps` command for that. Then run all the tests:

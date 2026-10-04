@@ -77,7 +77,8 @@ Loads the user session by the provided refresh token, checks if it belongs to th
 It always returns the same (nothing) regardless of failure or success.
 This keeps the internal workings of the system hidden from outsiders.
 - Uses a modifying query to keep the operation atomic.
-- No transaction on this operation. The only database modification operation is atomic.
+- Transactional operation because of the modifying query.
+The transaction required for the modifying query is located in an inner service method.
 
 ### 1.4. Logout all
 
@@ -95,4 +96,101 @@ Invalidates all user sessions that belong to the authenticated user.
   It always returns the same (nothing) whether it closed any sessions or not.
   This keeps the internal workings of the system hidden from outsiders.
 - Uses a modifying query to keep the operation atomic.
-- No transaction on this operation. The only database modification operation is atomic.
+- Transactional operation because of the modifying query. 
+The transaction required for the modifying query is located in an inner service method.
+
+## 2. User operations
+
+**Operations:**
+1. **Create user** : create customer and create operator endpoints
+2. **Change password** : change password endpoint
+3. **Delete user** : delete user endpoint
+
+### 2.1. Create user
+
+Creates a new user with the provided credentials and role.
+
+**Receives:** 
+- `create user request`
+- UserRole `role`
+
+**Steps:**
+1. Validate provided user password. Throws `InvalidPasswordException`.
+2. Check if provided username is unique (not taken). Throws `DuplicateEntryException`.
+3. Creates new user with provided credentials and role.
+4. Return newly created user data.
+
+**Returns:** `user response`
+
+**Notes:**
+- User password is encoded before persistence.
+- User response does not expose sensitive data (password).
+- Operation used by both create customer and create operator endpoints.
+Both do the exact same just with different roles and permissions.
+- Used by the base operator seeder to create the base OPERATOR user.
+
+### 2.2. Change password
+
+Changes the authenticated user password for the provided new one.
+
+**Receives:** `password change request`
+
+**Steps:**
+1. Check if new password is different from old password. Throws `InvalidPasswordException`.
+2. Validate provided new password. Throws `InvalidPasswordException`.
+3. Load authenticated user. Throws `EntityNotFoundException`.
+4. Check if provided old password matches existing new password. Throws `InvalidPasswordException`.
+5. Change user password to new one.
+
+**Returns:** nothing
+
+**Notes:**
+- Old password is required in the request to validate the password change operation.
+- Transactional operation.
+It is possible that the authenticated user gets deleted concurrently between being loaded and the password change.
+A transaction ensures the user does not get re-inserted into the database after the password change in case that happens.
+- Uses the security utility component to load the authenticated user from the database.
+Throws `EntityNotFoundException` in case the user got deleted but the access token is still valid.
+
+### 2.3. Delete user
+
+Deletes the currently authenticated user.
+
+**Receives:** nothing
+
+**Steps:**
+1. Get authenticated user username.
+2. Delete user by username.
+
+**Returns:** nothing
+
+**Notes:**
+- Transactional operation because of the modifying delete query.
+- Uses a modifying query for user deletion to keep the operation atomic.
+- This delete operation is idempotent.
+It always returns the same (nothing) regardless of failure or success.
+In this case it is to keep the 204 returning operations consistent.
+
+
+## Base operator seeder
+
+Implements `CommandLineRunner` and executes once on application start.
+Is instantiated only when the `spring.application.base_operator.seeder.enable` property is set to `true`.
+
+Populates the database with the base OPERATOR user.
+
+**Receives (on initialization):** 
+- String `baseUsername`: required, not blank
+- String `basePassword`: required, not blank
+
+**Steps:**
+1. Checks if base operator already exists.
+If user exists but is not and OPERATOR, throws `IllegalStateException`.
+If exists and is OPERATOR, do nothing.
+2. Create base OPERATOR user (create user operation).
+
+**Returns:** nothing
+
+**Notes:**
+- Throws `IllegalStateException` on initialization if the base operator credentials are null or blank, and when a user with `baseUsername` exists but is not an OPERATOR.
+- Uses the create user operation to create the base OPERATOR user.
