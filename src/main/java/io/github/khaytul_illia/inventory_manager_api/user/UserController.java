@@ -83,7 +83,7 @@ public class UserController {
     public void changePassword(
         @RequestBody @Valid PasswordChangeRequest request
     ){
-
+        userService.changePassword(request);
     }
 
     @DeleteMapping(path = "")
