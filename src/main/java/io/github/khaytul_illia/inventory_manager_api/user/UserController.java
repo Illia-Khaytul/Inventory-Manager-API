@@ -80,6 +80,24 @@ public class UserController {
 
     @PatchMapping(path = "/password/change")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Change the password of the authenticated user",
+        description = """
+            Changes the password of the authenticated user for the provided new password.
+            - Returns with 204 No Content on successful password change.
+            - Returns with 400 Bad Request if the password change request or the new password are invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 404 Not Found if the authenticated user does not exist.
+            - Returns with 409 Conflict if the authenticated user got deleted mid-operation.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/users_change_password_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/users_change_password_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/users_change_password_401"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/users_change_password_404"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/users_change_password_409")
+    })
     public void changePassword(
         @RequestBody @Valid PasswordChangeRequest request
     ){

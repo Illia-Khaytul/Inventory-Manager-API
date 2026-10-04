@@ -91,6 +91,9 @@ public class AuthEndpointResponseProvider {
         ErrorResponse refreshAccess401response = formatErrorResponse(
             new ErrorResponse(HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired")
         );
+        ErrorResponse refreshAccess409response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Concurrent modification error")
+        );
 
         return Map.of(
             "refresh_access_success",
@@ -114,6 +117,12 @@ public class AuthEndpointResponseProvider {
                 "ErrorResponse",
                 "Refresh token was used, or session was invalid or expired",
                 new Example().value(refreshAccess401response)
+            ),
+            "refresh_access_409",
+            buildApiResponse(
+                "ErrorResponse",
+                "Refresh token was modified concurrently",
+                new Example().value(refreshAccess409response)
             )
         );
     }
