@@ -1,5 +1,10 @@
 spring:
   application:
+    base_operator:
+      seeder:
+        enable: false #disabled by default
+      username: #fill in with secured values for production use
+      password:
     security:
       jwt:
         issuer: '' #fill in for production use

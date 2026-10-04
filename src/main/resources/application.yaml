@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: inventory-manager-api
+    base_operator:
+      seeder:
+        enable: true
+      username: ${BASE_OPERATOR_USERNAME}
+      password: ${BASE_OPERATOR_PASSWORD}
     security:
       user_sessions:
         limit: 10
