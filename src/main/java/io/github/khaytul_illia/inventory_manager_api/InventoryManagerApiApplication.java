@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
-@EnableJpaAuditing(modifyOnCreate = false)
 public class InventoryManagerApiApplication {
 
 	public static void main(String[] args) {
