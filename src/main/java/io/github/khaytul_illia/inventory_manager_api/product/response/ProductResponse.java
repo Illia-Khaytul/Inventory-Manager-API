@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record ProductResponse(
-    long id,
+    Long id,
     String name,
     String description,
     int stock,
