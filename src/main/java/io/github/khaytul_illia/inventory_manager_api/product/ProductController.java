@@ -17,6 +17,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping(path = "/products")
@@ -27,12 +28,25 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "JWT authentication")
 public class ProductController {
 
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
     @PostMapping(path = "")
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductResponse> createProduct(
         @RequestBody @Valid CreateProductRequest request
     ){
-        return null;
+        ProductResponse response = productService.createProduct(request);
+
+        return ResponseEntity
+            .created(ServletUriComponentsBuilder
+                .fromCurrentRequestUri()
+                .path("/{productId}")
+                .build(response.id())
+            )
+            .body(response);
     }
 
     @PatchMapping(path = "/{productId}")
