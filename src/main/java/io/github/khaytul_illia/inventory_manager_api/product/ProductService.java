@@ -36,9 +36,11 @@ public class ProductService {
 
         product = productRepository.save(product);
 
+        ProductResponse productResponse = productMapper.toResponse(product);
+
         log.info("Successfully created new product with id {}", product.getId());
 
-        return productMapper.toResponse(product);
+        return productResponse;
     }
 
 }
