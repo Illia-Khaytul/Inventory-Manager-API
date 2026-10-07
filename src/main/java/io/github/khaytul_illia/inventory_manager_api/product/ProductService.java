@@ -73,6 +73,8 @@ public class ProductService {
 
         productMapper.updateProduct(product, request);
 
+        product = productRepository.saveAndFlush(product);
+
         log.info("Successfully updated product");
 
         return productMapper.toResponse(product);

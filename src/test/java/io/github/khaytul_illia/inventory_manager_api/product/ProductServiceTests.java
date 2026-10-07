@@ -175,6 +175,8 @@ public class ProductServiceTests {
                 .thenReturn(Optional.of(product));
             doNothing()
                 .when(productMapper).updateProduct(product, request);
+            when(productRepository.saveAndFlush(product))
+                .thenReturn(product);
             when(productMapper.toResponse(product))
                 .thenReturn(productResponse);
 
@@ -203,6 +205,8 @@ public class ProductServiceTests {
                 .thenReturn(false);
             doNothing()
                 .when(productMapper).updateProduct(product, request);
+            when(productRepository.saveAndFlush(product))
+                .thenReturn(product);
             when(productMapper.toResponse(product))
                 .thenReturn(productResponse);
 

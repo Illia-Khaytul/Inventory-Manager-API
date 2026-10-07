@@ -91,6 +91,8 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
 
+        userRepository.saveAndFlush(user);
+
         log.info("Password changed successfully for user with id {}", user.getId());
     }
 
