@@ -17,7 +17,13 @@ public interface ProductMapper {
 
     ProductResponse toResponse(Product product);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @BeanMapping(
+        ignoreByDefault = true,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "price", source = "price")
     void updateProduct(@MappingTarget Product product, UpdateProductRequest request);
 
 }
