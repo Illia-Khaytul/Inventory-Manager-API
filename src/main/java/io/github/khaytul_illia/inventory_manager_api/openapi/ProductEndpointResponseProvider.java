@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ public class ProductEndpointResponseProvider {
     public static Map<String, ApiResponse> provideProductEndpointResponses(){
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideCreateProductResponses());
+        responses.putAll(provideUpdateProductResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "products_" + entry.getKey(),
@@ -42,6 +44,7 @@ public class ProductEndpointResponseProvider {
         ErrorResponse createProduct400ResponseBlankCase = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
                 "name", "cannot be blank",
+                "description", "must be null or have at least one non-whitespace character",
                 "price", "cannot be null"
             ))
         );
@@ -49,7 +52,7 @@ public class ProductEndpointResponseProvider {
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
                 "name", "size must be between 0 and 100",
                 "description", "size must be between 0 and 1000",
-                "price", "must be between 0 and " + Integer.MAX_VALUE
+                "price", "must be less than or equal to " + Integer.MAX_VALUE
             ))
         );
         ErrorResponse createProduct401Response = formatErrorResponse(
@@ -106,5 +109,105 @@ public class ProductEndpointResponseProvider {
             )
         );
     }
-    
+
+    private static Map<String, ApiResponse> provideUpdateProductResponses(){
+        ProductResponse updateProductSuccessResponse = new ProductResponse(
+            1L,
+            "New Product Name",
+            "New more detailed product description",
+            0,
+            new BigDecimal("20.05"),
+            fixedTime,
+            "operator1",
+            fixedTime.plus(100, ChronoUnit.MINUTES),
+            "operator2"
+        );
+        ErrorResponse updateProduct400ResponseBlankCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "name", "must be null or have at least one non-whitespace character",
+                "description", "must be null or have at least one non-whitespace character"
+            ))
+        );
+        ErrorResponse updateProduct400ResponseSizeCase1 = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "name", "size must be between 0 and 100",
+                "description", "size must be between 0 and 1000",
+                "price", "must be greater than or equal to 0"
+            ))
+        );
+        ErrorResponse updateProduct400ResponseSizeCase2 = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "name", "size must be between 0 and 100",
+                "description", "size must be between 0 and 1000",
+                "price", "must be less than or equal to " + Integer.MAX_VALUE
+            ))
+        );
+        ErrorResponse updateProduct401Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
+        );
+        ErrorResponse updateProduct403Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.FORBIDDEN, "Forbidden from accessing this resource")
+        );
+        ErrorResponse updateProduct404Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.NOT_FOUND, "Product with id 1 does not exist")
+        );
+        ErrorResponse updateProduct409ResponseTakenNameCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Product with name 'Original Product (copy)' already exists")
+        );
+        ErrorResponse updateProduct409ResponseConcurrentCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Concurrent modification error")
+        );
+
+        return Map.of(
+            "update_product_success",
+            buildApiResponse(
+                "ProductResponse",
+                "Successfully updated product",
+                new Example().value(updateProductSuccessResponse)
+            ),
+            "update_product_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid update product request parameters",
+                Map.of(
+                    "Null or empty",
+                    new Example().value(updateProduct400ResponseBlankCase).description("update product request had null or blank values"),
+                    "Invalid size 1",
+                    new Example().value(updateProduct400ResponseSizeCase1).description("update product request has parameters of an invalid size"),
+                    "Invalid size 2",
+                    new Example().value(updateProduct400ResponseSizeCase2).description("update product request has parameters of an invalid size")
+                )
+            ),
+            "update_product_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing without authentication",
+                new Example().value(updateProduct401Response)
+            ),
+            "update_product_403",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing with authentication but not an OPERATOR",
+                new Example().value(updateProduct403Response)
+            ),
+            "update_product_404",
+            buildApiResponse(
+                "ErrorResponse",
+                "Updated product does not exist",
+                new Example().value(updateProduct404Response)
+            ),
+            "update_product_409",
+            buildApiResponse(
+                "ErrorResponse",
+                "Provided new product name is not unique or product was modified concurrently",
+                Map.of(
+                    "New product name not unique",
+                    new Example().value(updateProduct409ResponseTakenNameCase),
+                    "Concurrent modification",
+                    new Example().value(updateProduct409ResponseConcurrentCase)
+                )
+            )
+        );
+    }
+
 }

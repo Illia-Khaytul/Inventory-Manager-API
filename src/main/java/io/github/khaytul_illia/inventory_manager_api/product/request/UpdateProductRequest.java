@@ -2,10 +2,21 @@ package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
+@Schema(
+    description = "Product data used for product updating",
+    example = """
+        {
+            "name": "New Product Name",
+            "description": "New more detailed description",
+            "price": null
+        }
+        """
+)
 public record UpdateProductRequest(
 
     @NullOrNotBlank
