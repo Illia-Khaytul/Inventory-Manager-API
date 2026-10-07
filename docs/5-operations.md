@@ -171,6 +171,33 @@ Deletes the currently authenticated user.
 It always returns the same (nothing) regardless of failure or success.
 In this case it is to keep the 204 returning operations consistent.
 
+## 3. Product operations
+
+**Operations:**
+1. **Create product** : create product endpoint
+2. **Update product** : update product endpoint
+3. **Change product stock** : change product stock endpoint
+4. **Get product** : get product endpoints
+5. **Get products** : get products endpoint
+6. **Delete product** : delete product endpoint
+
+### 3.1. Create product
+
+Creates a new product with the provided data and empty stock.
+
+**Receives:** `create product request`
+
+**Steps:**
+1. Check if the product name is unique. Throws `DuplicateEntryException`.
+2. Create new product with provided data and 0 stock.
+3. Returns newly created product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Product stock is set to 0 on creation.
+Managing a product's stock is delegated to a separate operation.
+
 
 ## Base operator seeder
 
