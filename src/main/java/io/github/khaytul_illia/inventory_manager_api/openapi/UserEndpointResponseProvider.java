@@ -17,7 +17,7 @@ import static io.github.khaytul_illia.inventory_manager_api.openapi.OpenApiConfi
 
 public class UserEndpointResponseProvider {
 
-    public static Map<String, ApiResponse> provideUsersEndpointResponses(){
+    public static Map<String, ApiResponse> provideUserEndpointResponses(){
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideCreateUserResponses());
         responses.putAll(provideCreateCustomerResponses());

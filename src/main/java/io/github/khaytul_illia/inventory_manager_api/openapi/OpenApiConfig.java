@@ -1,7 +1,10 @@
 package io.github.khaytul_illia.inventory_manager_api.openapi;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
@@ -9,6 +12,7 @@ import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -71,11 +75,15 @@ public class OpenApiConfig {
             );
 
         AuthEndpointResponseProvider.provideAuthEndpointResponses().forEach(components::addResponses);
-        UserEndpointResponseProvider.provideUsersEndpointResponses().forEach(components::addResponses);
+        UserEndpointResponseProvider.provideUserEndpointResponses().forEach(components::addResponses);
+        ProductEndpointResponseProvider.provideProductEndpointResponses().forEach(components::addResponses);
 
         addSchema(components, ErrorResponse.class);
         addSchema(components, AccessTokenResponse.class);
         addSchema(components, UserResponse.class);
+        addSchema(components, ProductResponse.class);
+        addSchema(components, ProductShortResponse.class);
+        addSchema(components, PaginatedResponse.class);
 
         return components;
     }
@@ -99,22 +107,34 @@ public class OpenApiConfig {
     }
 
     public static ApiResponse buildApiResponse(String schemaName, String description){
-        return buildApiResponse(schemaName, description, Map.of());
+        return buildApiResponse(schemaName, description, Map.of(), Map.of());
     }
 
     public static ApiResponse buildApiResponse(String schemaName, String description, Example example){
-        return buildApiResponse(schemaName, description, Map.of("default", example));
+        return buildApiResponse(schemaName, description, Map.of("default", example), Map.of());
+    }
+
+    public static ApiResponse buildApiResponse(String schemaName, String description, Example example, Map<String, Header> headers){
+        return buildApiResponse(schemaName, description, Map.of("default", example), headers);
     }
 
     public static ApiResponse buildApiResponse(String schemaName, String description, Map<String, Example> examples) {
+        return buildApiResponse(schemaName, description, examples, Map.of());
+    }
+
+    public static ApiResponse buildApiResponse(String schemaName, String description, Map<String, Example> examples, Map<String, Header> headers) {
+        ApiResponse apiResponse = new ApiResponse();
         MediaType mediaType = new MediaType()
             .schema(new Schema<>().$ref("#/components/schemas/" + schemaName));
 
         if(examples != null && !examples.isEmpty()) {
             examples.forEach(mediaType::addExamples);
         }
+        if(headers != null && !headers.isEmpty()){
+            apiResponse.headers(headers);
+        }
 
-        return new ApiResponse()
+        return apiResponse
             .description(description)
             .content(new Content()
                 .addMediaType(

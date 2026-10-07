@@ -7,6 +7,9 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +38,24 @@ public class ProductController {
     }
 
     @PostMapping(path = "")
+    @Operation(
+        summary = "Create new product",
+        description = """
+            Creates a new product with the provided data and empty stock.
+            - Returns with 201 Created on successful product creation.
+            - Returns with 400 Bad Request if the create product request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 409 Conflict if the provided product name is not unique.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", ref = "#/components/responses/products_create_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_create_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_create_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_create_product_403"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_create_product_409")
+    })
     public ResponseEntity<ProductResponse> createProduct(
         @RequestBody @Valid CreateProductRequest request
     ){

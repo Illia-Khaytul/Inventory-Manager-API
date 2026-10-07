@@ -162,17 +162,16 @@ public class ProductControllerTests {
         static Stream<Arguments> provideInvalidCreateProductRequests(){
             String longDescription = "r".repeat(1001);
             String longName = "r".repeat(101);
-            String priceRangeMessage = "must be between 0 and " + Integer.MAX_VALUE;
 
             return Stream.of(
                 Arguments.of(
                     null, longDescription, null, "must not be blank", "size must be between 0 and 1000", "must not be null"
                 ),
                 Arguments.of(
-                    "", longDescription, new BigDecimal(-1), "must not be blank", "size must be between 0 and 1000", priceRangeMessage
+                    "", longDescription, new BigDecimal(-1), "must not be blank", "size must be between 0 and 1000", "must be greater than or equal to 0"
                 ),
                 Arguments.of(
-                    "   ", longDescription, new BigDecimal(Integer.MAX_VALUE + ".01"), "must not be blank", "size must be between 0 and 1000", priceRangeMessage
+                    "   ", longDescription, new BigDecimal(Integer.MAX_VALUE + ".01"), "must not be blank", "size must be between 0 and 1000", "must be less than or equal to " + Integer.MAX_VALUE
                 ),
                 Arguments.of(
                     longName, longDescription, null, "size must be between 0 and 100", "size must be between 0 and 1000", "must not be null"
