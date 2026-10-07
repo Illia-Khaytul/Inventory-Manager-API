@@ -190,13 +190,40 @@ Creates a new product with the provided data and empty stock.
 **Steps:**
 1. Check if the product name is unique. Throws `DuplicateEntryException`.
 2. Create new product with provided data and 0 stock.
-3. Returns newly created product data.
+3. Return newly created product data.
 
 **Returns:** `product response`
 
 **Notes:**
 - Product stock is set to 0 on creation.
 Managing a product's stock is delegated to a separate operation.
+
+### 3.2. Update product
+
+Update existing product with the provided data.
+
+**Receives:**
+- long `productId`
+- `update product request`
+
+**Steps:**
+1. Load product by id. Throws `EntityNotFoundException`.
+2. Check if the request is empty. If empty, return loaded product data.
+3. Check if the product name is unique. Throws `DuplicateEntryException`.
+4. Update product with provided data.
+5. Return updated product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Partial update.
+Null request fields are not used for the updated.
+- Added request empty check to skip the operation if there is nothing to update.
+- Transactional operation.
+It is possible that the updated product may get deleted between being loaded and its changes persisted.
+A transaction ensures that the loaded product does not get re-inserted into the database after the update in case that happens.
+- Allows 3 retries.
+A partial update allows to reload fresh data on concurrent modification and safely try again.
 
 
 ## Base operator seeder

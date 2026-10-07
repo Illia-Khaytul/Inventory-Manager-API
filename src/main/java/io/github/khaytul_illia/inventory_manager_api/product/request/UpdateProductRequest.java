@@ -1,22 +1,41 @@
 package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.Size;
-import org.hibernate.validator.constraints.Range;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
+@Schema(
+    description = "Product data used for product updating",
+    example = """
+        {
+            "name": "New Product Name",
+            "description": "New more detailed description",
+            "price": null
+        }
+        """
+)
 public record UpdateProductRequest(
 
+    @NullOrNotBlank
     @Size(max = 100)
     String name,
 
+    @NullOrNotBlank
     @Size(max = 1000)
     String description,
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @Range(min = 0, max = Integer.MAX_VALUE)
+    @PositiveOrZero
+    @DecimalMax("2147483647")
     BigDecimal price
 
 ) {
+
+    public boolean isEmpty(){
+        return name == null && description == null && price == null;
+    }
+
 }

@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -71,6 +72,19 @@ public class ProductMapperTests {
         assertThat(response.modifiedBy()).isEqualTo(product.getModifiedBy());
     }
 
+    @ParameterizedTest
+    @MethodSource("provideProductUpdateData")
+    @DisplayName("Should update the product with the not null update product request values")
+    void should(Product actual, Product expected, UpdateProductRequest request){
+        //Act
+        productMapper.updateProduct(actual, request);
+
+        //Assert
+        assertThat(actual.getName()).isEqualTo(expected.getName());
+        assertThat(actual.getDescription()).isEqualTo(expected.getDescription());
+        assertThat(actual.getPrice()).isEqualTo(expected.getPrice());
+    }
+
     /*
             Test data provider methods
      */
@@ -88,6 +102,36 @@ public class ProductMapperTests {
             //Null description and modified at/by fields
             Arguments.of(
                 new Product(2L, "different product", null, 1, price, createdAt, "operator1", null, null, 2)
+            )
+        );
+    }
+
+    static Stream<Arguments> provideProductUpdateData(){
+        String name = "Original Product";
+        String description = "Long description...";
+        BigDecimal price = new BigDecimal("11.11");
+        String newName = "new name";
+        String newDescription = "new description";
+        BigDecimal newPrice = new BigDecimal("25.25");
+
+        return Stream.of(
+            //All fields set
+            Arguments.of(
+                new Product(null, name, description, 0, price, null, null, null, null, null),
+                new Product(null, newName, newDescription, 0, newPrice, null, null, null, null, null),
+                new UpdateProductRequest(newName, newDescription, newPrice)
+            ),
+            //Some fields missing
+            Arguments.of(
+                new Product(null, name, description, 0, price, null, null, null, null, null),
+                new Product(null, newName, description, 0, newPrice, null, null, null, null, null),
+                new UpdateProductRequest(newName, null, newPrice)
+            ),
+            //All fields missing
+            Arguments.of(
+                new Product(null, name, description, 0, price, null, null, null, null, null),
+                new Product(null, name, description, 0, price, null, null, null, null, null),
+                new UpdateProductRequest(null, null, null)
             )
         );
     }

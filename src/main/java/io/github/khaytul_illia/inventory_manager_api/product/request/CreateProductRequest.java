@@ -1,9 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
-import org.hibernate.validator.constraints.Range;
 
 import java.math.BigDecimal;
 
@@ -23,6 +23,7 @@ public record CreateProductRequest(
     @Size(max = 100)
     String name,
 
+    @NullOrNotBlank
     @Size(max = 1000)
     String description,
 
@@ -30,7 +31,6 @@ public record CreateProductRequest(
     @NotNull
     @PositiveOrZero
     @DecimalMax("2147483647")
-    //@Range(min = 0, max = Integer.MAX_VALUE)
     BigDecimal price
 
 ) {

@@ -26,13 +26,10 @@ public class SecurityConfig {
     ){
         http
             .authorizeHttpRequests(request -> request
-                .requestMatchers("/auth/login", "/auth/refresh-access").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh-access").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
-                .requestMatchers(
-                    HttpMethod.POST,
-                    "/users/operators",
-                    "/products"
-                ).hasRole(User.UserRole.OPERATOR.name())
+                .requestMatchers(HttpMethod.POST, "/users/operators").hasRole(User.UserRole.OPERATOR.name())
+                .requestMatchers("/products/**").hasRole(User.UserRole.OPERATOR.name())
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )

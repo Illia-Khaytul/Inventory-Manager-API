@@ -72,11 +72,31 @@ public class ProductController {
 
     @PatchMapping(path = "/{productId}")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Update existing product",
+        description = """
+            Updates an existing product with the provided data.
+            - Returns with 200 OK on successful product update.
+            - Returns with 400 Bad Request if the update product request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 404 Not Found if the updated product does not exist.
+            - Returns with 409 Conflict if the provided product name is not unique or the product has been modified concurrently.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_update_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_update_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_update_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_update_product_403"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_update_product_404"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_update_product_409")
+    })
     public ProductResponse updateProduct(
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid UpdateProductRequest request
     ){
-        return null;
+        return productService.updateProduct(productId, request);
     }
 
     @PatchMapping(path = "/{productId}/stock")
