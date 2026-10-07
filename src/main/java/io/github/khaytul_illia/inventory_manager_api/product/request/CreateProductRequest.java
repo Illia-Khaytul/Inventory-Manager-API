@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import org.hibernate.validator.constraints.Range;
@@ -23,6 +24,7 @@ public record CreateProductRequest(
     @Size(max = 100)
     String name,
 
+    @NullOrNotBlank
     @Size(max = 1000)
     String description,
 

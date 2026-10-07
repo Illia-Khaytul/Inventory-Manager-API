@@ -60,11 +60,9 @@ public class UserService {
 
         user = userRepository.save(user);
 
-        UserResponse userResponse = userMapper.toUserResponse(user);
-
         log.info("Successfully created new user ({}) with id {}", role.name(), user.getId());
 
-        return userResponse;
+        return userMapper.toUserResponse(user);
     }
 
     @Transactional

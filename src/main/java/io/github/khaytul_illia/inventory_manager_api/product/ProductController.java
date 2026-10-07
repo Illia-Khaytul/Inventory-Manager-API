@@ -76,7 +76,7 @@ public class ProductController {
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid UpdateProductRequest request
     ){
-        return null;
+        return productService.updateProduct(productId, request);
     }
 
     @PatchMapping(path = "/{productId}/stock")
