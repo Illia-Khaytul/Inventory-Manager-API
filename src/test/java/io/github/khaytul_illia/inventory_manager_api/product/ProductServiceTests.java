@@ -2,9 +2,13 @@ package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidStockModificationException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,8 +18,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +36,8 @@ public class ProductServiceTests {
     private ProductRepository productRepository;
     @Mock
     private ProductMapper productMapper;
+    @Mock
+    private SecurityUtils securityUtils;
     @InjectMocks
     private ProductService productService;
 
@@ -190,7 +198,6 @@ public class ProductServiceTests {
             verify(productMapper).toResponse(product);
         }
 
-
         @Test
         @DisplayName("Should update the found product when the new product name is unique")
         void shouldUpdateProduct_whenNewProductNameIsUnique(){
@@ -226,4 +233,103 @@ public class ProductServiceTests {
 
     }
 
+    @Nested
+    @DisplayName("changeProductStock tests")
+    class ChangeProductStockTests {
+
+        private final long productId = 1L;
+        private final ModifyStockRequest request = new ModifyStockRequest(10);
+        private Jwt jwtMock;
+
+        @BeforeEach
+        void beforeEach(){
+            String authenticatedUsername = "operator";
+            jwtMock = mock(Jwt.class);
+
+            when(jwtMock.getSubject())
+                .thenReturn(authenticatedUsername);
+        }
+
+        @Test
+        @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
+        void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
+            //Arrange
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwtMock);
+            when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
+                .thenReturn(0);
+            when(productRepository.findById(productId))
+                .thenReturn(Optional.empty());
+
+            //Act and Assert
+            assertThatThrownBy(() -> productService.changeProductStock(productId, request))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage(String.format("Product with id %s does not exist", productId));
+
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
+            verify(productRepository).findById(productId);
+        }
+
+        @Test
+        @DisplayName("Should throw InvalidStockModificationException when the product stock was not modified")
+        void shouldThrowInvalidStockModificationException_whenProductStockNotModified() {
+            //Arrange
+            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
+
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwtMock);
+            when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
+                .thenReturn(0);
+            when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product));
+
+            //Act and Assert
+            assertThatThrownBy(() -> productService.changeProductStock(productId, request))
+                .isInstanceOf(InvalidStockModificationException.class)
+                .satisfies(e -> {
+                    InvalidStockModificationException exception = (InvalidStockModificationException) e;
+
+                    assertThat(exception.getMessage()).isEqualTo("Invalid stock modification");
+                    assertThat(exception.getDetails()).containsExactlyInAnyOrder(
+                        String.format("Tried modifying stock by %s for %s existing", request.stockChange(), product.getStock())
+                    );
+                });
+
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
+            verify(productRepository).findById(productId);
+        }
+
+        @Test
+        @DisplayName("Should modify product stock when product stock change is valid")
+        void shouldModifyProductStock_whenProductStockIsValid() {
+            //Arrange
+            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
+            ProductResponse expectedResponse = new ProductResponse(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null);
+
+            when(securityUtils.getAuthenticatedUserAccessToken())
+                .thenReturn(jwtMock);
+            when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
+                .thenReturn(1);
+            when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product));
+            when(productMapper.toResponse(product))
+                .thenReturn(expectedResponse);
+
+            //Act
+            ProductResponse response = productService.changeProductStock(productId, request);
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(expectedResponse.id());
+            assertThat(response.stock()).isEqualTo(expectedResponse.stock());
+
+            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
+            verify(productRepository).findById(productId);
+            verify(productMapper).toResponse(product);
+        }
+
+    }
 }

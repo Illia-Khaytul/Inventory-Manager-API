@@ -225,6 +225,28 @@ A transaction ensures that the loaded product does not get re-inserted into the 
 - Allows 3 retries.
 A partial update allows to reload fresh data on concurrent modification and safely try again.
 
+### 3.3. Change product stock
+
+Modify an existing product's stock by the provided value.
+
+**Receives:**
+- long `productId`
+- `modify stock request`
+
+**Steps:**
+1. Modify product stock.
+2. Load product by id. Throws `EntityNotFoundException`.
+3. Check if the product's stock has been modified successfully.
+4. Return modified product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Uses a modifying query to keep the modification operation atomic.
+- Fails if the stock modification is invalid (resulting stock is below 0).
+Uses the returned rows from the modifying query to verify that.
+- Transactional operation because of the modifying query.
+- Modifying query manually changes the audit fields and bumps up the product's version for future stock modification related operations (automatic order filling). 
 
 ## Base operator seeder
 

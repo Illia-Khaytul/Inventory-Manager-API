@@ -101,11 +101,31 @@ public class ProductController {
 
     @PatchMapping(path = "/{productId}/stock")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Change existing product stock",
+        description = """
+            Modifies the stock of an existing product with the provided data.
+            - Returns with 200 OK on successful product stock change.
+            - Returns with 400 Bad Request if the modify stock request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 404 Not Found if the target product does not exist.
+            - Returns with 409 Conflict if the product stock modification is invalid.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_change_product_stock_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_change_product_stock_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_change_product_stock_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_change_product_stock_403"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_change_product_stock_404"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_change_product_stock_409")
+    })
     public ProductResponse changeProductStock(
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid ModifyStockRequest request
     ){
-        return null;
+        return productService.changeProductStock(productId, request);
     }
 
     @GetMapping(path = "/{productId}")

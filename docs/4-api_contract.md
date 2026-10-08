@@ -214,20 +214,20 @@ Requires authentication.
 
 `create product request`:
 - String `name`: required, not blank, max length 100
-- String `description`: optional, max length 1000
+- String `description`: optional, not blank, max length 1000
 - BigDecimal `price`: required, min 0, max integer limit, mapped from a String
 
 `update product request`:
-- String `name`: optional, max length 100
-- String `description`: optional, max length 1000
+- String `name`: optional, not blank, max length 100
+- String `description`: optional, not blank, max length 1000
 - BigDecimal `price`: optional, min 0, max integer limit, mapped from a String
 
 `modify stock request`:
-- int `stockChange`: required, integer value range
+- Integer `stockChange`: required, not 0
 
 `product filtering`:
 - String `nameContains`: optional, max length 50
-- Integer `minStock`: optional, min 0, max integer limit
+- Integer `minStock`: optional, min 0
 - BigDecimal `minPrice`: optional, min 0, max integer limit, mapped from a String
 - BigDecimal `maxPrice`: optional, min 0, max integer limit, mapped from a String
 

@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -324,6 +326,109 @@ public class ProductControllerTests {
                     "must be greater than or equal to 0"
                 )
             );
+        }
+
+    }
+
+    @Nested
+    @DisplayName("changeProductStock endpoint tests")
+    class ChangeProductStockTests{
+
+        private final long productId = 1L;
+
+        @Test
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 200 OK when successfully changed product stock")
+        void shouldReturn200_whenSuccessfullyModifiedProductStock() throws Exception{
+            //Arrange
+            Instant createdAt = Instant.now();
+            String createdBy = "operator";
+            String price = "99.99";
+            ModifyStockRequest request = new ModifyStockRequest(10);
+            ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+
+            when(productService.changeProductStock(anyLong(), any(ModifyStockRequest.class)))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    patch("/products/{productId}/stock", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.id()))
+                .andExpect(jsonPath("$.name").value(response.name()))
+                .andExpect(jsonPath("$.price").value(price))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.createdBy").exists())
+                .andExpect(jsonPath("$.modifiedAt").exists())
+                .andExpect(jsonPath("$.modifiedBy").exists());
+
+            verify(productService).changeProductStock(anyLong(), any(ModifyStockRequest.class));
+        }
+
+        @Test
+        @WithMockUser(roles = "CUSTOMER")
+        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
+        void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
+            //Arrange
+            ModifyStockRequest request = new ModifyStockRequest(10);
+
+            //Act and Assert
+            mockMvc.perform(
+                    patch("/products/{productId}/stock", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
+        void shouldReturn401_whenNoAuthentication() throws Exception {
+            //Arrange
+            ModifyStockRequest request = new ModifyStockRequest(10);
+
+            //Act and Assert
+            mockMvc.perform(
+                    patch("/products/{productId}/stock", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            nullValues = "NULL",
+            textBlock = """
+                -1, NULL, must be greater than 0, must not be null
+                -1, 0, must be greater than 0, must not be 0
+                """)
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 400 Bad Request when invalid modify stock request fields")
+        void shouldReturn400_whenInvalidModifyStockRequest(
+            long productId,
+            Integer stockChange,
+            String productIdMessage,
+            String stockChangeMessage
+        ) throws Exception{
+            //Arrange
+            ModifyStockRequest request = new ModifyStockRequest(stockChange);
+
+            //Act and Assert
+            mockMvc.perform(
+                    patch("/products/{productId}/stock", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.productId").value(productIdMessage))
+                .andExpect(jsonPath("$.data.stockChange").value(stockChangeMessage));
         }
 
     }

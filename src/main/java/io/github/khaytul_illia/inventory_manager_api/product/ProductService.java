@@ -2,14 +2,19 @@ package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
+import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidStockModificationException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Service
 @Slf4j
@@ -17,13 +22,16 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final SecurityUtils securityUtils;
 
     public ProductService(
         ProductRepository productRepository,
-        ProductMapper productMapper
+        ProductMapper productMapper,
+        SecurityUtils securityUtils
     ) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.securityUtils = securityUtils;
     }
 
     public ProductResponse createProduct(CreateProductRequest request){
@@ -76,6 +84,35 @@ public class ProductService {
         product = productRepository.saveAndFlush(product);
 
         log.info("Successfully updated product");
+
+        return productMapper.toResponse(product);
+    }
+
+    @Transactional
+    public ProductResponse changeProductStock(long productId, ModifyStockRequest request){
+        log.info("Modifying stock for product with id {}", productId);
+
+        log.debug("Applying stock modification");
+
+        Instant modifiedAt = Instant.now();
+        String modifiedBy = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        int updatedRows = productRepository.changeProductStock(productId, request.stockChange(), modifiedAt, modifiedBy);
+
+        log.debug("Loading modified product");
+
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
+
+        log.debug("Checking if the product's stock has been modified");
+
+        if(updatedRows == 0){
+            throw new InvalidStockModificationException(
+                "Invalid stock modification",
+                String.format("Tried modifying stock by %s for %s existing", request.stockChange(), product.getStock())
+            );
+        }
+
+        log.info("Successfully changed product stock from {} to {} ({})", product.getStock() - request.stockChange(), product.getStock(), request.stockChange());
 
         return productMapper.toResponse(product);
     }

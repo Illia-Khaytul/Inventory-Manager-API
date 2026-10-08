@@ -3,6 +3,7 @@ package io.github.khaytul_illia.inventory_manager_api.product;
 import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
@@ -202,4 +203,35 @@ public class ProductServiceIT {
 
     }
 
+    @Nested
+    @DisplayName("changeProductStock integration tests")
+    class ChangeProductStockIT {
+
+        @Test
+        @DisplayName("Should change product stock when stock modification is valid")
+        void shouldChangeProductStock_whenStockModificationIsValid(){
+            //Arrange
+            ModifyStockRequest request = new ModifyStockRequest(10);
+            int originalStock = product.getStock();
+            int originalVersion = product.getVersion();
+
+            //Act
+            ProductResponse response = productService.changeProductStock(product.getId(), request);
+
+            //Assert
+            Instant now = Instant.now();
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(product.getId());
+            assertThat(response.stock()).isEqualTo(originalStock + request.stockChange());
+            assertThat(response.createdAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
+            assertThat(response.createdBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.modifiedAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
+            assertThat(response.modifiedBy()).isEqualTo(authenticatedUsername);
+
+            Product modifiedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(modifiedProduct.getStock()).isEqualTo(originalStock + request.stockChange());
+            assertThat(modifiedProduct.getVersion()).isEqualTo(originalVersion + 1);
+        }
+
+    }
 }
