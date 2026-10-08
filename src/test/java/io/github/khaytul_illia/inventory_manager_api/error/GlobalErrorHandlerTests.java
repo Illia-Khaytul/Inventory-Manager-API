@@ -129,6 +129,31 @@ public class GlobalErrorHandlerTests {
     }
 
     @Test
+    @DisplayName("Should return 409 Conflict when caught InvalidStockModificationException")
+    void shouldReturn409_whenInvalidStockModificationException() throws Exception {
+        //Arrange
+        InvalidStockModificationException exception = new InvalidStockModificationException("message", "detail1", "detail2");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isConflict())
+            .andExpect(result -> {
+                ErrorResponse response = deserializeErrorResponse(result);
+                Map<String, Object> data = response.data();
+
+                assertErrorResponse(response, HttpStatus.CONFLICT, exception.getMessage());
+                //noinspection unchecked
+                assertThat((List<String>) data.get("details")).containsExactlyInAnyOrderElementsOf(exception.getDetails());
+            });
+    }
+
+    @Test
     @DisplayName("Should return 409 Conflict when caught DuplicateEntryException")
     void shouldReturn409_whenDuplicateEntryException() throws Exception {
         //Arrange

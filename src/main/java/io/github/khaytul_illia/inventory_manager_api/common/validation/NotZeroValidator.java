@@ -7,7 +7,7 @@ public class NotZeroValidator implements ConstraintValidator<NotZero, Number> {
 
     @Override
     public boolean isValid(Number value, ConstraintValidatorContext context) {
-        return !value.equals(0);
+        return value == null || !value.equals(0);
     }
 
 }

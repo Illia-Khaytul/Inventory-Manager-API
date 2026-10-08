@@ -8,8 +8,7 @@ public record ModifyStockRequest(
 
     @NotNull
     @NotZero
-    @Range(min = Integer.MIN_VALUE, max = Integer.MAX_VALUE)
-    int stockChange
+    Integer stockChange
 
 ) {
 }
