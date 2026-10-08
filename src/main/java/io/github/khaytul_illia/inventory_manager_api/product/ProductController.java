@@ -105,7 +105,7 @@ public class ProductController {
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid ModifyStockRequest request
     ){
-        return null;
+        return productService.changeProductStock(productId, request);
     }
 
     @GetMapping(path = "/{productId}")

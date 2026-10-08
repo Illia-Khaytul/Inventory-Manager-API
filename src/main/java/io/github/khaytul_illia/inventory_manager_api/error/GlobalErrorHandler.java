@@ -74,6 +74,21 @@ public class GlobalErrorHandler {
         );
     }
 
+    @ExceptionHandler(InvalidStockModificationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse invalidStockModificationHandler(InvalidStockModificationException e){
+        Map<String, Object> data = new HashMap<>();
+        data.put("details", e.getDetails());
+
+        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), data);
+
+        return new ErrorResponse(
+            HttpStatus.CONFLICT,
+            e.getMessage(),
+            data
+        );
+    }
+
     @ExceptionHandler(DuplicateEntryException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse duplicateEntryHandler(DuplicateEntryException e){
