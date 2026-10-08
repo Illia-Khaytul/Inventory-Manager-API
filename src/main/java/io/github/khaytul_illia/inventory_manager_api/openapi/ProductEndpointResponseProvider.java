@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ public class ProductEndpointResponseProvider {
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideCreateProductResponses());
         responses.putAll(provideUpdateProductResponses());
+        responses.putAll(provideChangeProductStockResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "products_" + entry.getKey(),
@@ -206,6 +208,88 @@ public class ProductEndpointResponseProvider {
                     "Concurrent modification",
                     new Example().value(updateProduct409ResponseConcurrentCase)
                 )
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideChangeProductStockResponses(){
+        ProductResponse changeProductStockSuccessResponse = new ProductResponse(
+            1L,
+            "Original Product",
+            "product description if any",
+            110,
+            new BigDecimal("20.05"),
+            fixedTime,
+            "operator1",
+            null,
+            null
+        );
+        ErrorResponse changeProductStock400ResponseNullCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "stockChange", "must not be null"
+            ))
+        );
+        ErrorResponse changeProductStock400ResponseZeroCase = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "stockChange", "must not be 0"
+            ))
+        );
+        ErrorResponse changeProductStock401Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
+        );
+        ErrorResponse changeProductStock403Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.FORBIDDEN, "Forbidden from accessing this resource")
+        );
+        ErrorResponse changeProductStock404Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.NOT_FOUND, "Product with id 1 does not exist")
+        );
+        ErrorResponse changeProductStock409Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.CONFLICT, "Invalid stock modification", Map.of(
+                "details", List.of("Tried modifying stock by -10 for 5 existing")
+            ))
+        );
+
+        return Map.of(
+            "change_product_stock_success",
+            buildApiResponse(
+                "ProductResponse",
+                "Successfully changed product stock",
+                new Example().value(changeProductStockSuccessResponse)
+            ),
+            "change_product_stock_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid modify stock request parameters",
+                Map.of(
+                    "Null value",
+                    new Example().value(changeProductStock400ResponseNullCase).description("change product stock request had a null value"),
+                    "Zero value",
+                    new Example().value(changeProductStock400ResponseZeroCase).description("change product stock request has a value of 0")
+                )
+            ),
+            "change_product_stock_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing without authentication",
+                new Example().value(changeProductStock401Response)
+            ),
+            "change_product_stock_403",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing with authentication but not an OPERATOR",
+                new Example().value(changeProductStock403Response)
+            ),
+            "change_product_stock_404",
+            buildApiResponse(
+                "ErrorResponse",
+                "Target product does not exist",
+                new Example().value(changeProductStock404Response)
+            ),
+            "change_product_stock_409",
+            buildApiResponse(
+                "ErrorResponse",
+                "Product stock modification is invalid",
+                new Example().value(changeProductStock409Response)
             )
         );
     }
