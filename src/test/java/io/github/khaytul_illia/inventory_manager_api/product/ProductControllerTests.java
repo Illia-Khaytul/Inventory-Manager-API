@@ -1,9 +1,12 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
@@ -22,18 +25,23 @@ import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.MultiValueMap;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -510,6 +518,120 @@ public class ProductControllerTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
                 .andExpect(jsonPath("$.data.productId").value(productIdMessage));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("getProducts endpoint tests")
+    class GetProductsTests {
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 200 OK when successfully gotten a page of products")
+        void shouldReturn200_whenSuccessfullyGottenPageOfProducts() throws Exception {
+            //Arrange
+            String price = "55.55";
+            ProductShortResponse productResponse1 = new ProductShortResponse(1L, "Original Product", 10, new BigDecimal(price));
+            ProductShortResponse productResponse2 = new ProductShortResponse(2L, "Original Product 2", 5, new BigDecimal(price));
+            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of(productResponse1, productResponse2));
+
+            when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(response.page()))
+                .andExpect(jsonPath("$.pageSize").value(response.pageSize()))
+                .andExpect(jsonPath("$.totalPages").value(response.totalPages()))
+                .andExpect(jsonPath("$.totalElements").value(response.totalElements()))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].id").value(productResponse1.id()))
+                .andExpect(jsonPath("$.content[1].id").value(productResponse2.id()));
+
+            verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
+        }
+
+        @Test
+        @DisplayName("Should return 200 OK when accessed with no authentication")
+        void shouldReturn200_whenNoAuthentication() throws Exception {
+            //Arrange
+            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of());
+
+            when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products")
+                )
+                .andExpect(status().isOk());
+
+            verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidPaginationAndFiltering")
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 400 Bad Request when invalid modify stock request fields")
+        void shouldReturn400_whenInvalidModifyStockRequest(
+            MultiValueMap<String, String> queryParams,
+            Map<String, String> errorMessages
+        ) throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products")
+                        .queryParams(queryParams)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.nameContains").value(errorMessages.get("nameContains")))
+                .andExpect(jsonPath("$.data.minStock").value(errorMessages.get("minStock")))
+                .andExpect(jsonPath("$.data.minPrice").value(errorMessages.get("minPrice")))
+                .andExpect(jsonPath("$.data.maxPrice").value(errorMessages.get("maxPrice")));
+        }
+
+            /*
+                Test data provider methods
+         */
+
+        static Stream<Arguments> provideInvalidPaginationAndFiltering() {
+            String longName = "r".repeat(101);
+
+            return Stream.of(
+                Arguments.of(
+                    MultiValueMap.fromSingleValue(Map.of(
+                        "nameContains", longName,
+                        "minStock", "-1",
+                        "minPrice", "-1",
+                        "maxPrice", "-1"
+                    )),
+                    Map.of(
+                        "nameContains", "size must be between 0 and 100",
+                        "minStock", "must be greater than or equal to 0",
+                        "minPrice", "must be greater than or equal to 0",
+                        "maxPrice", "must be greater than or equal to 0"
+                    )
+                ),
+                Arguments.of(
+                    MultiValueMap.fromSingleValue(Map.of(
+                        "nameContains", "   ",
+                        "minStock", "-1",
+                        "minPrice", Integer.MAX_VALUE + ".01",
+                        "maxPrice", Integer.MAX_VALUE + ".01"
+                    )),
+                    Map.of(
+                        "nameContains", "must be null or have at least one non-whitespace character",
+                        "minStock", "must be greater than or equal to 0",
+                        "minPrice", "must be less than or equal to " + Integer.MAX_VALUE,
+                        "maxPrice", "must be less than or equal to " + Integer.MAX_VALUE
+                    )
+                )
+            );
         }
 
     }
