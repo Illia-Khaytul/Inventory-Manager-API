@@ -3,6 +3,7 @@ package io.github.khaytul_illia.inventory_manager_api.user;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
@@ -46,6 +47,8 @@ public class UserControllerTests {
 
     @MockitoBean
     private UserService userService;
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     @Autowired
     private MockMvc mockMvc;

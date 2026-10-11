@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh-access").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/operators").hasRole(User.UserRole.OPERATOR.name())
+                .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                 .requestMatchers("/products/**").hasRole(User.UserRole.OPERATOR.name())
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
