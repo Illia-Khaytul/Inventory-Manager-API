@@ -41,10 +41,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -632,6 +634,78 @@ public class ProductControllerTests {
                     )
                 )
             );
+        }
+
+    }
+
+    @Nested
+    @DisplayName("deleteProduct endpoint tests")
+    class DeleteProductTests {
+
+        private final long productId = 1L;
+
+        @Test
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 204 No Content when successfully deleted product")
+        void shouldReturn204_whenSuccessfullyModifiedProductStock() throws Exception {
+            //Arrange
+            doNothing()
+                .when(productService).deleteProduct(anyLong());
+
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/products/{productId}", productId)
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(result -> {
+                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
+                });
+
+            verify(productService).deleteProduct(anyLong());
+        }
+
+        @Test
+        @WithMockUser(roles = "CUSTOMER")
+        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
+        void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/products/{productId}", productId)
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
+        void shouldReturn401_whenNoAuthentication() throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/products/{productId}", productId)
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            nullValues = "NULL",
+            textBlock = """
+                -1, must be greater than 0
+                """)
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 400 Bad Request when invalid productId path variable")
+        void shouldReturn400_whenInvalidModifyStockRequest(
+            long productId,
+            String productIdMessage
+        ) throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    delete("/products/{productId}", productId)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
         }
 
     }
