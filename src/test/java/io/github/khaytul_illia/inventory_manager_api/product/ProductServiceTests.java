@@ -430,4 +430,27 @@ public class ProductServiceTests {
 
     }
 
+
+    @Nested
+    @DisplayName("deleteProduct tests")
+    class DeleteProductTests{
+
+        @Test
+        @DisplayName("Should perform product deletion with provided id")
+        void shouldPerformProductDeletionById(){
+            //Arrange
+            long productId = 1L;
+
+            doNothing()
+                .when(productRepository).deleteProductById(productId);
+
+            //Act
+            productService.deleteProduct(productId);
+
+            //Assert
+            verify(productRepository).deleteProductById(productId);
+        }
+
+    }
+
 }

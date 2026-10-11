@@ -171,4 +171,72 @@ public class ProductRepositoryTests {
 
     }
 
+    @Nested
+    @DisplayName("deleteProductById tests")
+    class DeleteProductByIdTests{
+
+        @ParameterizedTest
+        @MethodSource("provideProducts")
+        @DisplayName("Should delete product when product exists by id")
+        void shouldDeleteProduct_whenExistsById(Product target, List<Product> otherProducts){
+            //Arrange
+            otherProducts.forEach(otherUser -> entityManager.persist(otherUser));
+            entityManager.persist(target);
+            entityManager.flush();
+            entityManager.clear();
+            
+            //Act
+            productRepository.deleteProductById(target.getId());
+            
+            //Assert
+            assertThat(productRepository.existsById(target.getId())).isFalse();
+            otherProducts.forEach(otherProduct -> assertThat(productRepository.existsById(otherProduct.getId())).isTrue());
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideProducts")
+        @DisplayName("Should do nothing when product does not exist by id")
+        void shouldDoNothing_whenDoesNotExistById(Product target, List<Product> otherProducts){
+            //Arrange
+            otherProducts.forEach(otherUser -> entityManager.persist(otherUser));
+            entityManager.persistAndFlush(target);
+            entityManager.remove(target);
+            entityManager.flush();
+            entityManager.clear();
+            
+            //Act
+            productRepository.deleteProductById(target.getId());
+            
+            //Assert
+            assertThat(productRepository.existsById(target.getId())).isFalse();
+            otherProducts.forEach(otherProduct -> assertThat(productRepository.existsById(otherProduct.getId())).isTrue());
+        }
+
+        /*
+                Test data provider methods
+         */
+    
+        static Stream<Arguments> provideProducts(){
+            Instant createdAt = Instant.now();
+            String createdBy = "operator";
+
+            return Stream.of(
+                //Target session alone
+                Arguments.of(
+                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    List.of()
+                ),
+                //Target and other sessions
+                Arguments.of(
+                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    List.of(
+                        new Product(null, "other1", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                        new Product(null, "other2", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null)
+                    )
+                )
+            );
+        }
+
+    }
+
 }
