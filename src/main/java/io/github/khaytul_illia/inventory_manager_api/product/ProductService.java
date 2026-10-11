@@ -150,4 +150,13 @@ public class ProductService {
         return productMapper.toPaginatedResponse(products);
     }
 
+    @Transactional
+    public void deleteProduct(long productId){
+        log.info("Deleting product with id {}", productId);
+
+        productRepository.deleteProductById(productId);
+
+        log.info("Successfully performed deletion for product");
+    }
+
 }

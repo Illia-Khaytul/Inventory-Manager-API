@@ -104,7 +104,7 @@ public class UserService {
 
         userRepository.deleteByUsername(username);
 
-        log.info("Successfully deleted user '{}'", username);
+        log.info("Successfully performed deletion for user '{}'", username);
     }
 
 }

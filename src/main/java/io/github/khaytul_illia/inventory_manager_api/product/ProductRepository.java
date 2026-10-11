@@ -24,4 +24,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         """)
     int changeProductStock(long productId, int stockChange, Instant modifiedAt, String modifiedBy);
 
+    @Modifying
+    @Query("delete from Product p where p.id = :productId")
+    void deleteProductById(long productId);
+
 }
