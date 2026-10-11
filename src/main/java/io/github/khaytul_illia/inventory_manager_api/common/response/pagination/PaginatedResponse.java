@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api.common.pagination;
+package io.github.khaytul_illia.inventory_manager_api.common.response.pagination;
 
 import java.util.List;
 

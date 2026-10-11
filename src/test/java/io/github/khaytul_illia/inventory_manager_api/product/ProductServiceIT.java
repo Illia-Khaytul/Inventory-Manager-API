@@ -49,7 +49,7 @@ public class ProductServiceIT {
     private Product product;
 
     @BeforeEach
-    void beforeEach(){
+    void beforeEach() {
         transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
         Jwt jwtMock = mock(Jwt.class);
@@ -64,7 +64,7 @@ public class ProductServiceIT {
     }
 
     @AfterEach
-    void afterEach(){
+    void afterEach() {
         SecurityContextHolder.getContext().setAuthentication(null);
 
         productRepository.deleteAll();
@@ -72,11 +72,11 @@ public class ProductServiceIT {
 
     @Nested
     @DisplayName("createProduct integration tests")
-    class CreateProductIT{
+    class CreateProductIT {
 
         @Test
-        @DisplayName("Should create new product with the provided data when the product name is unique")
-        void shouldCreateNewProduct_whenProductNameIsUnique(){
+        @DisplayName("Should create new product with the provided data")
+        void shouldCreateNewProduct() {
             //Arrange
             CreateProductRequest request = new CreateProductRequest(productName + "_unique", null, price);
 
@@ -93,6 +93,7 @@ public class ProductServiceIT {
             assertThat(response.createdBy()).isEqualTo(authenticatedUsername);
             assertThat(response.modifiedAt()).isNull();
             assertThat(response.modifiedBy()).isNull();
+
             assertThat(productRepository.count()).isEqualTo(2);
         }
 
@@ -100,7 +101,7 @@ public class ProductServiceIT {
 
     @Nested
     @DisplayName("updateProduct integration tests")
-    class UpdateProductIT{
+    class UpdateProductIT {
 
         private final String newName = productName + "_new";
         private final BigDecimal newPrice = new BigDecimal("101.99");
@@ -108,7 +109,7 @@ public class ProductServiceIT {
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product is deleted mid-operation")
-        void shouldThrowEntityNotFoundException_whenProductDeletedConcurrently(){
+        void shouldThrowEntityNotFoundException_whenProductDeletedConcurrently() {
             //Arrange
             doAnswer(invocation -> {
                 transactionTemplate.executeWithoutResult(status -> productRepository.deleteById(product.getId()));
@@ -127,7 +128,7 @@ public class ProductServiceIT {
 
         @Test
         @DisplayName("Should throw OptimisticLockingFailureException when product is modified concurrently too many times")
-        void shouldThrowOptimisticLockingFailureException_whenProductModifiedConcurrentlyTooMuch(){
+        void shouldThrowOptimisticLockingFailureException_whenProductModifiedConcurrentlyTooMuch() {
             //Arrange
             doAnswer(invocation -> {
                 transactionTemplate.executeWithoutResult(status -> {
@@ -151,7 +152,7 @@ public class ProductServiceIT {
 
         @Test
         @DisplayName("Should update product when product is modified concurrently once")
-        void shouldUpdateProduct_whenProductModifiedConcurrentlyOnce(){
+        void shouldUpdateProduct_whenProductModifiedConcurrentlyOnce() {
             //Arrange
             doAnswer(invocation -> {
                 transactionTemplate.executeWithoutResult(status -> {
@@ -179,7 +180,7 @@ public class ProductServiceIT {
 
         @Test
         @DisplayName("Should update product when product is not modified concurrently")
-        void shouldUpdateProduct_whenProductNotModifiedConcurrently(){
+        void shouldUpdateProduct_whenProductNotModifiedConcurrently() {
             //Arrange
             Instant now = Instant.now();
 
@@ -208,8 +209,8 @@ public class ProductServiceIT {
     class ChangeProductStockIT {
 
         @Test
-        @DisplayName("Should change product stock when stock modification is valid")
-        void shouldChangeProductStock_whenStockModificationIsValid(){
+        @DisplayName("Should change product stock")
+        void shouldChangeProductStock() {
             //Arrange
             ModifyStockRequest request = new ModifyStockRequest(10);
             int originalStock = product.getStock();
@@ -234,4 +235,23 @@ public class ProductServiceIT {
         }
 
     }
+
+    @Nested
+    @DisplayName("getProduct integration tests")
+    class GetProductIT {
+
+        @Test
+        @DisplayName("Should get product by id")
+        void shouldGetProductById() {
+            //Act
+            ProductResponse response = productService.getProduct(product.getId());
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(product.getId());
+            assertThat(response.name()).isEqualTo(productName);
+        }
+
+    }
+
 }

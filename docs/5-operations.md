@@ -200,7 +200,7 @@ Managing a product's stock is delegated to a separate operation.
 
 ### 3.2. Update product
 
-Update existing product with the provided data.
+Updates existing product with the provided data.
 
 **Receives:**
 - long `productId`
@@ -227,7 +227,7 @@ A partial update allows to reload fresh data on concurrent modification and safe
 
 ### 3.3. Change product stock
 
-Modify an existing product's stock by the provided value.
+Modifies an existing product's stock by the provided value.
 
 **Receives:**
 - long `productId`
@@ -236,7 +236,7 @@ Modify an existing product's stock by the provided value.
 **Steps:**
 1. Modify product stock.
 2. Load product by id. Throws `EntityNotFoundException`.
-3. Check if the product's stock has been modified successfully.
+3. Check if the product's stock has been modified successfully. Throws `InvalidStockModificationException`.
 4. Return modified product data.
 
 **Returns:** `product response`
@@ -247,6 +247,25 @@ Modify an existing product's stock by the provided value.
 Uses the returned rows from the modifying query to verify that.
 - Transactional operation because of the modifying query.
 - Modifying query manually changes the audit fields and bumps up the product's version for future stock modification related operations (automatic order filling). 
+
+### 3.4. Get product
+
+Gets an existing product by id.
+
+**Receives:**
+- long `productId`
+
+**Steps:**
+1. Load product by id. Throws `EntityNotFoundException`.
+2. Return loaded product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Returns audit fields only if accessing user is OPERATOR.
+This feature is implemented via custom ResponseBodyAdvice implementation.
+
+
 
 ## Base operator seeder
 

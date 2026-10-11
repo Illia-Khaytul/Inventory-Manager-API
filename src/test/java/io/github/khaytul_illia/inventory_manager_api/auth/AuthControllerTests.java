@@ -6,6 +6,7 @@ import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenRe
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
@@ -31,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +50,8 @@ public class AuthControllerTests {
 
     @MockitoBean
     private AuthService authService;
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     @Autowired
     private MockMvc mockMvc;

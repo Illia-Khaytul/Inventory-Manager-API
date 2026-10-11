@@ -19,28 +19,29 @@ import static io.github.khaytul_illia.inventory_manager_api.openapi.OpenApiConfi
 
 public class ProductEndpointResponseProvider {
 
-    public static Map<String, ApiResponse> provideProductEndpointResponses(){
+    public static Map<String, ApiResponse> provideProductEndpointResponses() {
         Map<String, ApiResponse> responses = new HashMap<>();
         responses.putAll(provideCreateProductResponses());
         responses.putAll(provideUpdateProductResponses());
         responses.putAll(provideChangeProductStockResponses());
+        responses.putAll(provideGetProductResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "products_" + entry.getKey(),
             Map.Entry::getValue
         ));
     }
-    
-    private static Map<String, ApiResponse> provideCreateProductResponses(){
+
+    private static Map<String, ApiResponse> provideCreateProductResponses() {
         ProductResponse createProductSuccessResponse = new ProductResponse(
-            1L, 
-            "Original Product", 
-            "product description if any", 
-            0, 
-            new BigDecimal("20.05"), 
-            fixedTime, 
-            "operator1", 
-            null, 
+            1L,
+            "Original Product",
+            "product description if any",
+            0,
+            new BigDecimal("20.05"),
+            fixedTime,
+            "operator1",
+            null,
             null
         );
         ErrorResponse createProduct400ResponseBlankCase = formatErrorResponse(
@@ -112,7 +113,7 @@ public class ProductEndpointResponseProvider {
         );
     }
 
-    private static Map<String, ApiResponse> provideUpdateProductResponses(){
+    private static Map<String, ApiResponse> provideUpdateProductResponses() {
         ProductResponse updateProductSuccessResponse = new ProductResponse(
             1L,
             "New Product Name",
@@ -123,6 +124,11 @@ public class ProductEndpointResponseProvider {
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
             "operator2"
+        );
+        ErrorResponse updateProduct400ResponseProductId = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "productId", "must be greater than or equal to 0"
+            ))
         );
         ErrorResponse updateProduct400ResponseBlankCase = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -172,6 +178,8 @@ public class ProductEndpointResponseProvider {
                 "ErrorResponse",
                 "Invalid update product request parameters",
                 Map.of(
+                    "Invalid productId",
+                    new Example().value(updateProduct400ResponseProductId).description("target product id is negative"),
                     "Null or empty",
                     new Example().value(updateProduct400ResponseBlankCase).description("update product request had null or blank values"),
                     "Invalid size 1",
@@ -212,7 +220,7 @@ public class ProductEndpointResponseProvider {
         );
     }
 
-    private static Map<String, ApiResponse> provideChangeProductStockResponses(){
+    private static Map<String, ApiResponse> provideChangeProductStockResponses() {
         ProductResponse changeProductStockSuccessResponse = new ProductResponse(
             1L,
             "Original Product",
@@ -221,8 +229,13 @@ public class ProductEndpointResponseProvider {
             new BigDecimal("20.05"),
             fixedTime,
             "operator1",
-            null,
-            null
+            fixedTime.plus(100, ChronoUnit.MINUTES),
+            "operator2"
+        );
+        ErrorResponse changeProductStock400ResponseProductId = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "productId", "must be greater than or equal to 0"
+            ))
         );
         ErrorResponse changeProductStock400ResponseNullCase = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -261,6 +274,8 @@ public class ProductEndpointResponseProvider {
                 "ErrorResponse",
                 "Invalid modify stock request parameters",
                 Map.of(
+                    "Invalid productId",
+                    new Example().value(changeProductStock400ResponseProductId).description("target product id is negative"),
                     "Null value",
                     new Example().value(changeProductStock400ResponseNullCase).description("change product stock request had a null value"),
                     "Zero value",
@@ -290,6 +305,65 @@ public class ProductEndpointResponseProvider {
                 "ErrorResponse",
                 "Product stock modification is invalid",
                 new Example().value(changeProductStock409Response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideGetProductResponses() {
+        ProductResponse getProductSuccessResponseOperator = new ProductResponse(
+            1L,
+            "Original Product",
+            "product description if any",
+            110,
+            new BigDecimal("20.05"),
+            fixedTime,
+            "operator1",
+            fixedTime.plus(100, ChronoUnit.MINUTES),
+            "operator2"
+        );
+        ProductResponse getProductSuccessResponseCustomer = new ProductResponse(
+            1L,
+            "Original Product",
+            "product description if any",
+            110,
+            new BigDecimal("20.05"),
+            null,
+            null,
+            null,
+            null
+        );
+        ErrorResponse getProduct400Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "productId", "must be greater than or equal to 0"
+            ))
+        );
+        ErrorResponse getProduct404Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.NOT_FOUND, "Product with id 1 does not exist")
+        );
+
+        return Map.of(
+            "get_product_success",
+            buildApiResponse(
+                "ProductResponse",
+                "Successfully loaded product",
+                Map.of(
+                    "OPERATOR response",
+                    new Example().value(getProductSuccessResponseOperator).description("Full response with audit fields for OPERATOR users"),
+                    "Non OPERATOR response",
+                    new Example().value(getProductSuccessResponseCustomer).description("Short response without audit fields for non OPERATOR users")
+                )
+            ),
+            "get_product_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid productId",
+                new Example().value(getProduct400Response)
+            ),
+            "get_product_404",
+            buildApiResponse(
+                "ErrorResponse",
+                "Target product does not exist",
+                new Example().value(getProduct404Response)
             )
         );
     }

@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -41,6 +43,8 @@ public class GlobalErrorHandlerTests {
 
     @MockitoSpyBean
     private DummyController dummyController;
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     @Autowired
     private MockMvc mockMvc;

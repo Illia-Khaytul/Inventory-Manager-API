@@ -7,21 +7,23 @@ import io.github.khaytul_illia.inventory_manager_api.product.response.ProductRes
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
+import io.github.khaytul_illia.inventory_manager_api.user.User;
 import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,8 +36,8 @@ import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -55,25 +57,41 @@ public class ProductControllerTests {
 
     @MockitoBean
     private ProductService productService;
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     @Autowired
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
 
+    private final String defaultRole = User.UserRole.OPERATOR.name();
+    private Jwt jwtMock;
+
+    @BeforeEach
+    void beforeEach() {
+        jwtMock = mock(Jwt.class);
+
+        when(securityUtils.getAuthenticatedUserAccessToken())
+            .thenReturn(jwtMock);
+        when(jwtMock.getClaimAsString("roles"))
+            .thenReturn(defaultRole);
+    }
+
     @Nested
     @DisplayName("createProduct endpoint tests")
-    class CreateProductTests{
+    class CreateProductTests {
+
+        private final String price = "99.99";
+        private final CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 201 Created when successfully created new product")
-        void shouldReturn201_whenSuccessfullyCreatedProduct() throws Exception{
+        void shouldReturn201_whenSuccessfullyCreatedProduct() throws Exception {
             //Arrange
             Instant createdAt = Instant.now();
             String createdBy = "operator";
-            String price = "99.99";
-            CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
             ProductResponse response = new ProductResponse(1L, "product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, null, null);
 
             when(productService.createProduct(any(CreateProductRequest.class)))
@@ -100,12 +118,8 @@ public class ProductControllerTests {
 
         @Test
         @WithMockUser(roles = "CUSTOMER")
-        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
+        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
-            //Arrange
-            String price = "99.99";
-            CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
-
             //Act and Assert
             mockMvc.perform(
                     post("/products")
@@ -119,10 +133,6 @@ public class ProductControllerTests {
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
-            //Arrange
-            String price = "99.99";
-            CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
-
             //Act and Assert
             mockMvc.perform(
                     post("/products")
@@ -144,7 +154,7 @@ public class ProductControllerTests {
             String nameMessage,
             String descriptionMessage,
             String priceMessage
-        ) throws Exception{
+        ) throws Exception {
             //Arrange
             CreateProductRequest request = new CreateProductRequest(name, description, price);
 
@@ -165,7 +175,7 @@ public class ProductControllerTests {
                 Test data provider methods
          */
 
-        static Stream<Arguments> provideInvalidCreateProductRequests(){
+        static Stream<Arguments> provideInvalidCreateProductRequests() {
             String longDescription = "r".repeat(1001);
             String longName = "r".repeat(101);
 
@@ -193,19 +203,19 @@ public class ProductControllerTests {
 
     @Nested
     @DisplayName("updateProduct endpoint tests")
-    class UpdateProductTests{
+    class UpdateProductTests {
 
         private final long productId = 1L;
+        private final String price = "99.99";
+        private final UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully updated a product")
-        void shouldReturn200_whenSuccessfullyUpdatedProduct() throws Exception{
+        void shouldReturn200_whenSuccessfullyUpdatedProduct() throws Exception {
             //Arrange
             Instant createdAt = Instant.now();
             String createdBy = "operator";
-            String price = "99.99";
-            UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
             ProductResponse response = new ProductResponse(1L, "new_product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
 
             when(productService.updateProduct(anyLong(), any(UpdateProductRequest.class)))
@@ -231,12 +241,8 @@ public class ProductControllerTests {
 
         @Test
         @WithMockUser(roles = "CUSTOMER")
-        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
+        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
-            //Arrange
-            String price = "99.99";
-            UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
-
             //Act and Assert
             mockMvc.perform(
                     patch("/products/{productId}", productId)
@@ -250,10 +256,6 @@ public class ProductControllerTests {
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
-            //Arrange
-            String price = "99.99";
-            UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
-
             //Act and Assert
             mockMvc.perform(
                     patch("/products/{productId}", productId)
@@ -277,7 +279,7 @@ public class ProductControllerTests {
             String nameMessage,
             String descriptionMessage,
             String priceMessage
-        ) throws Exception{
+        ) throws Exception {
             //Arrange
             UpdateProductRequest request = new UpdateProductRequest(name, description, price);
 
@@ -299,7 +301,7 @@ public class ProductControllerTests {
                 Test data provider methods
          */
 
-        static Stream<Arguments> provideInvalidUpdateProductRequests(){
+        static Stream<Arguments> provideInvalidUpdateProductRequests() {
             String longDescription = "r".repeat(1001);
             String longName = "r".repeat(101);
 
@@ -332,19 +334,19 @@ public class ProductControllerTests {
 
     @Nested
     @DisplayName("changeProductStock endpoint tests")
-    class ChangeProductStockTests{
+    class ChangeProductStockTests {
 
         private final long productId = 1L;
+        private final ModifyStockRequest request = new ModifyStockRequest(10);
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully changed product stock")
-        void shouldReturn200_whenSuccessfullyModifiedProductStock() throws Exception{
+        void shouldReturn200_whenSuccessfullyModifiedProductStock() throws Exception {
             //Arrange
             Instant createdAt = Instant.now();
             String createdBy = "operator";
             String price = "99.99";
-            ModifyStockRequest request = new ModifyStockRequest(10);
             ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
 
             when(productService.changeProductStock(anyLong(), any(ModifyStockRequest.class)))
@@ -370,11 +372,8 @@ public class ProductControllerTests {
 
         @Test
         @WithMockUser(roles = "CUSTOMER")
-        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
+        @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
-            //Arrange
-            ModifyStockRequest request = new ModifyStockRequest(10);
-
             //Act and Assert
             mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
@@ -388,9 +387,6 @@ public class ProductControllerTests {
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
-            //Arrange
-            ModifyStockRequest request = new ModifyStockRequest(10);
-
             //Act and Assert
             mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
@@ -415,7 +411,7 @@ public class ProductControllerTests {
             Integer stockChange,
             String productIdMessage,
             String stockChangeMessage
-        ) throws Exception{
+        ) throws Exception {
             //Arrange
             ModifyStockRequest request = new ModifyStockRequest(stockChange);
 
@@ -429,6 +425,91 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
                 .andExpect(jsonPath("$.data.productId").value(productIdMessage))
                 .andExpect(jsonPath("$.data.stockChange").value(stockChangeMessage));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("getProduct endpoint tests")
+    class GetProductTests {
+
+        private final long productId = 1L;
+        private final Instant createdAt = Instant.now();
+        private final String createdBy = "operator";
+        private final String price = "99.99";
+        private final ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+
+        @Test
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 200 OK and product audit fields when accessed as OPERATOR")
+        void shouldReturn200WithAuditing_whenAccessedAsOperator() throws Exception {
+            //Arrange
+            when(productService.getProduct(anyLong()))
+                .thenReturn(response);
+
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products/{productId}", productId)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.id()))
+                .andExpect(jsonPath("$.name").value(response.name()))
+                .andExpect(jsonPath("$.price").value(price))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.createdBy").exists())
+                .andExpect(jsonPath("$.modifiedAt").exists())
+                .andExpect(jsonPath("$.modifiedBy").exists());
+
+            verify(productService).getProduct(anyLong());
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = {"CUSTOMER"})
+        @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
+        void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
+            //Arrange
+            reset(jwtMock);
+
+            when(productService.getProduct(anyLong()))
+                .thenReturn(response);
+            when(jwtMock.getClaimAsString("roles"))
+                .thenReturn(role);
+
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products/{productId}", productId)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.id()))
+                .andExpect(jsonPath("$.name").value(response.name()))
+                .andExpect(jsonPath("$.price").value(price))
+                .andExpect(jsonPath("$.createdAt").doesNotExist())
+                .andExpect(jsonPath("$.createdBy").doesNotExist())
+                .andExpect(jsonPath("$.modifiedAt").doesNotExist())
+                .andExpect(jsonPath("$.modifiedBy").doesNotExist());
+
+            verify(productService).getProduct(anyLong());
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            textBlock = """
+                -1, must be greater than 0
+                """)
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 400 Bad Request when invalid productId path variable")
+        void shouldReturn400_whenInvalidProductId(
+            long productId,
+            String productIdMessage
+        ) throws Exception {
+            //Act and Assert
+            mockMvc.perform(
+                    get("/products/{productId}", productId)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
+                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
         }
 
     }

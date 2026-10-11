@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
-import io.github.khaytul_illia.inventory_manager_api.common.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.view.RoleBasedJsonView;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
@@ -58,7 +59,7 @@ public class ProductController {
     })
     public ResponseEntity<ProductResponse> createProduct(
         @RequestBody @Valid CreateProductRequest request
-    ){
+    ) {
         ProductResponse response = productService.createProduct(request);
 
         return ResponseEntity
@@ -95,7 +96,7 @@ public class ProductController {
     public ProductResponse updateProduct(
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid UpdateProductRequest request
-    ){
+    ) {
         return productService.updateProduct(productId, request);
     }
 
@@ -124,16 +125,34 @@ public class ProductController {
     public ProductResponse changeProductStock(
         @PathVariable @Valid @Positive long productId,
         @RequestBody @Valid ModifyStockRequest request
-    ){
+    ) {
         return productService.changeProductStock(productId, request);
     }
 
     @GetMapping(path = "/{productId}")
     @ResponseStatus(HttpStatus.OK)
+    @RoleBasedJsonView
+    @Operation(
+        summary = "Get existing product",
+        description = """
+            Gets an existing product by provided id.
+            - Returns with 200 OK on successfully loaded product.
+            - Returns with 400 Bad Request if the provided id is invalid.
+            - Returns with 404 Not Found if the product does not exist.
+            
+            Note: Product auditing fields are hidden from all non OPERATOR users.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_get_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_get_product_400"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_get_product_404")
+    })
     public ProductResponse getProduct(
         @PathVariable @Valid @Positive long productId
-    ){
-        return null;
+    ) {
+        return productService.getProduct(productId);
     }
 
     @GetMapping(path = "")
@@ -141,7 +160,7 @@ public class ProductController {
     public PaginatedResponse<ProductShortResponse> getProducts(
         @PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pagination,
         @ModelAttribute @Valid ProductFiltering filtering
-    ){
+    ) {
         return null;
     }
 
@@ -149,7 +168,7 @@ public class ProductController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(
         @PathVariable @Valid @Positive long productId
-    ){
+    ) {
 
     }
 
