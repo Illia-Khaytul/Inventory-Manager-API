@@ -1,17 +1,18 @@
 package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
 import jakarta.validation.constraints.*;
-import org.hibernate.validator.constraints.Range;
 
 import java.math.BigDecimal;
 
 public record ProductFiltering(
 
     @Size(max = 100)
+    @NullOrNotBlank
     String nameContains,
 
-    @Range(min = 0, max = Integer.MAX_VALUE)
+    @PositiveOrZero
     Integer minStock,
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
@@ -25,4 +26,9 @@ public record ProductFiltering(
     BigDecimal maxPrice
 
 ) {
+
+    public boolean isEmpty(){
+        return (nameContains == null || nameContains.isBlank()) && minStock == null && minPrice == null && maxPrice == null;
+    }
+
 }

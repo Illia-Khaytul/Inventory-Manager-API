@@ -158,10 +158,10 @@ public class ProductController {
     @GetMapping(path = "")
     @ResponseStatus(HttpStatus.OK)
     public PaginatedResponse<ProductShortResponse> getProducts(
-        @PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pagination,
+        @PageableDefault Pageable pagination,
         @ModelAttribute @Valid ProductFiltering filtering
     ) {
-        return null;
+        return productService.getProducts(pagination, filtering);
     }
 
     @PostMapping(path = "/{productId}")
