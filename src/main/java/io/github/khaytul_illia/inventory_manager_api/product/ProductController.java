@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -177,12 +176,28 @@ public class ProductController {
         return productService.getProducts(pagination, filtering);
     }
 
-    @PostMapping(path = "/{productId}")
+    @DeleteMapping(path = "/{productId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Delete existing product",
+        description = """
+            Deletes an existing product by provided id
+            - Returns with 204 No Content on successful product deletion.
+            - Returns with 400 Bad Request if the provided id is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/products_delete_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_delete_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_delete_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_delete_product_403")
+    })
     public void deleteProduct(
         @PathVariable @Valid @Positive long productId
     ) {
-
+        productService.deleteProduct(productId);
     }
 
 }

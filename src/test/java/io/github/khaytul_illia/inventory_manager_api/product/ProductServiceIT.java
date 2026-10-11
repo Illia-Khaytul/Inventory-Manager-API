@@ -366,4 +366,20 @@ public class ProductServiceIT {
 
     }
 
+    @Nested
+    @DisplayName("deleteProduct integration tests")
+    class DeleteProductIT {
+
+        @Test
+        @DisplayName("Should delete product by id")
+        void shouldDeleteProductById(){
+            //Act
+            productService.deleteProduct(product.getId());
+
+            //Assert
+            assertThat(productRepository.existsById(product.getId())).isFalse();
+        }
+
+    }
+
 }
