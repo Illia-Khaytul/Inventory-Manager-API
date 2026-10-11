@@ -11,7 +11,7 @@ Base endpoint path is `/api/v1`.
 - int `pageSize`
 - int `totalPages`
 - long `totalElements`
-- List<T> `elements`
+- List<T> `content`
 
 ## 1. Authentication API
 
@@ -226,7 +226,7 @@ Requires authentication.
 - Integer `stockChange`: required, not 0
 
 `product filtering`:
-- String `nameContains`: optional, max length 100
+- String `nameContains`: optional, not blank, max length 100
 - Integer `minStock`: optional, min 0
 - BigDecimal `minPrice`: optional, min 0, max integer limit, mapped from a String
 - BigDecimal `maxPrice`: optional, min 0, max integer limit, mapped from a String

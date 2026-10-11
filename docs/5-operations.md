@@ -265,6 +265,23 @@ Gets an existing product by id.
 - Returns audit fields only if accessing user is OPERATOR.
 This feature is implemented via custom ResponseBodyAdvice implementation.
 
+### 3.5. Get products
+
+Gets a page of products from provided pagination and filtering.
+
+**Receives:**
+- Pageable `pagination`
+- `product filtering`
+
+**Steps:**
+1. Build specification using filtering
+2. Load product page with specification and pagination.
+3. Return loaded product page data.
+
+**Returns:** `paginated response` of `product short response`
+
+**Notes:**
+- Does not allow name filtering by blank values (e.g. "" or "   "). 
 
 
 ## Base operator seeder
