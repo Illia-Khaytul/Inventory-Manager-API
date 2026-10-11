@@ -226,7 +226,7 @@ Requires authentication.
 - Integer `stockChange`: required, not 0
 
 `product filtering`:
-- String `nameContains`: optional, max length 50
+- String `nameContains`: optional, max length 100
 - Integer `minStock`: optional, min 0
 - BigDecimal `minPrice`: optional, min 0, max integer limit, mapped from a String
 - BigDecimal `maxPrice`: optional, min 0, max integer limit, mapped from a String
@@ -310,6 +310,7 @@ Requires authentication as OPERATOR.
 - 401 Unauthorized: not authenticated
 - 403 Forbidden: authenticated but not an OPERATOR
 - 404 Not Found: product does not exist by id
+- 409 Conflict: invalid product stock modification
 
 ### 3.4. Get product
 
@@ -335,11 +336,11 @@ Does not require authentication.
 Does not require authentication.
 
 **Receives:**
-- Query parameters: Pageable `pagination`: default page 0, page size 10, sort by `createdAt` DESC
+- Query parameters: Pageable `pagination`: default page 0, page size 10
 - Query parameters: `product filtering`
 
 **Returns:**
-- Body: `paginated response` of `book short response`
+- Body: `paginated response` of `product short response`
 
 **Responses:**
 - 200 OK: products page returned
