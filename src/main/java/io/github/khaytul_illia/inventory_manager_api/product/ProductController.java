@@ -157,6 +157,19 @@ public class ProductController {
 
     @GetMapping(path = "")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Get page of products",
+        description = """
+            Gets a page of products from provided filtering and pagination.
+            - Returns with 200 OK on successfully loaded products page.
+            - Returns with 400 Bad Request if the query parameters are invalid.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_get_products_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_get_products_400")
+    })
     public PaginatedResponse<ProductShortResponse> getProducts(
         @PageableDefault Pageable pagination,
         @ModelAttribute @Valid ProductFiltering filtering
