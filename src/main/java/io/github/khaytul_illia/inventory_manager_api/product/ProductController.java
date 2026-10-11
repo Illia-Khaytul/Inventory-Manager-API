@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
-import io.github.khaytul_illia.inventory_manager_api.common.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.view.RoleBasedJsonView;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
@@ -130,10 +131,11 @@ public class ProductController {
 
     @GetMapping(path = "/{productId}")
     @ResponseStatus(HttpStatus.OK)
+    @RoleBasedJsonView
     public ProductResponse getProduct(
         @PathVariable @Valid @Positive long productId
     ){
-        return null;
+        return productService.getProduct(productId);
     }
 
     @GetMapping(path = "")

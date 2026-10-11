@@ -34,12 +34,12 @@ public class ProductService {
         this.securityUtils = securityUtils;
     }
 
-    public ProductResponse createProduct(CreateProductRequest request){
+    public ProductResponse createProduct(CreateProductRequest request) {
         log.info("Creating new product of name '{}'", request.name());
 
         log.debug("Checking if the product name is unique");
 
-        if(productRepository.existsByName(request.name())){
+        if (productRepository.existsByName(request.name())) {
             throw new DuplicateEntryException("Product with name '%s' already exists", request.name());
         }
 
@@ -56,7 +56,7 @@ public class ProductService {
 
     @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3)
     @Transactional
-    public ProductResponse updateProduct(long productId, UpdateProductRequest request){
+    public ProductResponse updateProduct(long productId, UpdateProductRequest request) {
         log.info("Updating product with id {}", productId);
 
         log.debug("Loading product by id");
@@ -64,7 +64,7 @@ public class ProductService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
 
-        if(request.isEmpty()){
+        if (request.isEmpty()) {
             log.info("Request is empty, nothing to update");
 
             return productMapper.toResponse(product);
@@ -73,7 +73,7 @@ public class ProductService {
         log.debug("Checking if the new product name is unique");
 
         String newName = request.name();
-        if(newName != null && !product.getName().equals(newName) && productRepository.existsByName(newName)){
+        if (newName != null && !product.getName().equals(newName) && productRepository.existsByName(newName)) {
             throw new DuplicateEntryException("Product with name '%s' already exists", newName);
         }
 
@@ -89,7 +89,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse changeProductStock(long productId, ModifyStockRequest request){
+    public ProductResponse changeProductStock(long productId, ModifyStockRequest request) {
         log.info("Modifying stock for product with id {}", productId);
 
         log.debug("Applying stock modification");
@@ -105,7 +105,7 @@ public class ProductService {
 
         log.debug("Checking if the product's stock has been modified");
 
-        if(updatedRows == 0){
+        if (updatedRows == 0) {
             throw new InvalidStockModificationException(
                 "Invalid stock modification",
                 String.format("Tried modifying stock by %s for %s existing", request.stockChange(), product.getStock())
@@ -113,6 +113,17 @@ public class ProductService {
         }
 
         log.info("Successfully changed product stock from {} to {} ({})", product.getStock() - request.stockChange(), product.getStock(), request.stockChange());
+
+        return productMapper.toResponse(product);
+    }
+
+    public ProductResponse getProduct(long productId) {
+        log.info("Getting product with id {}", productId);
+
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
+
+        log.info("Successfully loaded product");
 
         return productMapper.toResponse(product);
     }

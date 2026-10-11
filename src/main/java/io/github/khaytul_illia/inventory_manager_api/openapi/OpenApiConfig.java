@@ -1,7 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.openapi;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
-import io.github.khaytul_illia.inventory_manager_api.common.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
