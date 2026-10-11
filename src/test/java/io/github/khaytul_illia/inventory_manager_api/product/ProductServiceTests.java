@@ -43,13 +43,13 @@ public class ProductServiceTests {
 
     @Nested
     @DisplayName("createProduct tests")
-    class CreateProductTests{
+    class CreateProductTests {
 
         private final CreateProductRequest request = new CreateProductRequest("product_name", null, BigDecimal.ONE);
 
         @Test
         @DisplayName("Should throw DuplicateEntryException when product name is not unique")
-        void shouldThrowDuplicateEntryException_whenProductNameIsNotUnique(){
+        void shouldThrowDuplicateEntryException_whenProductNameIsNotUnique() {
             //Arrange
             when(productRepository.existsByName(request.name()))
                 .thenReturn(true);
@@ -64,7 +64,7 @@ public class ProductServiceTests {
 
         @Test
         @DisplayName("Should create new product when product name is unique")
-        void shouldCreateNewProduct_whenProductNameIsUnique(){
+        void shouldCreateNewProduct_whenProductNameIsUnique() {
             //Arrange
             Product product = new Product();
             product.setId(1L);
@@ -105,7 +105,7 @@ public class ProductServiceTests {
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
-        void shouldThrowEntityNotFoundException_whenProductDoesNotExist(){
+        void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
             //Arrange
             when(productRepository.findById(productId))
                 .thenReturn(Optional.empty());
@@ -120,7 +120,7 @@ public class ProductServiceTests {
 
         @Test
         @DisplayName("Should return product response when update request is empty")
-        void shouldReturnProductResponse_whenRequestIsEmpty(){
+        void shouldReturnProductResponse_whenRequestIsEmpty() {
             //Arrange
             UpdateProductRequest request = new UpdateProductRequest(null, null, null);
             Product product = new Product();
@@ -145,7 +145,7 @@ public class ProductServiceTests {
 
         @Test
         @DisplayName("Should throw DuplicateEntryException when new product name is not unique")
-        void shouldThrowDuplicateEntryException_whenNewProductNameIsNotUnique(){
+        void shouldThrowDuplicateEntryException_whenNewProductNameIsNotUnique() {
             //Arrange
             Product product = new Product();
             product.setName(request.name() + "_different");
@@ -172,7 +172,7 @@ public class ProductServiceTests {
                 original name, original name
                 """)
         @DisplayName("Should not throw DuplicateEntryException when new product name is null or equal to old product name")
-        void shouldNotThrowDuplicateEntryException_whenNewProductNameIsNullOrEqualToOldName(String oldName, String newName){
+        void shouldNotThrowDuplicateEntryException_whenNewProductNameIsNullOrEqualToOldName(String oldName, String newName) {
             //Arrange
             UpdateProductRequest request = new UpdateProductRequest(newName, "description", null);
             Product product = new Product();
@@ -192,6 +192,8 @@ public class ProductServiceTests {
             ProductResponse response = productService.updateProduct(productId, request);
 
             //Assert
+            assertThat(response).isNotNull();
+
             verify(productRepository).findById(productId);
             verify(productRepository, never()).existsByName(request.name());
             verify(productMapper).updateProduct(product, request);
@@ -200,7 +202,7 @@ public class ProductServiceTests {
 
         @Test
         @DisplayName("Should update the found product when the new product name is unique")
-        void shouldUpdateProduct_whenNewProductNameIsUnique(){
+        void shouldUpdateProduct_whenNewProductNameIsUnique() {
             //Arrange
             Product product = new Product();
             product.setName(request.name() + "_different");
@@ -242,7 +244,7 @@ public class ProductServiceTests {
         private Jwt jwtMock;
 
         @BeforeEach
-        void beforeEach(){
+        void beforeEach() {
             String authenticatedUsername = "operator";
             jwtMock = mock(Jwt.class);
 
@@ -332,4 +334,52 @@ public class ProductServiceTests {
         }
 
     }
+
+    @Nested
+    @DisplayName("getProduct tests")
+    class GetProductTests {
+
+        private final long productId = 1L;
+
+        @Test
+        @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
+        void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
+            //Arrange
+            when(productRepository.findById(productId))
+                .thenReturn(Optional.empty());
+
+            //Act and Assert
+            assertThatThrownBy(() -> productService.getProduct(productId))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage(String.format("Product with id %s does not exist", productId));
+
+            verify(productRepository).findById(productId);
+        }
+
+        @Test
+        @DisplayName("Should get product when product exists by id")
+        void shouldGetProduct_whenProductExists() {
+            //Arrange
+            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
+            ProductResponse expectedResponse = new ProductResponse(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null);
+
+            when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product));
+            when(productMapper.toResponse(product))
+                .thenReturn(expectedResponse);
+
+            //Act
+            ProductResponse response = productService.getProduct(productId);
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(expectedResponse.id());
+            assertThat(response.name()).isEqualTo(expectedResponse.name());
+
+            verify(productRepository).findById(productId);
+            verify(productMapper).toResponse(product);
+        }
+
+    }
+
 }
