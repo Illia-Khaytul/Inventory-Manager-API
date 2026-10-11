@@ -28,6 +28,7 @@ public class ProductEndpointResponseProvider {
         responses.putAll(provideChangeProductStockResponses());
         responses.putAll(provideGetProductResponses());
         responses.putAll(provideGetProductsResponses());
+        responses.putAll(provideDeleteProductResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "products_" + entry.getKey(),
@@ -415,6 +416,43 @@ public class ProductEndpointResponseProvider {
                     "Invalid size 2",
                     new Example().value(getProducts400ResponseSizeCase2).description("product filtering has parameters of an invalid size")
                 )
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideDeleteProductResponses(){
+        ErrorResponse deleteProduct400Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "productId", "must be greater than or equal to 0"
+            ))
+        );
+        ErrorResponse deleteProduct401Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource")
+        );
+        ErrorResponse deleteProduct403Response = formatErrorResponse(
+            new ErrorResponse(HttpStatus.FORBIDDEN, "Forbidden from accessing this resource")
+        );
+        
+        return Map.of(
+            "delete_product_success",
+            new ApiResponse().description("Successfully deleted product"),
+            "delete_product_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid productId",
+                new Example().value(deleteProduct400Response)
+            ),
+            "delete_product_401",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing without authentication",
+                new Example().value(deleteProduct401Response)
+            ),
+            "delete_product_403",
+            buildApiResponse(
+                "ErrorResponse",
+                "Accessing with authentication but not an OPERATOR",
+                new Example().value(deleteProduct403Response)
             )
         );
     }
