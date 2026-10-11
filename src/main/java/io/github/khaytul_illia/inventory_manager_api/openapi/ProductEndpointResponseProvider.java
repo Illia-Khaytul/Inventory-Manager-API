@@ -1,7 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.openapi;
 
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -25,6 +27,7 @@ public class ProductEndpointResponseProvider {
         responses.putAll(provideUpdateProductResponses());
         responses.putAll(provideChangeProductStockResponses());
         responses.putAll(provideGetProductResponses());
+        responses.putAll(provideGetProductsResponses());
 
         return responses.entrySet().stream().collect(Collectors.toMap(
             entry -> "products_" + entry.getKey(),
@@ -364,6 +367,54 @@ public class ProductEndpointResponseProvider {
                 "ErrorResponse",
                 "Target product does not exist",
                 new Example().value(getProduct404Response)
+            )
+        );
+    }
+
+    private static Map<String, ApiResponse> provideGetProductsResponses() {
+        PaginatedResponse<ProductShortResponse> getProductsSuccessResponse = new PaginatedResponse<>(
+            0,
+            10,
+            1,
+            3,
+            List.of(
+                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99")),
+                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99")),
+                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"))
+            )
+        );
+        ErrorResponse getProducts400ResponseSizeCase1 = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "minStock", "must be greater than or equal to 0",
+                "minPrice", "must be greater than or equal to 0",
+                "maxPrice", "must be greater than or equal to 0"
+            ))
+        );
+        ErrorResponse getProducts400ResponseSizeCase2 = formatErrorResponse(
+            new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
+                "nameContains", "size must be between 0 and 100",
+                "minPrice", "must be less than or equal to " + Integer.MAX_VALUE,
+                "maxPrice", "must be less than or equal to " + Integer.MAX_VALUE
+            ))
+        );
+
+        return Map.of(
+            "get_products_success",
+            buildApiResponse(
+                "ProductResponse",
+                "Successfully loaded product page",
+                new Example().value(getProductsSuccessResponse)
+            ),
+            "get_products_400",
+            buildApiResponse(
+                "ErrorResponse",
+                "Invalid product filtering parameters",
+                Map.of(
+                    "Invalid size 1",
+                    new Example().value(getProducts400ResponseSizeCase1).description("product filtering has parameters of an invalid size"),
+                    "Invalid size 2",
+                    new Example().value(getProducts400ResponseSizeCase2).description("product filtering has parameters of an invalid size")
+                )
             )
         );
     }

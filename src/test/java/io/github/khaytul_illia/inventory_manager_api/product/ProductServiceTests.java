@@ -1,12 +1,15 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidStockModificationException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,10 +21,16 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +43,8 @@ public class ProductServiceTests {
 
     @Mock
     private ProductRepository productRepository;
+    @Mock
+    private ProductSpecificationBuilder specificationBuilder;
     @Mock
     private ProductMapper productMapper;
     @Mock
@@ -378,6 +389,43 @@ public class ProductServiceTests {
 
             verify(productRepository).findById(productId);
             verify(productMapper).toResponse(product);
+        }
+
+    }
+
+    @Nested
+    @DisplayName("getProducts tests")
+    class GetProductsTests {
+
+        @Test
+        @DisplayName("Should get a page of products with provided pagination and filtering")
+        void shouldGetProductPageWithPaginationAndFiltering() {
+            //Arrange
+            Pageable pagination = PageRequest.of(0, 10);
+            ProductFiltering filtering = new ProductFiltering("Product", null, null, new BigDecimal(100));
+            Specification<Product> spec = Specification.allOf();
+            Page<Product> page = new PageImpl<>(List.of(), pagination, 0);
+            PaginatedResponse<ProductShortResponse> expectedResponse = new PaginatedResponse<>(0, 10, 1, 0, List.of());
+
+            when(specificationBuilder.buildSpecificationFromFiltering(filtering))
+                .thenReturn(spec);
+            when(productRepository.findAll(spec, pagination))
+                .thenReturn(page);
+            when(productMapper.toPaginatedResponse(page))
+                .thenReturn(expectedResponse);
+
+            //Act
+            PaginatedResponse<ProductShortResponse> response = productService.getProducts(pagination, filtering);
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.page()).isEqualTo(expectedResponse.page());
+            assertThat(response.pageSize()).isEqualTo(expectedResponse.pageSize());
+            assertThat(response.content()).hasSize(expectedResponse.content().size());
+
+            verify(specificationBuilder).buildSpecificationFromFiltering(filtering);
+            verify(productRepository).findAll(spec, pagination);
+            verify(productMapper).toPaginatedResponse(page);
         }
 
     }

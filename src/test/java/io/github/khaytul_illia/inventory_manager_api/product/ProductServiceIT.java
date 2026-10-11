@@ -1,17 +1,26 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,6 +32,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -250,6 +262,106 @@ public class ProductServiceIT {
             assertThat(response).isNotNull();
             assertThat(response.id()).isEqualTo(product.getId());
             assertThat(response.name()).isEqualTo(productName);
+        }
+
+    }
+
+    @Nested
+    @DisplayName("getProducts integration tests")
+    class GetProductsIT {
+
+        private List<Product> products;
+
+        @BeforeEach
+        void beforeEach() {
+            Instant now = Instant.now();
+            Product product1 = productRepository.save(new Product(null, "product1aaa", null, 0, new BigDecimal("10"), now, "operator1", null, null, null));
+            Product product2 = productRepository.save(new Product(null, "product2aba", null, 10, new BigDecimal("10.01"), now, "operator1", null, null, null));
+            Product product3 = productRepository.save(new Product(null, "product3abc", null, 5, new BigDecimal("20"), now, "operator1", null, null, null));
+            Product product4 = productRepository.save(new Product(null, "product4acb", null, 6, new BigDecimal("5.6"), now, "operator1", null, null, null));
+            Product product5 = productRepository.save(new Product(null, "product5cba", null, 7, new BigDecimal("9.3"), now, "operator1", null, null, null));
+            products = List.of(product1, product2, product3, product4, product5);
+
+            productRepository.deleteById(product.getId());
+        }
+
+        @ParameterizedTest
+        @MethodSource("providePaginationAndFiltering")
+        @DisplayName("Should get products with pagination and filtering")
+        void shouldGetProductsWithPaginationAndFiltering(Pageable pagination, ProductFiltering filtering, int[] expected, int totalElements) {
+            //Act
+            PaginatedResponse<ProductShortResponse> response = productService.getProducts(pagination, filtering);
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.page()).isEqualTo(pagination.getPageNumber());
+            assertThat(response.pageSize()).isEqualTo(pagination.getPageSize());
+            assertThat(response.totalPages()).isEqualTo(totalElements / pagination.getPageSize() + (totalElements % pagination.getPageSize() == 0 ? 0 : 1));
+            assertThat(response.totalElements()).isEqualTo(totalElements);
+            assertThat(response.content()).hasSize(expected.length);
+            assertThat(
+                response.content().stream().map(ProductShortResponse::id).toList()
+            ).containsExactlyElementsOf(
+                Arrays.stream(expected).mapToObj(i -> products.get(i).getId()).toList()
+            );
+        }
+
+        /*
+               Test data provider methods
+        */
+
+        static Stream<Arguments> providePaginationAndFiltering() {
+            return Stream.of(
+                //No filtering, big pagination
+                Arguments.of(
+                    PageRequest.of(0, 100),
+                    new ProductFiltering(null, null, null, null),
+                    new int[]{0, 1, 2, 3, 4},
+                    5
+                ),
+                //No filtering, small pagination
+                Arguments.of(
+                    PageRequest.of(0, 2),
+                    new ProductFiltering(null, null, null, null),
+                    new int[]{0, 1},
+                    5
+                ),
+                //Name contains filtering
+                Arguments.of(
+                    PageRequest.of(0, 10),
+                    new ProductFiltering("ab", null, null, null),
+                    new int[]{1, 2},
+                    2
+                ),
+                //Min stock filtering
+                Arguments.of(
+                    PageRequest.of(0, 10),
+                    new ProductFiltering(null, 6, null, null),
+                    new int[]{1, 3, 4},
+                    3
+                ),
+                //Min price filtering and sorting
+                Arguments.of(
+                    PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "stock")),
+                    new ProductFiltering(null, null, new BigDecimal("10"), null),
+                    new int[]{0, 2, 1},
+                    3
+                ),
+                //Max price filtering
+                Arguments.of(
+                    PageRequest.of(0, 10),
+                    new ProductFiltering(null, null, null, new BigDecimal("10")),
+                    new int[]{0, 3, 4},
+                    3
+                ),
+                //Multiple filtering, small pagination and stock sorting
+                Arguments.of(
+                    PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "stock")),
+                    new ProductFiltering("b", null, new BigDecimal("9"), null),
+                    new int[]{2, 4},
+                    3
+                )
+            );
         }
 
     }

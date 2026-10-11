@@ -1,15 +1,21 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidStockModificationException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +27,18 @@ import java.time.Instant;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductSpecificationBuilder specificationBuilder;
     private final ProductMapper productMapper;
     private final SecurityUtils securityUtils;
 
     public ProductService(
         ProductRepository productRepository,
+        ProductSpecificationBuilder specificationBuilder,
         ProductMapper productMapper,
         SecurityUtils securityUtils
     ) {
         this.productRepository = productRepository;
+        this.specificationBuilder = specificationBuilder;
         this.productMapper = productMapper;
         this.securityUtils = securityUtils;
     }
@@ -126,6 +135,19 @@ public class ProductService {
         log.info("Successfully loaded product");
 
         return productMapper.toResponse(product);
+    }
+
+    public PaginatedResponse<ProductShortResponse> getProducts(Pageable pagination, ProductFiltering filtering){
+        log.info("Getting page N-{} of {} products", pagination.getPageNumber(), pagination.getPageSize());
+
+        log.debug("Building product specification from filtering");
+
+        Specification<Product> spec = specificationBuilder.buildSpecificationFromFiltering(filtering);
+        Page<Product> products = productRepository.findAll(spec, pagination);
+
+        log.info("Successfully loaded a page of products from a found total of {}", products.getTotalElements());
+
+        return productMapper.toPaginatedResponse(products);
     }
 
 }
