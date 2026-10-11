@@ -57,7 +57,7 @@ Session invalidation must be committed regardless of that.
 When that happens it means that the token has probably been leaked and therefore the session should be closed.
 In any case that will always happen if the user tries resending the same request after receiving the error response.
 This functionality has not been implemented because it is outside the scope of this project, is extremely rare to occur naturally and the current token validity check already covers most of the invalidation cases.
-- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for loggin purposes.
+- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for logging purposes.
 
 ### 1.3. Logout
 
@@ -169,7 +169,6 @@ Deletes the currently authenticated user.
 - Uses a modifying query for user deletion to keep the operation atomic.
 - This delete operation is idempotent.
 It always returns the same (nothing) regardless of failure or success.
-In this case it is to keep the 204 returning operations consistent.
 
 ## 3. Product operations
 
@@ -282,6 +281,25 @@ Gets a page of products from provided pagination and filtering.
 
 **Notes:**
 - Does not allow name filtering by blank values (e.g. "" or "   "). 
+
+### 3.6. Delete product
+
+Deletes and existing product by id.
+
+**Receives:**
+- long `productId`
+
+**Steps:**
+1. Delete product by id.
+
+**Returns:** nothing
+
+**Notes:**
+- Transactional operation because of the modifying delete query.
+- Uses a modifying query for product deletion to avoid optimistic locking problems.
+- This delete operation is idempotent.
+It always returns the same (nothing) regardless of failure or success.
+
 
 
 ## Base operator seeder
