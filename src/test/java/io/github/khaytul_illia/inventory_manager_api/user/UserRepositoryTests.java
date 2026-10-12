@@ -34,11 +34,11 @@ public class UserRepositoryTests {
 
     @Nested
     @DisplayName("existsByUsername tests")
-    class ExistsByUsernameTests{
+    class ExistsByUsernameTests {
 
         @Test
         @DisplayName("Should return false when user does not exist by username")
-        void shouldReturnFalse_whenUserDoesNotExist(){
+        void shouldReturnFalse_whenUserDoesNotExist() {
             //Act
             boolean exists = userRepository.existsByUsername("not existent");
 
@@ -48,7 +48,7 @@ public class UserRepositoryTests {
 
         @Test
         @DisplayName("Should return true when user exists by username")
-        void shouldReturnTrue_whenUserExists(){
+        void shouldReturnTrue_whenUserExists() {
             //Arrange
             User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
 
@@ -66,11 +66,11 @@ public class UserRepositoryTests {
 
     @Nested
     @DisplayName("findByUsername tests")
-    class FindByUsernameTests{
+    class FindByUsernameTests {
 
         @Test
         @DisplayName("Should return empty Optional when user does not exist by username")
-        void shouldReturnEmptyOptional_whenUserDoesNotExist(){
+        void shouldReturnEmptyOptional_whenUserDoesNotExist() {
             //Act
             Optional<User> foundUser = userRepository.findByUsername("not existent");
 
@@ -80,7 +80,7 @@ public class UserRepositoryTests {
 
         @Test
         @DisplayName("Should return Optional with user when user exists by username")
-        void shouldReturnUserOptional_whenUserExists(){
+        void shouldReturnUserOptional_whenUserExists() {
             //Arrange
             User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
 
@@ -99,16 +99,14 @@ public class UserRepositoryTests {
 
     @Nested
     @DisplayName("deleteByUsername tests")
-    class DeleteByUsernameTests{
+    class DeleteByUsernameTests {
 
         @ParameterizedTest
         @MethodSource("provideUsers")
         @DisplayName("Should delete user when it exists by username")
-        void shouldDeleteUser_whenExistsByUsername(User target, List<User> otherUsers){
+        void shouldDeleteUser_whenExistsByUsername(User target, List<User> otherUsers) {
             //Arrange
-            otherUsers.forEach(otherUser -> {
-                entityManager.persist(otherUser);
-            });
+            otherUsers.forEach(otherUser -> entityManager.persist(otherUser));
             entityManager.persist(target);
             entityManager.flush();
             entityManager.clear();
@@ -117,20 +115,18 @@ public class UserRepositoryTests {
             userRepository.deleteByUsername(target.getUsername());
 
             //Assert
-            assertThat(userRepository.findById(target.getId())).isEmpty();
+            assertThat(userRepository.existsById(target.getId())).isFalse();
             otherUsers.forEach(
-                user -> assertThat(userRepository.findById(user.getId())).isNotEmpty()
+                user -> assertThat(userRepository.existsById(user.getId())).isTrue()
             );
         }
 
         @ParameterizedTest
         @MethodSource("provideUsers")
         @DisplayName("Should do nothing when user does not exist by username")
-        void shouldDoNothing_whenUserDoesNotExist(User target, List<User> otherUsers){
+        void shouldDoNothing_whenUserDoesNotExist(User target, List<User> otherUsers) {
             //Arrange
-            otherUsers.forEach(otherUser -> {
-                entityManager.persist(otherUser);
-            });
+            otherUsers.forEach(otherUser -> entityManager.persist(otherUser));
             entityManager.flush();
             entityManager.clear();
 
@@ -139,7 +135,7 @@ public class UserRepositoryTests {
 
             //Assert
             otherUsers.forEach(
-                user -> assertThat(userRepository.findById(user.getId())).isNotEmpty()
+                user -> assertThat(userRepository.existsById(user.getId())).isTrue()
             );
         }
 
@@ -147,7 +143,7 @@ public class UserRepositoryTests {
                 Test data provider methods
          */
 
-        static Stream<Arguments> provideUsers(){
+        static Stream<Arguments> provideUsers() {
             return Stream.of(
                 //Target session alone
                 Arguments.of(

@@ -57,7 +57,7 @@ Session invalidation must be committed regardless of that.
 When that happens it means that the token has probably been leaked and therefore the session should be closed.
 In any case that will always happen if the user tries resending the same request after receiving the error response.
 This functionality has not been implemented because it is outside the scope of this project, is extremely rare to occur naturally and the current token validity check already covers most of the invalidation cases.
-- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for loggin purposes.
+- `InvalidRefreshTokenException` receives a generic message for all invalid refresh token cases for the user response, but the specific messages are still collected for logging purposes.
 
 ### 1.3. Logout
 
@@ -169,7 +169,137 @@ Deletes the currently authenticated user.
 - Uses a modifying query for user deletion to keep the operation atomic.
 - This delete operation is idempotent.
 It always returns the same (nothing) regardless of failure or success.
-In this case it is to keep the 204 returning operations consistent.
+
+## 3. Product operations
+
+**Operations:**
+1. **Create product** : create product endpoint
+2. **Update product** : update product endpoint
+3. **Change product stock** : change product stock endpoint
+4. **Get product** : get product endpoints
+5. **Get products** : get products endpoint
+6. **Delete product** : delete product endpoint
+
+### 3.1. Create product
+
+Creates a new product with the provided data and empty stock.
+
+**Receives:** `create product request`
+
+**Steps:**
+1. Check if the product name is unique. Throws `DuplicateEntryException`.
+2. Create new product with provided data and 0 stock.
+3. Return newly created product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Product stock is set to 0 on creation.
+Managing a product's stock is delegated to a separate operation.
+
+### 3.2. Update product
+
+Updates existing product with the provided data.
+
+**Receives:**
+- long `productId`
+- `update product request`
+
+**Steps:**
+1. Load product by id. Throws `EntityNotFoundException`.
+2. Check if the request is empty. If empty, return loaded product data.
+3. Check if the product name is unique. Throws `DuplicateEntryException`.
+4. Update product with provided data.
+5. Return updated product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Partial update.
+Null request fields are not used for the updated.
+- Added request empty check to skip the operation if there is nothing to update.
+- Transactional operation.
+It is possible that the updated product may get deleted between being loaded and its changes persisted.
+A transaction ensures that the loaded product does not get re-inserted into the database after the update in case that happens.
+- Allows 3 retries.
+A partial update allows to reload fresh data on concurrent modification and safely try again.
+
+### 3.3. Change product stock
+
+Modifies an existing product's stock by the provided value.
+
+**Receives:**
+- long `productId`
+- `modify stock request`
+
+**Steps:**
+1. Modify product stock.
+2. Load product by id. Throws `EntityNotFoundException`.
+3. Check if the product's stock has been modified successfully. Throws `InvalidStockModificationException`.
+4. Return modified product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Uses a modifying query to keep the modification operation atomic.
+- Fails if the stock modification is invalid (resulting stock is below 0).
+Uses the returned rows from the modifying query to verify that.
+- Transactional operation because of the modifying query.
+- Modifying query manually changes the audit fields and bumps up the product's version for future stock modification related operations (automatic order filling). 
+
+### 3.4. Get product
+
+Gets an existing product by id.
+
+**Receives:**
+- long `productId`
+
+**Steps:**
+1. Load product by id. Throws `EntityNotFoundException`.
+2. Return loaded product data.
+
+**Returns:** `product response`
+
+**Notes:**
+- Returns audit fields only if accessing user is OPERATOR.
+This feature is implemented via custom ResponseBodyAdvice implementation.
+
+### 3.5. Get products
+
+Gets a page of products from provided pagination and filtering.
+
+**Receives:**
+- Pageable `pagination`
+- `product filtering`
+
+**Steps:**
+1. Build specification using filtering
+2. Load product page with specification and pagination.
+3. Return loaded product page data.
+
+**Returns:** `paginated response` of `product short response`
+
+**Notes:**
+- Does not allow name filtering by blank values (e.g. "" or "   "). 
+
+### 3.6. Delete product
+
+Deletes and existing product by id.
+
+**Receives:**
+- long `productId`
+
+**Steps:**
+1. Delete product by id.
+
+**Returns:** nothing
+
+**Notes:**
+- Transactional operation because of the modifying delete query.
+- Uses a modifying query for product deletion to avoid optimistic locking problems.
+- This delete operation is idempotent.
+It always returns the same (nothing) regardless of failure or success.
+
 
 
 ## Base operator seeder

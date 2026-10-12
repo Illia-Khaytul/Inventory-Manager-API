@@ -91,6 +91,8 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
 
+        userRepository.saveAndFlush(user);
+
         log.info("Password changed successfully for user with id {}", user.getId());
     }
 
@@ -102,7 +104,7 @@ public class UserService {
 
         userRepository.deleteByUsername(username);
 
-        log.info("Successfully deleted user '{}'", username);
+        log.info("Successfully performed deletion for user '{}'", username);
     }
 
 }

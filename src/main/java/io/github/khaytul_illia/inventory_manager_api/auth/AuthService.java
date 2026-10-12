@@ -104,7 +104,7 @@ public class AuthService {
 
         sessionService.invalidateSession(session.getId());
 
-        log.info("Successfully logged out from session with id {}", session.getId());
+        log.info("Successfully performed logout from session with id {}", session.getId());
     }
 
     public void logoutAll(){
@@ -114,7 +114,7 @@ public class AuthService {
 
         sessionService.invalidateAllUserSessions(username);
 
-        log.info("Successfully logged out from all sessions for user '{}'", username);
+        log.info("Successfully performed logout from all sessions for user '{}'", username);
     }
 
 }

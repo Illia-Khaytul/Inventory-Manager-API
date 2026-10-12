@@ -44,7 +44,7 @@ Stores the refresh token value and its data.
 - String `tokenValue`: required, unique
 - Instant `issuedAt`: required
 - boolean `used`: required
-- UserSession `user_session`: foreign key for UserSession, EAGER fetching, required, on delete cascade 
+- UserSession `session`: foreign key for UserSession, LAZY fetching, required, on delete cascade 
 - Integer `version`: version
 
 Notes:
@@ -54,3 +54,29 @@ Notes:
 Refresh tokens are tightly related to user sessions.
 There cannot be a refresh token that does not point to a session.
 - Versioning to ensure the token gets used (used flag flipped) only once.
+
+## 4. Product
+
+Stores the product data and auditing fields.
+
+**Fields:**
+- Long `id`: primary key, identity
+- String `name`: required, unique
+- String `description`: big string (text)
+- int `stock`: required
+- BigDecimal `price`: required
+- Instant `createdAt`: required, not updatable, auditing field
+- String `createdBy`: required, not updatable, auditing field
+- Instant `modifiedAt`: auditing field
+- String `modifiedBy`: auditing field
+- Integer `version`: version
+
+Notes:
+- Price is BigDecimal because it is a monetary value, it must be precise.
+- Uses Spring's entity auditing. 
+- The created at/by fields are set once for new entities and cannot be modified.
+- Modified at/by fields are not set on creation, only on modification.
+- Created/modified by fields are String values and will contain the username of the authenticated user.
+Product management is protected and always requires authentication, so those fields cannot be null.
+This also helps with the user hard deletion, keeping the auditing fields intact.
+- Versioning for optimistic locking during concurrent modification.

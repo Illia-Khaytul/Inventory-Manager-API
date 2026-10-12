@@ -2,6 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.error;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
+import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -41,6 +43,8 @@ public class GlobalErrorHandlerTests {
 
     @MockitoSpyBean
     private DummyController dummyController;
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     @Autowired
     private MockMvc mockMvc;
@@ -125,6 +129,31 @@ public class GlobalErrorHandlerTests {
             .andExpect(status().isBadRequest())
             .andExpect(result -> {
                 assertValidationErrorResponse(result, exception.getMessage(), data);
+            });
+    }
+
+    @Test
+    @DisplayName("Should return 409 Conflict when caught InvalidStockModificationException")
+    void shouldReturn409_whenInvalidStockModificationException() throws Exception {
+        //Arrange
+        InvalidStockModificationException exception = new InvalidStockModificationException("message", "detail1", "detail2");
+
+        doThrow(exception)
+            .when(dummyController).dummyOperation();
+
+        //Act and Assert
+        mockMvc
+            .perform(
+                get("/dummy")
+            )
+            .andExpect(status().isConflict())
+            .andExpect(result -> {
+                ErrorResponse response = deserializeErrorResponse(result);
+                Map<String, Object> data = response.data();
+
+                assertErrorResponse(response, HttpStatus.CONFLICT, exception.getMessage());
+                //noinspection unchecked
+                assertThat((List<String>) data.get("details")).containsExactlyInAnyOrderElementsOf(exception.getDetails());
             });
     }
 

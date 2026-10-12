@@ -7,6 +7,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -73,6 +74,21 @@ public class GlobalErrorHandler {
         );
     }
 
+    @ExceptionHandler(InvalidStockModificationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse invalidStockModificationHandler(InvalidStockModificationException e){
+        Map<String, Object> data = new HashMap<>();
+        data.put("details", e.getDetails());
+
+        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), data);
+
+        return new ErrorResponse(
+            HttpStatus.CONFLICT,
+            e.getMessage(),
+            data
+        );
+    }
+
     @ExceptionHandler(DuplicateEntryException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse duplicateEntryHandler(DuplicateEntryException e){
@@ -130,6 +146,16 @@ public class GlobalErrorHandler {
     public ErrorResponse handlerMethodValidationHandler(HandlerMethodValidationException e){
         Map<String, Object> errors = new HashMap<>();
         e.getParameterValidationResults().forEach(error -> {
+            if(error instanceof ParameterErrors fieldErrors){
+                fieldErrors.getFieldErrors().forEach(fieldError ->{
+                    @SuppressWarnings("unchecked")
+                    List<String> messages = (List<String>) errors.computeIfAbsent(fieldError.getField(), key -> new ArrayList<>());
+                    messages.add(fieldError.getDefaultMessage());
+                });
+
+                return;
+            }
+
             List<String> messages = error.getResolvableErrors().stream()
                 .map(MessageSourceResolvable::getDefaultMessage)
                 .toList();

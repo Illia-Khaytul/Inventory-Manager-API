@@ -1,0 +1,203 @@
+package io.github.khaytul_illia.inventory_manager_api.product;
+
+import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.response.view.RoleBasedJsonView;
+import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
+import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+@RestController
+@RequestMapping(path = "/products")
+@Tag(
+    name = "Products",
+    description = "API for product management and viewing"
+)
+@SecurityRequirement(name = "JWT authentication")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    @PostMapping(path = "")
+    @Operation(
+        summary = "Create new product",
+        description = """
+            Creates a new product with the provided data and empty stock.
+            - Returns with 201 Created on successful product creation.
+            - Returns with 400 Bad Request if the create product request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 409 Conflict if the provided product name is not unique.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", ref = "#/components/responses/products_create_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_create_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_create_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_create_product_403"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_create_product_409")
+    })
+    public ResponseEntity<ProductResponse> createProduct(
+        @RequestBody @Valid CreateProductRequest request
+    ) {
+        ProductResponse response = productService.createProduct(request);
+
+        return ResponseEntity
+            .created(ServletUriComponentsBuilder
+                .fromCurrentRequestUri()
+                .path("/{productId}")
+                .build(response.id())
+            )
+            .body(response);
+    }
+
+    @PatchMapping(path = "/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Update existing product",
+        description = """
+            Updates an existing product with the provided data.
+            - Returns with 200 OK on successful product update.
+            - Returns with 400 Bad Request if the update product request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 404 Not Found if the updated product does not exist.
+            - Returns with 409 Conflict if the provided product name is not unique or the product has been modified concurrently.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_update_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_update_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_update_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_update_product_403"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_update_product_404"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_update_product_409")
+    })
+    public ProductResponse updateProduct(
+        @PathVariable @Valid @Positive long productId,
+        @RequestBody @Valid UpdateProductRequest request
+    ) {
+        return productService.updateProduct(productId, request);
+    }
+
+    @PatchMapping(path = "/{productId}/stock")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Change existing product stock",
+        description = """
+            Modifies the stock of an existing product with the provided data.
+            - Returns with 200 OK on successful product stock change.
+            - Returns with 400 Bad Request if the modify stock request is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            - Returns with 404 Not Found if the target product does not exist.
+            - Returns with 409 Conflict if the product stock modification is invalid.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_change_product_stock_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_change_product_stock_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_change_product_stock_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_change_product_stock_403"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_change_product_stock_404"),
+        @ApiResponse(responseCode = "409", ref = "#/components/responses/products_change_product_stock_409")
+    })
+    public ProductResponse changeProductStock(
+        @PathVariable @Valid @Positive long productId,
+        @RequestBody @Valid ModifyStockRequest request
+    ) {
+        return productService.changeProductStock(productId, request);
+    }
+
+    @GetMapping(path = "/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    @RoleBasedJsonView
+    @Operation(
+        summary = "Get existing product",
+        description = """
+            Gets an existing product by provided id.
+            - Returns with 200 OK on successfully loaded product.
+            - Returns with 400 Bad Request if the provided id is invalid.
+            - Returns with 404 Not Found if the product does not exist.
+            
+            Note: Product auditing fields are hidden from all non OPERATOR users.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_get_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_get_product_400"),
+        @ApiResponse(responseCode = "404", ref = "#/components/responses/products_get_product_404")
+    })
+    public ProductResponse getProduct(
+        @PathVariable @Valid @Positive long productId
+    ) {
+        return productService.getProduct(productId);
+    }
+
+    @GetMapping(path = "")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "Get page of products",
+        description = """
+            Gets a page of products from provided filtering and pagination.
+            - Returns with 200 OK on successfully loaded products page.
+            - Returns with 400 Bad Request if the query parameters are invalid.
+            """,
+        security = {}
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", ref = "#/components/responses/products_get_products_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_get_products_400")
+    })
+    public PaginatedResponse<ProductShortResponse> getProducts(
+        @PageableDefault Pageable pagination,
+        @ModelAttribute @Valid ProductFiltering filtering
+    ) {
+        return productService.getProducts(pagination, filtering);
+    }
+
+    @DeleteMapping(path = "/{productId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+        summary = "Delete existing product",
+        description = """
+            Deletes an existing product by provided id
+            - Returns with 204 No Content on successful product deletion.
+            - Returns with 400 Bad Request if the provided id is invalid.
+            - Returns with 401 Unauthorized if user is not authenticated.
+            - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", ref = "#/components/responses/products_delete_product_success"),
+        @ApiResponse(responseCode = "400", ref = "#/components/responses/products_delete_product_400"),
+        @ApiResponse(responseCode = "401", ref = "#/components/responses/products_delete_product_401"),
+        @ApiResponse(responseCode = "403", ref = "#/components/responses/products_delete_product_403")
+    })
+    public void deleteProduct(
+        @PathVariable @Valid @Positive long productId
+    ) {
+        productService.deleteProduct(productId);
+    }
+
+}

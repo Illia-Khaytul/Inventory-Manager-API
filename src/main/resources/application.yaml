@@ -26,7 +26,7 @@ spring:
   data:
     web:
       pageable:
-        max-size: 100
+        max-page-size: 100
   web:
     format:
       date: iso

@@ -24,6 +24,7 @@ Exceptions captured and handled by the handlers.
 - `FailedLoginAuthenticationException`: when user authentication during login failed.
 - `InvalidRefreshTokenException`: when the provided refresh token is not found or used, or its user session is invalid or expired.
 - `InvalidPasswordException`: when the provided password does not follow the configured validation rules.
+- `InvalidStockModificationException`: when the product stock modification is invalid (e.g. resulting stock is below 0).
 - `DuplicateEntryException`: when an entity with the provided parameter already exists.
 - `EntityNotFoundException`: when an entity does not exist.
 - `OptimisticLockingFailureException`: when a value is modified concurrently.
@@ -61,6 +62,14 @@ Contains a list of password validation error messages to return to the user as d
 `data` = Password validation errors, mapped as:
 - String `errors`: key
 - List<String> `errorMessages`: value
+
+**InvalidStockModificationException handler** -> 409 Conflict
+
+Contains a list of details specifying what exactly was wrong.
+
+`data` = Invalid stock modification details, mapped as:
+- String `details`: key
+- List<String> `details` (from the exception): value
 
 **DuplicateEntryException handler** -> 409 Conflict
 
