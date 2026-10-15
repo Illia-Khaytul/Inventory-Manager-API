@@ -11,7 +11,6 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -251,24 +249,15 @@ public class ProductServiceTests {
     class ChangeProductStockTests {
 
         private final long productId = 1L;
+        private final String authenticatedUsername = "operator";
         private final ModifyStockRequest request = new ModifyStockRequest(10);
-        private Jwt jwtMock;
-
-        @BeforeEach
-        void beforeEach() {
-            String authenticatedUsername = "operator";
-            jwtMock = mock(Jwt.class);
-
-            when(jwtMock.getSubject())
-                .thenReturn(authenticatedUsername);
-        }
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
         void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
+            when(securityUtils.getAuthenticatedUsername())
+                .thenReturn(authenticatedUsername);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
             when(productRepository.findById(productId))
@@ -279,7 +268,7 @@ public class ProductServiceTests {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage(String.format("Product with id %s does not exist", productId));
 
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
             verify(productRepository).findById(productId);
         }
@@ -290,8 +279,8 @@ public class ProductServiceTests {
             //Arrange
             Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
 
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
+            when(securityUtils.getAuthenticatedUsername())
+                .thenReturn(authenticatedUsername);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
             when(productRepository.findById(productId))
@@ -309,7 +298,7 @@ public class ProductServiceTests {
                     );
                 });
 
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
             verify(productRepository).findById(productId);
         }
@@ -321,8 +310,8 @@ public class ProductServiceTests {
             Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
             ProductResponse expectedResponse = new ProductResponse(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null);
 
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
+            when(securityUtils.getAuthenticatedUsername())
+                .thenReturn(authenticatedUsername);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(1);
             when(productRepository.findById(productId))
@@ -338,7 +327,7 @@ public class ProductServiceTests {
             assertThat(response.id()).isEqualTo(expectedResponse.id());
             assertThat(response.stock()).isEqualTo(expectedResponse.stock());
 
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
             verify(productRepository).findById(productId);
             verify(productMapper).toResponse(product);

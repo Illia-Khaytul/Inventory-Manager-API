@@ -104,7 +104,7 @@ public class ProductService {
         log.debug("Applying stock modification");
 
         Instant modifiedAt = Instant.now();
-        String modifiedBy = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        String modifiedBy = securityUtils.getAuthenticatedUsername();
         int updatedRows = productRepository.changeProductStock(productId, request.stockChange(), modifiedAt, modifiedBy);
 
         log.debug("Loading modified product");

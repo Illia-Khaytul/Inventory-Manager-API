@@ -52,7 +52,7 @@ public class RoleBasedViewResolver implements ResponseBodyAdvice<Object> {
     ) {
         String role;
         try {
-            role = securityUtils.getAuthenticatedUserAccessToken().getClaimAsString("roles");
+            role = securityUtils.getAuthenticatedUserRole();
         } catch (Exception ignored) {
             role = null;
         }

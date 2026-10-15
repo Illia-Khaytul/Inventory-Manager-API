@@ -64,13 +64,9 @@ public class ProductServiceIT {
     void beforeEach() {
         transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
-        Jwt jwtMock = mock(Jwt.class);
         SecurityContextHolder.getContext().setAuthentication(
-            new TestingAuthenticationToken(jwtMock, "password", User.UserRole.OPERATOR.name())
+            new TestingAuthenticationToken(authenticatedUsername, "password", "ROLE_" + User.UserRole.OPERATOR.name())
         );
-
-        when(jwtMock.getSubject())
-            .thenReturn(authenticatedUsername);
 
         product = productRepository.save(new Product(null, productName, null, 100, price, null, null, null, null, null));
     }

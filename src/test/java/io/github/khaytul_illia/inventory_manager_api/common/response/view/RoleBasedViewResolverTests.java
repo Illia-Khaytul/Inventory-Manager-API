@@ -20,7 +20,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractJacksonHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -107,7 +106,6 @@ public class RoleBasedViewResolverTests {
         private MethodParameter returnType;
         private MediaType selectedContentType;
         private Class<? extends HttpMessageConverter<?>> selectedConverterType;
-        private Jwt jwtMock;
 
         @BeforeEach
         void beforeEach() {
@@ -115,7 +113,6 @@ public class RoleBasedViewResolverTests {
             selectedContentType = mock(MediaType.class);
             //noinspection unchecked
             selectedConverterType = (Class<? extends HttpMessageConverter<?>>) (Class<?>) AbstractJacksonHttpMessageConverter.class;
-            jwtMock = mock(Jwt.class);
         }
 
         @ParameterizedTest
@@ -124,9 +121,7 @@ public class RoleBasedViewResolverTests {
         @DisplayName("Should return RestrictedView hint when authenticated user is not an OPERATOR")
         void shouldReturnNoViewHint_whenRoleNotOperator(String role) {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(role);
 
             //Act
@@ -142,7 +137,7 @@ public class RoleBasedViewResolverTests {
         @DisplayName("Should return RestrictedView hint when SecurityUtils throws")
         void shouldReturnNoViewHint_whenSecurityUtilsThrows() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenThrow(new RuntimeException());
 
             //Act
@@ -158,9 +153,7 @@ public class RoleBasedViewResolverTests {
         @DisplayName("Should return no view hint when authenticated user is OPERATOR")
         void shouldReturnNoViewHint_whenRoleOperator() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(User.UserRole.OPERATOR.name());
 
             //Act

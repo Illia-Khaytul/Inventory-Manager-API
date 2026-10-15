@@ -100,7 +100,7 @@ public class UserService {
     public void deleteUser(){
         log.info("Deleting user account");
 
-        String username = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        String username = securityUtils.getAuthenticatedUsername();
 
         userRepository.deleteByUsername(username);
 

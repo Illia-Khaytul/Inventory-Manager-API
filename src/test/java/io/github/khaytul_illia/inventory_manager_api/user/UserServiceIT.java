@@ -14,7 +14,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.TransactionDefinition;
@@ -40,6 +39,7 @@ public class UserServiceIT {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
+    private final String username = "username";
     private final String password = "password55";
     private String encodedPassword;
     private User user;
@@ -50,7 +50,7 @@ public class UserServiceIT {
 
         encodedPassword = passwordEncoder.encode(password);
 
-        user = userRepository.save(new User(null, "username", encodedPassword, User.UserRole.CUSTOMER));
+        user = userRepository.save(new User(null, username, encodedPassword, User.UserRole.CUSTOMER));
     }
 
     @AfterEach
@@ -89,13 +89,9 @@ public class UserServiceIT {
 
         @BeforeEach
         void beforeEach(){
-            Jwt jwtMock = mock(Jwt.class);
             SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken(jwtMock, password, user.getRole().name())
+                new TestingAuthenticationToken(username, password, user.getRole().name())
             );
-
-            when(jwtMock.getSubject())
-                .thenReturn(user.getUsername());
         }
 
         @AfterEach
@@ -146,13 +142,9 @@ public class UserServiceIT {
         @DisplayName("Should delete authenticated user")
         void shouldDeleteAuthenticatedUser(){
             //Arrange
-            Jwt jwtMock = mock(Jwt.class);
             SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken(jwtMock, password, user.getRole().name())
+                new TestingAuthenticationToken(username, password, user.getRole().name())
             );
-
-            when(jwtMock.getSubject())
-                .thenReturn(user.getUsername());
 
             //Act
             userService.deleteUser();

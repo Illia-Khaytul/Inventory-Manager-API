@@ -47,8 +47,9 @@ public class TokenServiceTests {
     @DisplayName("createAccessRefreshTokenPair tests")
     class CreateAccessRefreshTokenPairTests{
 
+        private final String username = "username";
         private final Instant createdAt = Instant.now();
-        private final User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
+        private final User user = new User(1L, username, "password", User.UserRole.CUSTOMER);
         private final UserSession session = new UserSession(1L, true, createdAt, createdAt.plusSeconds(3600), user);
 
         @Test
@@ -74,7 +75,7 @@ public class TokenServiceTests {
             when(accessTokenMock.getExpiresAt())
                 .thenReturn(expiresAt);
             when(accessTokenMock.getSubject())
-                .thenReturn(user.getUsername());
+                .thenReturn(username);
             when(accessTokenMock.getClaimAsString("roles"))
                 .thenReturn(user.getRole().name());
             when(accessTokenMock.getTokenValue())

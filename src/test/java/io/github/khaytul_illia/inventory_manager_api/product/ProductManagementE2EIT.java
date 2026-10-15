@@ -357,12 +357,8 @@ public class ProductManagementE2EIT {
     }
 
     private void createNewAuditedEntities(Runnable operation){
-        Jwt mockJwt = mock(Jwt.class);
-        when(mockJwt.getSubject())
-            .thenReturn(username);
-
         SecurityContextHolder.getContext().setAuthentication(
-            new TestingAuthenticationToken(mockJwt, password, "ROLE_" + User.UserRole.OPERATOR.name())
+            new TestingAuthenticationToken(username, password, "ROLE_" + User.UserRole.OPERATOR.name())
         );
 
         operation.run();

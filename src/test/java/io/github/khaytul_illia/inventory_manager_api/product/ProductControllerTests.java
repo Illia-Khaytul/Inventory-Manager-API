@@ -30,7 +30,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -84,15 +83,10 @@ public class ProductControllerTests {
     private ObjectMapper objectMapper;
 
     private final String defaultRole = User.UserRole.OPERATOR.name();
-    private Jwt jwtMock;
 
     @BeforeEach
     void beforeEach() {
-        jwtMock = mock(Jwt.class);
-
-        when(securityUtils.getAuthenticatedUserAccessToken())
-            .thenReturn(jwtMock);
-        when(jwtMock.getClaimAsString("roles"))
+        when(securityUtils.getAuthenticatedUserRole())
             .thenReturn(defaultRole);
     }
 
@@ -487,11 +481,11 @@ public class ProductControllerTests {
         @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
         void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
             //Arrange
-            reset(jwtMock);
+            reset(securityUtils);
 
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(role);
 
             //Act and Assert

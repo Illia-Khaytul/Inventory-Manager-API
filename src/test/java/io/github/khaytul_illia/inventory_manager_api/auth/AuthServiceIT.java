@@ -23,7 +23,6 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -57,6 +56,7 @@ public class AuthServiceIT {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
+    private final String username = "username";
     private final String password = "password";
     private final Instant now = Instant.now();
     private final String tokenValue = UUID.randomUUID().toString();
@@ -71,7 +71,7 @@ public class AuthServiceIT {
 
         transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
         transactionTemplate.executeWithoutResult(status -> {
-            user = userRepository.save(new User(null, "username", passwordEncoder.encode(password), User.UserRole.CUSTOMER));
+            user = userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
             session = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
             refreshToken = refreshTokenRepository.save(new RefreshToken(null, hashedTokenValue, now, false, session, null));
         });
@@ -212,12 +212,8 @@ public class AuthServiceIT {
         @DisplayName("Should invalidate user session when refresh token belongs to authenticated user")
         void shouldInvalidateSession_whenRefreshTokenBelongsToAuthenticatedUser(){
             //Arrange
-            Jwt jwt = mock(Jwt.class);
-            Authentication authentication = new TestingAuthenticationToken(jwt, "password", User.UserRole.CUSTOMER.name());
+            Authentication authentication = new TestingAuthenticationToken(username, "password", User.UserRole.CUSTOMER.name());
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            when(jwt.getSubject())
-                .thenReturn(user.getUsername());
 
             //Act
             authService.logout(request);
@@ -241,13 +237,9 @@ public class AuthServiceIT {
         @DisplayName("Should invalidate all owned user sessions")
         void shouldInvalidateAllUserSessions(){
             //Arrange
-            Jwt jwt = mock(Jwt.class);
-            Authentication authentication = new TestingAuthenticationToken(jwt, "password", User.UserRole.CUSTOMER.name());
+            Authentication authentication = new TestingAuthenticationToken(username, "password", User.UserRole.CUSTOMER.name());
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserSession differentSession = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
-
-            when(jwt.getSubject())
-                .thenReturn(user.getUsername());
 
             //Act
             authService.logoutAll();

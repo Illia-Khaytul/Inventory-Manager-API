@@ -23,7 +23,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.Instant;
 import java.util.List;
@@ -187,13 +186,10 @@ public class AuthServiceTests {
             User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
             UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
             RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
 
             when(tokenService.loadRefreshToken(request.refreshToken()))
                 .thenReturn(refreshToken);
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
+            when(securityUtils.getAuthenticatedUsername())
                 .thenReturn(user.getUsername() + "_different");
 
             //Act
@@ -201,7 +197,7 @@ public class AuthServiceTests {
 
             //Assert
             verify(tokenService).loadRefreshToken(request.refreshToken());
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService, never()).invalidateSession(anyLong());
         }
 
@@ -213,13 +209,10 @@ public class AuthServiceTests {
             User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
             UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
             RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
 
             when(tokenService.loadRefreshToken(request.refreshToken()))
                 .thenReturn(refreshToken);
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
+            when(securityUtils.getAuthenticatedUsername())
                 .thenReturn(user.getUsername());
             doNothing()
                 .when(sessionService).invalidateSession(session.getId());
@@ -229,7 +222,7 @@ public class AuthServiceTests {
 
             //Assert
             verify(tokenService).loadRefreshToken(request.refreshToken());
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService).invalidateSession(anyLong());
         }
 
@@ -244,11 +237,8 @@ public class AuthServiceTests {
         void shouldReturnNothingAndInvalidateAllUserSessions(){
             //Arrange
             String username = "username";
-            Jwt jwt = mock(Jwt.class);
 
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
+            when(securityUtils.getAuthenticatedUsername())
                 .thenReturn(username);
             doNothing()
                 .when(sessionService).invalidateAllUserSessions(username);
@@ -257,7 +247,7 @@ public class AuthServiceTests {
             authService.logoutAll();
 
             //Assert
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService).invalidateAllUserSessions(username);
         }
 
