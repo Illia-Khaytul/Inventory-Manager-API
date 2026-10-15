@@ -10,6 +10,7 @@ import org.passay.resolver.PropertiesMessageResolver;
 import org.passay.rule.CharacterRule;
 import org.passay.rule.LengthRule;
 import org.passay.rule.WhitespaceRule;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,10 +20,17 @@ public class UserPasswordValidator {
 
     private final PasswordValidator passwordValidator;
 
-    public UserPasswordValidator(){
+    public UserPasswordValidator(
+        @Value("${app.user.password.min-length}")
+        int minLength,
+        @Value("${app.user.password.max-length}")
+        int maxLength,
+        @Value("${app.user.password.min-digit-amount}")
+        int minDigitAmount
+    ){
         passwordValidator = new DefaultPasswordValidator(new PropertiesMessageResolver(), List.of(
-            new LengthRule(6, 50),
-            new CharacterRule(EnglishCharacterData.Digit, 2),
+            new LengthRule(minLength, maxLength),
+            new CharacterRule(EnglishCharacterData.Digit, minDigitAmount),
             new WhitespaceRule()
         ));
     }

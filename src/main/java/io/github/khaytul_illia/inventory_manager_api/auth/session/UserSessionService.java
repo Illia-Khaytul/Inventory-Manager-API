@@ -19,7 +19,7 @@ public class UserSessionService {
     private final UserSessionFactory sessionFactory;
 
     public UserSessionService(
-        @Value("${spring.application.security.user_sessions.limit}")
+        @Value("${app.auth.user-session.limit}")
         int maxOpenUserSessions,
         UserSessionRepository sessionRepository,
         UserSessionFactory sessionFactory

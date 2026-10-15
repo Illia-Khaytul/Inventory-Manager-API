@@ -1,23 +1,45 @@
 server:
   port: 8080
 
+app:
+  auth:
+    user-session:
+      limit: 10
+      lifetime: 5184000 #60 days
+    refresh-token:
+      max-length: 36
+    jwt:
+      private-key-source: classpath:security/jwt/jwt_private_key.pem
+      public-key-source: classpath:security/jwt/jwt_public_key.pem
+      lifetime: 900 #15 minutes
+      issuer: http://localhost:8080/api/v1
+  product:
+    name:
+      max-length: 100
+    description:
+      max-length: 1000
+    price:
+      max-value: 2147483647
+    update:
+      max-retries: 2
+  user:
+    password:
+      max-length: 50
+      min-length: 6
+      min-digit-amount: 2
+      bcrypt:
+        strength: 10
+    username:
+      max-length: 50
+    base-operator:
+      seeder:
+        enabled: true
+      username: ${BASE_OPERATOR_USERNAME}
+      password: ${BASE_OPERATOR_PASSWORD}
+
 spring:
   application:
     name: inventory-manager-api
-    base_operator:
-      seeder:
-        enable: true
-      username: ${BASE_OPERATOR_USERNAME}
-      password: ${BASE_OPERATOR_PASSWORD}
-    security:
-      user_sessions:
-        limit: 10
-        lifetime: 5184000 #60 days
-      jwt:
-        private_key_source: classpath:security/jwt/jwt_private_key.pem
-        public_key_source: classpath:security/jwt/jwt_public_key.pem
-        lifetime: 900 #15 minutes
-        issuer: http://localhost:8080/api/v1
   profiles:
     active: dev
   mvc:

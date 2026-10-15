@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Component
 @ConditionalOnBooleanProperty(
-    name = "spring.application.base_operator.seeder.enable",
+    name = "app.user.base-operator.seeder.enabled",
     matchIfMissing = true
 )
 @Slf4j
@@ -25,9 +25,9 @@ public class BaseOperatorSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
 
     public BaseOperatorSeeder(
-        @Value("${spring.application.base_operator.username}")
+        @Value("${app.user.base-operator.username}")
         String baseUsername,
-        @Value("${spring.application.base_operator.password}")
+        @Value("${app.user.base-operator.password}")
         String basePassword,
         UserService userService,
         UserRepository userRepository

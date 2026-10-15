@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.security.login;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,8 +15,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class LoginAuthConfig {
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder(10);
+    public PasswordEncoder passwordEncoder(
+        @Value("${app.user.password.bcrypt.strength}")
+        int bCryptStrength
+    ){
+        return new BCryptPasswordEncoder(bCryptStrength);
     }
 
     @Bean

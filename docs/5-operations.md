@@ -305,7 +305,7 @@ It always returns the same (nothing) regardless of failure or success.
 ## Base operator seeder
 
 Implements `CommandLineRunner` and executes once on application start.
-Is instantiated only when the `spring.application.base_operator.seeder.enable` property is set to `true`.
+Is instantiated only when the `app.user.base-operator.seeder.enabled` property is set to `true`.
 
 Populates the database with the base OPERATOR user.
 

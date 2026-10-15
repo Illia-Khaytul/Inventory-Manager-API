@@ -16,7 +16,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("UserPasswordValidator tests")
 public class UserPasswordValidatorTests {
 
-    private final UserPasswordValidator passwordValidator = new UserPasswordValidator();
+    private static final int minLength = 6;
+    private static final int maxLength = 50;
+    private static final int minDigitAmount = 2;
+    private final UserPasswordValidator passwordValidator = new UserPasswordValidator(minLength, maxLength, minDigitAmount);
 
     @ParameterizedTest
     @MethodSource("provideInvalidPasswords")
@@ -66,18 +69,27 @@ public class UserPasswordValidatorTests {
             ),
             //Password too short and has no numbers
             Arguments.of(
-                "abc",
-                List.of("Password must be 6 or more characters in length.", "Password must contain 2 or more digit characters.")
+                "a".repeat(minLength - 1),
+                List.of(
+                    String.format("Password must be %s or more characters in length.", minLength),
+                    String.format("Password must contain %s or more digit characters.", minDigitAmount)
+                )
             ),
             //Password too long and has spaces
             Arguments.of(
-                "qwertyuiopasdfghjklzxcvbnm qwertyuiopasdfghjklzxcvbnm",
-                List.of("Password must be no more than 50 characters in length.", "Password contains a whitespace character.")
+                "a".repeat(maxLength + 1) + " ",
+                List.of(
+                    String.format("Password must be no more than %s characters in length.", maxLength),
+                    "Password contains a whitespace character."
+                )
             ),
             //Invalid password
             Arguments.of(
                 "some weird password",
-                List.of("Password must contain 2 or more digit characters.", "Password contains a whitespace character.")
+                List.of(
+                    String.format("Password must contain %s or more digit characters.", minDigitAmount),
+                    "Password contains a whitespace character."
+                )
             )
         );
     }

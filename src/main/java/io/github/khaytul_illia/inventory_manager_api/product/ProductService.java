@@ -63,7 +63,7 @@ public class ProductService {
         return productMapper.toResponse(product);
     }
 
-    @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3)
+    @Retryable(includes = OptimisticLockingFailureException.class, maxRetriesString = "${app.product.update.max-retries}")
     @Transactional
     public ProductResponse updateProduct(long productId, UpdateProductRequest request) {
         log.info("Updating product with id {}", productId);
