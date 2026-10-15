@@ -1,6 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.RangePropertyValidator;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizePropertyValidator;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
@@ -60,7 +63,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     JwtConfig.class,
     JwtAuthenticationErrorHandler.class,
     AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class
+    AuthorizationErrorHandler.class,
+    SizePropertyValidator.class,
+    RangePropertyValidator.class,
+    ValidationProperties.class
 })
 @TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
 @ActiveProfiles("test")
@@ -198,11 +204,11 @@ public class ProductControllerTests {
                 ),
                 Arguments.of(
                     "", "   ", new BigDecimal(-1),
-                    "must not be blank", "must be null or have at least one non-whitespace character", "must be greater than or equal to 0"
+                    "must not be blank", "must be null or have at least one non-whitespace character", "must be between 0 and " + Integer.MAX_VALUE
                 ),
                 Arguments.of(
                     "   ", longDescription, new BigDecimal(Integer.MAX_VALUE + ".01"),
-                    "must not be blank", "size must be between 0 and 1000", "must be less than or equal to " + Integer.MAX_VALUE
+                    "must not be blank", "size must be between 0 and 1000", "must be between 0 and " + Integer.MAX_VALUE
                 ),
                 Arguments.of(
                     longName, longDescription, null,
@@ -323,21 +329,21 @@ public class ProductControllerTests {
                     "must be greater than 0",
                     "must be null or have at least one non-whitespace character",
                     "must be null or have at least one non-whitespace character",
-                    "must be greater than or equal to 0"
+                    "must be between 0 and " + Integer.MAX_VALUE
                 ),
                 Arguments.of(
                     -1, "   ", "   ", new BigDecimal(Integer.MAX_VALUE + ".01"),
                     "must be greater than 0",
                     "must be null or have at least one non-whitespace character",
                     "must be null or have at least one non-whitespace character",
-                    "must be less than or equal to " + Integer.MAX_VALUE
+                    "must be between 0 and " + Integer.MAX_VALUE
                 ),
                 Arguments.of(
                     -1, longName, longDescription, new BigDecimal(-1),
                     "must be greater than 0",
                     "size must be between 0 and 100",
                     "size must be between 0 and 1000",
-                    "must be greater than or equal to 0"
+                    "must be between 0 and " + Integer.MAX_VALUE
                 )
             );
         }
@@ -617,8 +623,8 @@ public class ProductControllerTests {
                     Map.of(
                         "nameContains", "size must be between 0 and 100",
                         "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be greater than or equal to 0",
-                        "maxPrice", "must be greater than or equal to 0"
+                        "minPrice", "must be between 0 and " + Integer.MAX_VALUE,
+                        "maxPrice", "must be between 0 and " + Integer.MAX_VALUE
                     )
                 ),
                 Arguments.of(
@@ -631,8 +637,8 @@ public class ProductControllerTests {
                     Map.of(
                         "nameContains", "must be null or have at least one non-whitespace character",
                         "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be less than or equal to " + Integer.MAX_VALUE,
-                        "maxPrice", "must be less than or equal to " + Integer.MAX_VALUE
+                        "minPrice", "must be between 0 and " + Integer.MAX_VALUE,
+                        "maxPrice", "must be between 0 and " + Integer.MAX_VALUE
                     )
                 )
             );

@@ -2,6 +2,9 @@ package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.RangeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
@@ -20,21 +23,19 @@ import java.math.BigDecimal;
 )
 public record ProductFiltering(
 
-    @Size(max = 100)
     @NullOrNotBlank
+    @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_NAME)
     String nameContains,
 
     @PositiveOrZero
     Integer minStock,
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @PositiveOrZero
-    @DecimalMax("2147483647")
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal minPrice,
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @PositiveOrZero
-    @DecimalMax("2147483647")
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal maxPrice
 
 ) {

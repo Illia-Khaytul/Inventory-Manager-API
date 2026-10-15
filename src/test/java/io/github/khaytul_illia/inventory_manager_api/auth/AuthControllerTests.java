@@ -3,6 +3,8 @@ package io.github.khaytul_illia.inventory_manager_api.auth;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizePropertyValidator;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
@@ -43,7 +45,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     JwtConfig.class,
     JwtAuthenticationErrorHandler.class,
     AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class
+    AuthorizationErrorHandler.class,
+    SizePropertyValidator.class,
+    ValidationProperties.class
 })
 @TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
 @ActiveProfiles("test")
@@ -251,7 +255,7 @@ public class AuthControllerTests {
             NULL, must not be blank
             "", must not be blank
             "   ", must not be blank
-            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 50
+            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 36
             """)
         @WithMockUser
         @DisplayName("Should return 400 Bad Request when invalid refresh token request fields")
@@ -330,7 +334,7 @@ public class AuthControllerTests {
             NULL, must not be blank
             "", must not be blank
             "   ", must not be blank
-            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 50
+            "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm", size must be between 0 and 36
             """)
         @WithMockUser
         @DisplayName("Should return 400 Bad Request when invalid refresh token request fields")

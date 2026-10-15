@@ -1,8 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.auth.request;
 
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Schema(
     description = "Refresh token used to renew the access to the API",
@@ -15,7 +16,7 @@ import jakarta.validation.constraints.Size;
 public record RefreshTokenRequest(
 
     @NotBlank
-    @Size(max = 50)
+    @SizeProperty(key = ValidationProperties.PropertyKey.REFRESH_TOKEN)
     String refreshToken
 
 ) {

@@ -1,8 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.user.request;
 
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Schema(
     description = "New password data to change the old user password",
@@ -16,11 +17,11 @@ import jakarta.validation.constraints.Size;
 public record PasswordChangeRequest(
 
     @NotBlank
-    @Size(max = 50)
+    @SizeProperty(key = ValidationProperties.PropertyKey.USER_PASSWORD)
     String oldPassword,
 
     @NotBlank
-    @Size(max = 50)
+    @SizeProperty(key = ValidationProperties.PropertyKey.USER_PASSWORD)
     String newPassword
 
 ) {

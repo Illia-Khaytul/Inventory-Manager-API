@@ -28,7 +28,7 @@ Base endpoint path is `/api/v1`.
 - String `password`: required, not blank, max length 50
 
 `refresh token request`:
-- String `refreshToken`: required, not blank, max length 50
+- String `refreshToken`: required, not blank, max length 36
 
 **Response DTOs:**
 

@@ -1,5 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizePropertyValidator;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
@@ -40,7 +42,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     JwtConfig.class,
     JwtAuthenticationErrorHandler.class,
     AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class
+    AuthorizationErrorHandler.class,
+    SizePropertyValidator.class,
+    ValidationProperties.class
 })
 @TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
 @ActiveProfiles("test")
