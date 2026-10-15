@@ -1,7 +1,7 @@
-package io.github.khaytul_illia.inventory_manager_api.error;
+package io.github.khaytul_illia.inventory_manager_api.error.handler;
 
 import io.github.khaytul_illia.inventory_manager_api.DummyController;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
+import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,11 +11,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,15 +30,15 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DummyController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
 @ActiveProfiles("test")
-@DisplayName("GlobalErrorHandler tests")
-public class GlobalErrorHandlerTests {
+@DisplayName("RequestErrorHandler tests")
+public class RequestErrorHandlerTests {
 
     @MockitoSpyBean
     private DummyController dummyController;
@@ -50,172 +49,6 @@ public class GlobalErrorHandlerTests {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    @DisplayName("Should return 403 Forbidden when caught UserSessionLimitExceededException")
-    void shouldReturn403_whenUserSessionLimitExceededException() throws Exception {
-        //Arrange
-        UserSessionLimitExceededException exception = new UserSessionLimitExceededException("message");
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isForbidden())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.FORBIDDEN, exception.getMessage());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 401 Unauthorized when caught FailedLoginAuthenticationException")
-    void shouldReturn401_whenFailedLoginAuthenticationException() throws Exception {
-        //Arrange
-        FailedLoginAuthenticationException exception = new FailedLoginAuthenticationException(new BadCredentialsException("message"));
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isUnauthorized())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 401 Unauthorized when caught InvalidRefreshTokenException")
-    void shouldReturn401_whenInvalidRefreshTokenException() throws Exception {
-        //Arrange
-        InvalidRefreshTokenException exception = new InvalidRefreshTokenException("message", List.of());
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isUnauthorized())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, exception.getMessage());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 400 Bad Request when caught InvalidPasswordException")
-    void shouldReturn400_whenInvalidPasswordException() throws Exception {
-        //Arrange
-        InvalidPasswordException exception = new InvalidPasswordException("message", List.of("error1", "error2"));
-        Map<String, List<String>> data = Map.of("errors", exception.getErrorMessages());
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isBadRequest())
-            .andExpect(result -> {
-                assertValidationErrorResponse(result, exception.getMessage(), data);
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 409 Conflict when caught InvalidStockModificationException")
-    void shouldReturn409_whenInvalidStockModificationException() throws Exception {
-        //Arrange
-        InvalidStockModificationException exception = new InvalidStockModificationException("message", "detail1", "detail2");
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isConflict())
-            .andExpect(result -> {
-                ErrorResponse response = deserializeErrorResponse(result);
-                Map<String, Object> data = response.data();
-
-                assertErrorResponse(response, HttpStatus.CONFLICT, exception.getMessage());
-                //noinspection unchecked
-                assertThat((List<String>) data.get("details")).containsExactlyInAnyOrderElementsOf(exception.getDetails());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 409 Conflict when caught DuplicateEntryException")
-    void shouldReturn409_whenDuplicateEntryException() throws Exception {
-        //Arrange
-        DuplicateEntryException exception = new DuplicateEntryException("message");
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isConflict())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.CONFLICT, exception.getMessage());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 404 Not Found when caught EntityNotFoundException")
-    void shouldReturn404_whenEntityNotFoundException() throws Exception {
-        //Arrange
-        EntityNotFoundException exception = new EntityNotFoundException("message");
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isNotFound())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, exception.getMessage());
-            });
-    }
-
-    @Test
-    @DisplayName("Should return 409 Conflict when caught OptimisticLockingFailureException")
-    void shouldReturn409_whenOptimisticLockingFailureException() throws Exception {
-        //Arrange
-        OptimisticLockingFailureException exception = new OptimisticLockingFailureException("message");
-
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isConflict())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.CONFLICT, "Concurrent modification error");
-            });
-    }
 
     @ParameterizedTest
     @MethodSource("provideInvalidIdValues")
@@ -324,23 +157,6 @@ public class GlobalErrorHandlerTests {
             .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, "Resource not found"));
     }
 
-    @ParameterizedTest
-    @MethodSource("provideUnexpectedExceptions")
-    @DisplayName("Should return 500 Internal Server Error when an unexpected exception is thrown")
-    void shouldReturn500_whenUnexpectedException(RuntimeException exception) throws Exception{
-        //Arrange
-        doThrow(exception)
-            .when(dummyController).dummyOperation();
-
-        //Act and Assert
-        mockMvc
-            .perform(
-                get("/dummy")
-            )
-            .andExpect(status().isInternalServerError())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong"));
-    }
-
     /*
             Test data provider methods
      */
@@ -382,15 +198,6 @@ public class GlobalErrorHandlerTests {
                 new DummyController.DummyRequest(null, ""),
                 Map.of("value1", List.of("must not be null"), "value2", List.of("must not be empty", "size must be between 2 and 5"))
             )
-        );
-    }
-
-    static Stream<Arguments> provideUnexpectedExceptions(){
-        return Stream.of(
-            //Random RuntimeException
-            Arguments.of(new RuntimeException("runtime exception message")),
-            //IllegalStateException
-            Arguments.of(new IllegalStateException("this is not allowed"))
         );
     }
 

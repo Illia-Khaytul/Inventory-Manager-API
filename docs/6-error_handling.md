@@ -20,9 +20,9 @@ It is less type safe, but doesn't require additional code for special cases.
 
 Exceptions captured and handled by the handlers.
 
-- `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
 - `FailedLoginAuthenticationException`: when user authentication during login failed.
 - `InvalidRefreshTokenException`: when the provided refresh token is not found or used, or its user session is invalid or expired.
+- `UserSessionLimitExceededException`: when user has already opened a maximum number of sessions.
 - `InvalidPasswordException`: when the provided password does not follow the configured validation rules.
 - `InvalidStockModificationException`: when the product stock modification is invalid (e.g. resulting stock is below 0).
 - `DuplicateEntryException`: when an entity with the provided parameter already exists.
@@ -36,24 +36,19 @@ Exceptions captured and handled by the handlers.
 - `NoResourceFoundException`: when the request does not point to any exposed endpoint.
 - `IllegalStateException`: when something in the application didn't work or isn't configured as intended. 
 
-## 3. Global exception handling
+## 3. Exception handling
 
 All exceptions not thrown manually (not from the written code) return a custom generic message as to not expose sensitive information in their message on accident. 
 Any useful information is manually included in the `data` field.
 
+### 3.1. Business rule exception handling
+
+Handles business rule violations and exceeded limit exceptions.
+
 **UserSessionLimitExceededException handler** -> 403 Forbidden
 
-The user session limit is a business rule. 
+The user session limit is a business rule.
 Trying to surpass it should return a forbidden operation status code.
-
-**FailedLoginAuthenticationException handler** -> 401 Unauthorized
-
-Used to symbolize any authentication failure during login.
-It wraps the actual exception for logging and returns a generic message.
-
-**InvalidRefreshTokenException handler** -> 401 Unauthorized
-
-Returns a generic message for all 4 invalid cases, but still contains the specific messages for logging purposes.
 
 **InvalidPasswordException handler** -> 400 Bad Request
 
@@ -71,6 +66,23 @@ Contains a list of details specifying what exactly was wrong.
 - String `details`: key
 - List<String> `details` (from the exception): value
 
+### 3.2. Security exception handling
+
+Handles security related exceptions that happen from within the service layer and concern the security of user data (e.g. failed login attempts, refresh token reuse).
+
+**FailedLoginAuthenticationException handler** -> 401 Unauthorized
+
+Used to symbolize any authentication failure during login.
+It wraps the actual exception for logging and returns a generic message.
+
+**InvalidRefreshTokenException handler** -> 401 Unauthorized
+
+Returns a generic message for all 4 invalid cases, but still contains the specific messages for logging purposes.
+
+### 3.3. Data domain exception handling
+
+Handles exceptions related to data persistence and its manipulation.
+
 **DuplicateEntryException handler** -> 409 Conflict
 
 **EntityNotFoundException handler** -> 404 Not Found
@@ -78,6 +90,10 @@ Contains a list of details specifying what exactly was wrong.
 **OptimisticLockingFailureException handler** -> 409 Conflict
 
 `message` = Concurrent modification error
+
+### 3.4. Request exception handling
+
+Handles all exceptions related to invalid or malformed user requests.
 
 **MethodArgumentNotValidException handler** -> 400 Bad Request
 
@@ -125,6 +141,10 @@ Notes:
 **NoResourceFoundException handler** -> 404 Not Found
 
 `message` = Resource not found
+
+### 3.5. Global exception handling
+
+Handles generic, global and unexpected exceptions thrown from the application.
 
 **Generic exception handler** -> 500 Internal Server Error
 

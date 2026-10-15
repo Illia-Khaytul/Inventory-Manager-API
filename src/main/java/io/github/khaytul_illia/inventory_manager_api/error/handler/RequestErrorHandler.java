@@ -1,9 +1,10 @@
-package io.github.khaytul_illia.inventory_manager_api.error;
+package io.github.khaytul_illia.inventory_manager_api.error.handler;
 
-import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
+import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
-import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,104 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
-public class GlobalErrorHandler {
-
-    @ExceptionHandler(UserSessionLimitExceededException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse userSessionLimitExceededHandler(UserSessionLimitExceededException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
-
-        return new ErrorResponse(
-            HttpStatus.FORBIDDEN,
-            e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(FailedLoginAuthenticationException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorResponse failedLoginAuthenticationHandler(FailedLoginAuthenticationException e){
-        log.info("Caught {}: {} - With cause {}: {}", e.getClass().getName(), e.getMessage(), e.getCause().getClass().getName(), e.getCause().getMessage());
-
-        return new ErrorResponse(
-            HttpStatus.UNAUTHORIZED,
-            e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(InvalidRefreshTokenException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorResponse invalidRefreshTokenHandler(InvalidRefreshTokenException e){
-        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), e.getDetails());
-
-        return new ErrorResponse(
-            HttpStatus.UNAUTHORIZED,
-            e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(InvalidPasswordException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse invalidPasswordHandler(InvalidPasswordException e){
-        Map<String, Object> data = new HashMap<>();
-        data.put("errors", e.getErrorMessages());
-
-        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), data);
-
-        return new ErrorResponse(
-            HttpStatus.BAD_REQUEST,
-            e.getMessage(),
-            data
-        );
-    }
-
-    @ExceptionHandler(InvalidStockModificationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse invalidStockModificationHandler(InvalidStockModificationException e){
-        Map<String, Object> data = new HashMap<>();
-        data.put("details", e.getDetails());
-
-        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), data);
-
-        return new ErrorResponse(
-            HttpStatus.CONFLICT,
-            e.getMessage(),
-            data
-        );
-    }
-
-    @ExceptionHandler(DuplicateEntryException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse duplicateEntryHandler(DuplicateEntryException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
-
-        return new ErrorResponse(
-            HttpStatus.CONFLICT,
-            e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(EntityNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse entityNotFoundHandler(EntityNotFoundException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
-
-        return new ErrorResponse(
-            HttpStatus.NOT_FOUND,
-            e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(OptimisticLockingFailureException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse optimisticLockingFailureHandler(OptimisticLockingFailureException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
-
-        return new ErrorResponse(
-            HttpStatus.CONFLICT,
-            "Concurrent modification error"
-        );
-    }
+public class RequestErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -132,7 +38,7 @@ public class GlobalErrorHandler {
             messages.add(error.getDefaultMessage());
         });
 
-        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), errors);
+        log.debug("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), errors);
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
@@ -162,7 +68,7 @@ public class GlobalErrorHandler {
             errors.put(error.getMethodParameter().getParameterName(), messages);
         });
 
-        log.info("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), errors);
+        log.debug("Caught {}: {} - {}", e.getClass().getName(), e.getMessage(), errors);
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
@@ -179,7 +85,7 @@ public class GlobalErrorHandler {
         data.put("receivedValue", e.getValue());
         data.put("requiredType", e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : null);
 
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
@@ -191,7 +97,7 @@ public class GlobalErrorHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse httpMessageNotReadableHandler(HttpMessageNotReadableException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         return new ErrorResponse(
             HttpStatus.BAD_REQUEST,
@@ -206,7 +112,7 @@ public class GlobalErrorHandler {
         data.put("received", e.getContentType() != null ? e.getContentType().getType() : null);
         data.put("supported", e.getSupportedMediaTypes().stream().map(MediaType::toString).toList());
 
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         return new ErrorResponse(
             HttpStatus.UNSUPPORTED_MEDIA_TYPE,
@@ -218,22 +124,11 @@ public class GlobalErrorHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse noResourceFoundHandler(NoResourceFoundException e){
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         return new ErrorResponse(
             HttpStatus.NOT_FOUND,
             "Resource not found"
-        );
-    }
-
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse genericExceptionHandler(Exception e){
-        log.warn("[EXCEPTION] Caught unexpected exception", e);
-
-        return new ErrorResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Something went wrong"
         );
     }
 

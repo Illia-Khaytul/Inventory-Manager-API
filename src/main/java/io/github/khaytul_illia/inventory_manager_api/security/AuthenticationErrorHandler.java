@@ -30,7 +30,7 @@ public class AuthenticationErrorHandler implements AuthenticationEntryPoint {
         HttpServletResponse response,
         AuthenticationException e
     ) throws IOException {
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication required to access this resource");
 
