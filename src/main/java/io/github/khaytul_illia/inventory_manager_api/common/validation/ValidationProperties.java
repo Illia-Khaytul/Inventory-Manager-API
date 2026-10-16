@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.common.validation;
 
+import io.github.khaytul_illia.inventory_manager_api.common.monetary.Decimals;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -70,7 +71,7 @@ public class ValidationProperties {
     ){
 
         public NumericLimits(String min, String max){
-            this(new BigDecimal(min), new BigDecimal(max));
+            this(Decimals.of(min), Decimals.of(max));
         }
 
     }

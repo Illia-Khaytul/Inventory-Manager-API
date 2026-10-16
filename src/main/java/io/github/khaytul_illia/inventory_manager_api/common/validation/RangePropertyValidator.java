@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.common.validation;
 
+import io.github.khaytul_illia.inventory_manager_api.common.monetary.Decimals;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.UnexpectedTypeException;
@@ -35,8 +36,8 @@ public class RangePropertyValidator implements ConstraintValidator<RangeProperty
                 propertyKey
             )));
 
-        min = minOverride.isBlank() ? limits.min() : new BigDecimal(minOverride);
-        max = maxOverride.isBlank() ? limits.max() : new BigDecimal(maxOverride);
+        min = minOverride.isBlank() ? limits.min() : Decimals.of(minOverride);
+        max = maxOverride.isBlank() ? limits.max() : Decimals.of(maxOverride);
     }
 
     @Override
@@ -67,11 +68,11 @@ public class RangePropertyValidator implements ConstraintValidator<RangeProperty
     private BigDecimal getNumericValue(Object value) {
         return switch (value){
             case BigDecimal bigDecimal -> bigDecimal;
-            case BigInteger bigInteger -> new BigDecimal(bigInteger);
-            case String string -> new BigDecimal(string);
-            case Double doubleValue -> new BigDecimal(doubleValue);
-            case Float floatValue -> new BigDecimal(floatValue);
-            case Number number -> new BigDecimal(number.longValue());
+            case BigInteger bigInteger -> Decimals.of(new BigDecimal(bigInteger));
+            case String string -> Decimals.of(string);
+            case Double doubleValue -> Decimals.of(doubleValue);
+            case Float floatValue -> Decimals.of(floatValue);
+            case Number number -> Decimals.of(number.longValue());
             default -> null;
         };
     }

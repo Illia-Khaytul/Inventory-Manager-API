@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.common.validation;
 
+import io.github.khaytul_illia.inventory_manager_api.common.monetary.Decimals;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.UnexpectedTypeException;
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
@@ -32,8 +33,8 @@ import static org.mockito.Mockito.*;
 public class RangePropertyValidatorTests {
 
     private final ValidationProperties.PropertyKey propertyKey = ValidationProperties.PropertyKey.USER_USERNAME;
-    private final BigDecimal minValue = new BigDecimal(2);
-    private final BigDecimal maxValue = new BigDecimal(5);
+    private final BigDecimal minValue = Decimals.of(2);
+    private final BigDecimal maxValue = Decimals.of(5);
     @Mock
     private ValidationProperties validationProperties;
     @InjectMocks

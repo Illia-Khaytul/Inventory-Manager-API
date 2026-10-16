@@ -29,7 +29,6 @@ public record UpdateProductRequest(
     @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_DESCRIPTION)
     String description,
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal price
 

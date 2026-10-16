@@ -16,8 +16,8 @@ import java.math.BigDecimal;
         {
             "nameContains": " Product ",
             "minStock": null,
-            "minPrice": "112",
-            "maxPrice": "200"
+            "minPrice": 112,
+            "maxPrice": 200
         }
         """
 )
@@ -30,11 +30,9 @@ public record ProductFiltering(
     @PositiveOrZero
     Integer minStock,
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal minPrice,
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal maxPrice
 

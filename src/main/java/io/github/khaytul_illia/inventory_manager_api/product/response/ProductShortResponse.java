@@ -11,7 +11,7 @@ import java.math.BigDecimal;
             "id": 1,
             "name": "Original Product",
             "stock": 100,
-            "price": "20.05"
+            "price": 20.05
         }
         """
 )

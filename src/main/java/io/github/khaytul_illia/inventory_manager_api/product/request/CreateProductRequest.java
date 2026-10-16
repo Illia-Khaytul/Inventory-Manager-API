@@ -16,7 +16,7 @@ import java.math.BigDecimal;
         {
             "name": "Original Product",
             "description": "This product is so awesome that...",
-            "price": "20.05"
+            "price": 20.05
         }
         """
 )
@@ -30,7 +30,6 @@ public record CreateProductRequest(
     @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_DESCRIPTION)
     String description,
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @NotNull
     @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal price
