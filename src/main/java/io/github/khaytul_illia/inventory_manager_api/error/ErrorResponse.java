@@ -1,7 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.error;
 
+import io.github.khaytul_illia.inventory_manager_api.common.response.serialization.SnakeCaseSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpStatus;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.time.Instant;
 import java.util.Map;
@@ -21,6 +23,7 @@ public record ErrorResponse(
     Instant timestamp,
     int status,
     String message,
+    @JsonSerialize(keyUsing = SnakeCaseSerializer.class)
     Map<String, Object> data
 ) {
 

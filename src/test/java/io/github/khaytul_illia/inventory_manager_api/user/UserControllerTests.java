@@ -317,8 +317,8 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.oldPassword").value(oldPasswordMessage))
-                .andExpect(jsonPath("$.data.newPassword").value(newPasswordMessage));
+                .andExpect(jsonPath("$.data.old_password").value(oldPasswordMessage))
+                .andExpect(jsonPath("$.data.new_password").value(newPasswordMessage));
         }
 
     }

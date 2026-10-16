@@ -118,7 +118,7 @@ public class RoleBasedViewResolverTests {
         @ParameterizedTest
         @NullSource
         @ValueSource(strings = {"CUSTOMER"})
-        @DisplayName("Should return RestrictedView hint when authenticated user is not an OPERATOR")
+        @DisplayName("Should return no view hint when authenticated user is not an OPERATOR")
         void shouldReturnNoViewHint_whenRoleNotOperator(String role) {
             //Arrange
             when(securityUtils.getAuthenticatedUserRole())
@@ -130,11 +130,11 @@ public class RoleBasedViewResolverTests {
             //Assert
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
-            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.RestrictedView.class);
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
         }
 
         @Test
-        @DisplayName("Should return RestrictedView hint when SecurityUtils throws")
+        @DisplayName("Should return no view hint when SecurityUtils throws")
         void shouldReturnNoViewHint_whenSecurityUtilsThrows() {
             //Arrange
             when(securityUtils.getAuthenticatedUserRole())
@@ -146,11 +146,11 @@ public class RoleBasedViewResolverTests {
             //Assert
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
-            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.RestrictedView.class);
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
         }
 
         @Test
-        @DisplayName("Should return no view hint when authenticated user is OPERATOR")
+        @DisplayName("Should return OperatorView hint when authenticated user is OPERATOR")
         void shouldReturnNoViewHint_whenRoleOperator() {
             //Arrange
             when(securityUtils.getAuthenticatedUserRole())
@@ -161,7 +161,8 @@ public class RoleBasedViewResolverTests {
 
             //Assert
             assertThat(hints).isNotNull();
-            assertThat(hints).isEmpty();
+            assertThat(hints).containsKey(JsonView.class.getName());
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.OperatorView.class);
         }
 
     }

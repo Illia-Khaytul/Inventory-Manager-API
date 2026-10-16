@@ -99,12 +99,12 @@ public class AuthControllerTests {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.issuer").value(response.issuer()))
-                .andExpect(jsonPath("$.issuedAt").value(response.issuedAt().toString()))
-                .andExpect(jsonPath("$.expiresAt").value(response.expiresAt().toString()))
+                .andExpect(jsonPath("$.issued_at").value(response.issuedAt().toString()))
+                .andExpect(jsonPath("$.expires_at").value(response.expiresAt().toString()))
                 .andExpect(jsonPath("$.subject").value(response.subject()))
                 .andExpect(jsonPath("$.role").value(response.role()))
-                .andExpect(jsonPath("$.accessToken").value(response.accessToken()))
-                .andExpect(jsonPath("$.refreshToken").value(response.refreshToken()));
+                .andExpect(jsonPath("$.access_token").value(response.accessToken()))
+                .andExpect(jsonPath("$.refresh_token").value(response.refreshToken()));
 
             verify(authService).login(any(LoginRequest.class));
         }
@@ -209,12 +209,12 @@ public class AuthControllerTests {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.issuer").value(response.issuer()))
-                .andExpect(jsonPath("$.issuedAt").value(response.issuedAt().toString()))
-                .andExpect(jsonPath("$.expiresAt").value(response.expiresAt().toString()))
+                .andExpect(jsonPath("$.issued_at").value(response.issuedAt().toString()))
+                .andExpect(jsonPath("$.expires_at").value(response.expiresAt().toString()))
                 .andExpect(jsonPath("$.subject").value(response.subject()))
                 .andExpect(jsonPath("$.role").value(response.role()))
-                .andExpect(jsonPath("$.accessToken").value(response.accessToken()))
-                .andExpect(jsonPath("$.refreshToken").value(response.refreshToken()));
+                .andExpect(jsonPath("$.access_token").value(response.accessToken()))
+                .andExpect(jsonPath("$.refresh_token").value(response.refreshToken()));
 
             verify(authService).refreshAccess(any(RefreshTokenRequest.class));
         }
@@ -274,7 +274,7 @@ public class AuthControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.refreshToken").value(refreshTokenMessage));
+                .andExpect(jsonPath("$.data.refresh_token").value(refreshTokenMessage));
         }
 
     }
@@ -353,7 +353,7 @@ public class AuthControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.refreshToken").value(refreshTokenMessage));
+                .andExpect(jsonPath("$.data.refresh_token").value(refreshTokenMessage));
         }
 
     }

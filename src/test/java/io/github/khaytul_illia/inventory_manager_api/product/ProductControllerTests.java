@@ -120,10 +120,10 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.id").value(response.id()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").doesNotExist())
-                .andExpect(jsonPath("$.modifiedBy").doesNotExist());
+                .andExpect(jsonPath("$.created_at").exists())
+                .andExpect(jsonPath("$.created_by").exists())
+                .andExpect(jsonPath("$.modified_at").doesNotExist())
+                .andExpect(jsonPath("$.modified_by").doesNotExist());
 
             verify(productService).createProduct(any(CreateProductRequest.class));
         }
@@ -243,10 +243,10 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.id").value(response.id()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(jsonPath("$.created_at").exists())
+                .andExpect(jsonPath("$.created_by").exists())
+                .andExpect(jsonPath("$.modified_at").exists())
+                .andExpect(jsonPath("$.modified_by").exists());
 
             verify(productService).updateProduct(anyLong(), any(UpdateProductRequest.class));
         }
@@ -303,7 +303,7 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage))
+                .andExpect(jsonPath("$.data.product_id").value(productIdMessage))
                 .andExpect(jsonPath("$.data.name").value(nameMessage))
                 .andExpect(jsonPath("$.data.description").value(descriptionMessage))
                 .andExpect(jsonPath("$.data.price").value(priceMessage));
@@ -374,10 +374,10 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.id").value(response.id()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(jsonPath("$.created_at").exists())
+                .andExpect(jsonPath("$.created_by").exists())
+                .andExpect(jsonPath("$.modified_at").exists())
+                .andExpect(jsonPath("$.modified_by").exists());
 
             verify(productService).changeProductStock(anyLong(), any(ModifyStockRequest.class));
         }
@@ -435,8 +435,8 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage))
-                .andExpect(jsonPath("$.data.stockChange").value(stockChangeMessage));
+                .andExpect(jsonPath("$.data.product_id").value(productIdMessage))
+                .andExpect(jsonPath("$.data.stock_change").value(stockChangeMessage));
         }
 
     }
@@ -467,10 +467,10 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.id").value(response.id()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(jsonPath("$.created_at").exists())
+                .andExpect(jsonPath("$.created_by").exists())
+                .andExpect(jsonPath("$.modified_at").exists())
+                .andExpect(jsonPath("$.modified_by").exists());
 
             verify(productService).getProduct(anyLong());
         }
@@ -496,10 +496,10 @@ public class ProductControllerTests {
                 .andExpect(jsonPath("$.id").value(response.id()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").doesNotExist())
-                .andExpect(jsonPath("$.createdBy").doesNotExist())
-                .andExpect(jsonPath("$.modifiedAt").doesNotExist())
-                .andExpect(jsonPath("$.modifiedBy").doesNotExist());
+                .andExpect(jsonPath("$.created_at").doesNotExist())
+                .andExpect(jsonPath("$.created_by").doesNotExist())
+                .andExpect(jsonPath("$.modified_at").doesNotExist())
+                .andExpect(jsonPath("$.modified_by").doesNotExist());
 
             verify(productService).getProduct(anyLong());
         }
@@ -521,7 +521,7 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
+                .andExpect(jsonPath("$.data.product_id").value(productIdMessage));
         }
 
     }
@@ -549,9 +549,9 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page").value(response.page()))
-                .andExpect(jsonPath("$.pageSize").value(response.pageSize()))
-                .andExpect(jsonPath("$.totalPages").value(response.totalPages()))
-                .andExpect(jsonPath("$.totalElements").value(response.totalElements()))
+                .andExpect(jsonPath("$.page_size").value(response.pageSize()))
+                .andExpect(jsonPath("$.total_pages").value(response.totalPages()))
+                .andExpect(jsonPath("$.total_elements").value(response.totalElements()))
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content", hasSize(2)))
                 .andExpect(jsonPath("$.content[0].id").value(productResponse1.id()))
@@ -593,10 +593,10 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.nameContains").value(errorMessages.get("nameContains")))
-                .andExpect(jsonPath("$.data.minStock").value(errorMessages.get("minStock")))
-                .andExpect(jsonPath("$.data.minPrice").value(errorMessages.get("minPrice")))
-                .andExpect(jsonPath("$.data.maxPrice").value(errorMessages.get("maxPrice")));
+                .andExpect(jsonPath("$.data.name_contains").value(errorMessages.get("nameContains")))
+                .andExpect(jsonPath("$.data.min_stock").value(errorMessages.get("minStock")))
+                .andExpect(jsonPath("$.data.min_price").value(errorMessages.get("minPrice")))
+                .andExpect(jsonPath("$.data.max_price").value(errorMessages.get("maxPrice")));
         }
 
             /*
@@ -707,7 +707,7 @@ public class ProductControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
+                .andExpect(jsonPath("$.data.product_id").value(productIdMessage));
         }
 
     }

@@ -57,11 +57,12 @@ public class RoleBasedViewResolver implements ResponseBodyAdvice<Object> {
             role = null;
         }
 
+        Class<?> view = ResponseViews.DefaultView.class;
         if (User.UserRole.OPERATOR.name().equalsIgnoreCase(role)) {
-            return Map.of();
+            view = ResponseViews.OperatorView.class;
         }
 
-        return Map.of(JsonView.class.getName(), ResponseViews.RestrictedView.class);
+        return Map.of(JsonView.class.getName(), view);
     }
 
 }

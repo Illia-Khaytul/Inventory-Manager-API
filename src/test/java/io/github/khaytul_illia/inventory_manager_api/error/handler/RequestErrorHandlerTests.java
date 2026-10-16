@@ -104,8 +104,8 @@ public class RequestErrorHandlerTests {
 
                 assertErrorResponse(response, HttpStatus.BAD_REQUEST, "Invalid request parameter type");
                 assertThat(data.get("parameter")).isEqualTo("id");
-                assertThat(data.get("receivedValue")).isEqualTo(value);
-                assertThat(data.get("requiredType")).isEqualTo("long");
+                assertThat(data.get("received_value")).isEqualTo(value);
+                assertThat(data.get("required_type")).isEqualTo("long");
             });
     }
 
