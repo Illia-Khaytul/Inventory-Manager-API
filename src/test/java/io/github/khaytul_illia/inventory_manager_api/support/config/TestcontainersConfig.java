@@ -10,7 +10,7 @@ import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 @ImportAutoConfiguration(ServiceConnectionAutoConfiguration.class)
-public class TestcontainersConfiguration {
+public class TestcontainersConfig {
 
 	@Bean
 	@ServiceConnection

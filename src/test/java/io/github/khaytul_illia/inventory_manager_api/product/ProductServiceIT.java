@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
@@ -40,6 +42,9 @@ public class ProductServiceIT extends ServiceITContext {
     private ProductService productService;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    @Qualifier("productRepository")
+    private ProductRepository realProductRepository;
 
     private final String authenticatedUsername = "operator1";
     private final String productName = "original product";
@@ -106,11 +111,13 @@ public class ProductServiceIT extends ServiceITContext {
         void shouldThrowEntityNotFoundException_whenProductDeletedConcurrently() {
             //Arrange
             doAnswer(invocation -> {
+                Optional<Product> foundProduct = realProductRepository.findById(product.getId());
+
                 transactionTemplate.executeWithoutResult(status -> productRepository.deleteById(product.getId()));
 
-                return invocation.callRealMethod();
+                return foundProduct;
             })
-                .when(productMapper).updateProduct(any(Product.class), any(UpdateProductRequest.class));
+                .when(productRepository).findById(product.getId());
 
             //Act and Assert
             assertThatThrownBy(() -> productService.updateProduct(product.getId(), request))
@@ -125,15 +132,17 @@ public class ProductServiceIT extends ServiceITContext {
         void shouldThrowOptimisticLockingFailureException_whenProductModifiedConcurrentlyTooMuch() {
             //Arrange
             doAnswer(invocation -> {
+                Optional<Product> foundProduct = realProductRepository.findById(product.getId());
+
                 transactionTemplate.executeWithoutResult(status -> {
-                    Product target = productRepository.findById(product.getId()).orElseThrow();
+                    Product target = realProductRepository.findById(product.getId()).orElseThrow();
 
                     target.setStock(target.getStock() + 1);
                 });
 
-                return invocation.callRealMethod();
+                return foundProduct;
             })
-                .when(productMapper).updateProduct(any(Product.class), any(UpdateProductRequest.class));
+                .when(productRepository).findById(product.getId());
 
             //Act and Assert
             assertThatThrownBy(() -> productService.updateProduct(product.getId(), request))
@@ -149,16 +158,18 @@ public class ProductServiceIT extends ServiceITContext {
         void shouldUpdateProduct_whenProductModifiedConcurrentlyOnce() {
             //Arrange
             doAnswer(invocation -> {
+                Optional<Product> foundProduct = realProductRepository.findById(product.getId());
+
                 transactionTemplate.executeWithoutResult(status -> {
-                    Product target = productRepository.findById(product.getId()).orElseThrow();
+                    Product target = realProductRepository.findById(product.getId()).orElseThrow();
 
                     target.setStock(target.getStock() + 1);
                 });
 
-                return invocation.callRealMethod();
+                return foundProduct;
             })
-                .doCallRealMethod()
-                .when(productMapper).updateProduct(any(Product.class), any(UpdateProductRequest.class));
+                .doAnswer(invocation -> realProductRepository.findById(product.getId()))
+                .when(productRepository).findById(product.getId());
 
             //Act
             ProductResponse response = productService.updateProduct(product.getId(), request);

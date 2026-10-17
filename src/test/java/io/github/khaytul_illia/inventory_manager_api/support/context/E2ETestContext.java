@@ -2,7 +2,7 @@ package io.github.khaytul_illia.inventory_manager_api.support.context;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
-import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfig;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
+@Import(TestcontainersConfig.class)
 @AutoConfigureRestTestClient
 @ActiveProfiles("test")
 public abstract class E2ETestContext {

@@ -8,10 +8,14 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.TransactionDefinition;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,6 +28,11 @@ public class UserServiceIT extends ServiceITContext {
     private UserService userService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    @Qualifier("userRepository")
+    private UserRepository realUserRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private final String username = "username";
     private final String password = "password55";
@@ -89,12 +98,15 @@ public class UserServiceIT extends ServiceITContext {
         @DisplayName("Should throw OptimisticLockingFailureException when authenticated user gets deleted mid-operation")
         void shouldThrowOptimisticLockingFailureException_whenAuthenticatedUserIsDeletedConcurrently(){
             //Arrange
+
             doAnswer(invocation -> {
+                Optional<User> foundUser = realUserRepository.findByUsername(user.getUsername());
+
                 transactionTemplate.executeWithoutResult(status -> userRepository.deleteById(user.getId()));
 
-                return invocation.callRealMethod();
+                return foundUser;
             })
-                .when(passwordEncoder).matches(password, user.getPassword());
+                .when(userRepository).findByUsername(user.getUsername());
 
             //Act and Assert
             assertThatThrownBy(() -> userService.changePassword(request))

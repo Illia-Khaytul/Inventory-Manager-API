@@ -14,14 +14,17 @@ import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,9 +39,14 @@ public class AuthServiceIT extends ServiceITContext {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
     @Autowired
+    @Qualifier("refreshTokenRepository")
+    private RefreshTokenRepository realRefreshTokenRepository;
+    @Autowired
     private UserSessionRepository sessionRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private final String username = "username";
     private final String password = "password";
@@ -95,10 +103,6 @@ public class AuthServiceIT extends ServiceITContext {
         @Test
         @DisplayName("Should create new session and return the access token response when refresh token value is unique")
         void shouldCreateSessionAndReturnTokenResponse_whenRefreshTokenIsUnique(){
-            //Arrange
-            doReturn(hashedTokenValue + "_unique")
-                .when(tokenFactory).hashTokenValue(anyString());
-
             //Act
             AccessTokenResponse response = authService.login(request);
 
@@ -143,15 +147,17 @@ public class AuthServiceIT extends ServiceITContext {
             RefreshToken refreshTokenRef = refreshToken;
 
             doAnswer(invocation -> {
+                Optional<RefreshToken> foundRefreshToken = realRefreshTokenRepository.findByTokenValue(refreshToken.getTokenValue());
+
                 transactionTemplate.executeWithoutResult(status -> {
                     RefreshToken sameRefreshToken = refreshTokenRepository.findById(refreshTokenRef.getId()).orElseThrow();
 
                     sameRefreshToken.setUsed(true);
                 });
 
-                return invocation.callRealMethod();
+                return foundRefreshToken;
             })
-                .when(tokenFactory).buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class));
+                .when(refreshTokenRepository).findByTokenValue(refreshToken.getTokenValue());
 
             //Act and Assert
             assertThatThrownBy(() -> authService.refreshAccess(request))
@@ -164,11 +170,6 @@ public class AuthServiceIT extends ServiceITContext {
         @Test
         @DisplayName("Should use refresh token and return an access token response when refresh token is valid")
         void shouldUseRefreshTokenAndReturnTokenResponse_whenTheRefreshTokenIsValid(){
-            //Arrange
-            doCallRealMethod()
-                .doReturn(hashedTokenValue + "_unique")
-                .when(tokenFactory).hashTokenValue(anyString());
-
             //Act
             AccessTokenResponse response = authService.refreshAccess(request);
 
