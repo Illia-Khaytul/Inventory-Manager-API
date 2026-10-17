@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api;
+package io.github.khaytul_illia.inventory_manager_api.support.config;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;

@@ -1,6 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.auth.session;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.RepositoryTestContext;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,11 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
 import java.util.List;
@@ -20,18 +15,12 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(TestcontainersConfiguration.class)
-@ActiveProfiles("test")
 @DisplayName("UserSessionRepository tests")
-public class UserSessionRepositoryTests {
-    
+public class UserSessionRepositoryTests extends RepositoryTestContext {
+
     @Autowired
     private UserSessionRepository sessionRepository;
-    @Autowired
-    private TestEntityManager entityManager;
-    
+
     @Nested
     @DisplayName("countOpenUserSessions test")
     class CountOpenUserSessionsTests{

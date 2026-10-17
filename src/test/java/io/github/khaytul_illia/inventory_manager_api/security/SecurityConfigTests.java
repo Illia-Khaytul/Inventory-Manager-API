@@ -1,6 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.security;
 
-import io.github.khaytul_illia.inventory_manager_api.DummyController;
+import io.github.khaytul_illia.inventory_manager_api.support.DummyController;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;

@@ -1,22 +1,13 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
-import io.github.khaytul_illia.inventory_manager_api.common.validation.RangePropertyValidator;
-import io.github.khaytul_illia.inventory_manager_api.common.validation.SizePropertyValidator;
-import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,18 +16,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.MultiValueMap;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -55,32 +38,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class)
-@Import({
-    SecurityConfig.class,
-    JwtRsaPemKeyConfig.class,
-    JwtConfig.class,
-    JwtAuthenticationErrorHandler.class,
-    AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class,
-    SizePropertyValidator.class,
-    RangePropertyValidator.class,
-    ValidationProperties.class
-})
-@TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
-@ActiveProfiles("test")
 @DisplayName("ProductController tests")
-public class ProductControllerTests {
-
-    @MockitoBean
-    private ProductService productService;
-    @MockitoBean
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+public class ProductControllerTests extends ControllerTestContext {
 
     private final String defaultRole = User.UserRole.OPERATOR.name();
 

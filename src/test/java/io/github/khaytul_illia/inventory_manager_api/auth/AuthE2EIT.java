@@ -1,67 +1,25 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.context.E2ETestContext;
 import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
-import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenFactory;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
-import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.client.RestTestClient;
-import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
-@AutoConfigureRestTestClient
-@ActiveProfiles("test")
 @DisplayName("Authentication API end-to-end tests")
-public class AuthE2EIT {
+public class AuthE2EIT extends E2ETestContext {
 
-    @Autowired
-    private RestTestClient restClient;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserSessionRepository sessionRepository;
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
     @Autowired
     private TokenFactory tokenFactory;
-
-    private final String username = "username";
-    private final String password = "password";
-
-    @BeforeEach
-    void beforeEach(){
-        userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
-    }
-
-    @AfterEach
-    void afterEach(){
-        refreshTokenRepository.deleteAll();
-        sessionRepository.deleteAll();
-        userRepository.deleteAll();
-    }
 
     @Test
     @DisplayName("User logs in and opens a session, refreshes access to the session, then logs out and closes it")

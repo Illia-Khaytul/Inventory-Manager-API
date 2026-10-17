@@ -1,10 +1,8 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.E2ETestContext;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
-import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
@@ -12,69 +10,35 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
-import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
-@AutoConfigureRestTestClient
-@ActiveProfiles("test")
 @DisplayName("Product management API end-to-end tests")
-public class ProductManagementE2EIT {
+public class ProductManagementE2EIT extends E2ETestContext {
 
-    @Autowired
-    private RestTestClient restClient;
-    @Autowired
-    private ObjectMapper objectMapper;
     @Autowired
     private ProductRepository productRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserSessionRepository sessionRepository;
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    @LocalServerPort
-    private int port;
-
-    private final String username = "username";
-    private final String password = "valid_pa55word";
     private Product product;
 
     @BeforeEach
     void beforeEach(){
-        userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.OPERATOR));
-
         createNewAuditedEntities(
             () -> product = productRepository.save(new Product(null, "Original Product", null, 0, new BigDecimal("99.99"), null, null, null, null, null))
         );
@@ -83,9 +47,6 @@ public class ProductManagementE2EIT {
     @AfterEach
     void afterEach(){
         productRepository.deleteAll();
-        refreshTokenRepository.deleteAll();
-        sessionRepository.deleteAll();
-        userRepository.deleteAll();
     }
 
     @Test

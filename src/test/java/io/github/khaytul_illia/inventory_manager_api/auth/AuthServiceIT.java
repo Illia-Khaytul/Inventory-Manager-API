@@ -1,30 +1,24 @@
 package io.github.khaytul_illia.inventory_manager_api.auth;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
+import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ServiceITContext;
+import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshToken;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
-import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.TokenFactory;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
@@ -34,14 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(TestcontainersConfiguration.class)
-@ActiveProfiles("test")
 @DisplayName("AuthService integration tests")
-public class AuthServiceIT {
-
-    @MockitoSpyBean
-    private TokenFactory tokenFactory;
+public class AuthServiceIT extends ServiceITContext {
 
     @Autowired
     private AuthService authService;
@@ -51,10 +39,6 @@ public class AuthServiceIT {
     private UserSessionRepository sessionRepository;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private TransactionTemplate transactionTemplate;
 
     private final String username = "username";
     private final String password = "password";

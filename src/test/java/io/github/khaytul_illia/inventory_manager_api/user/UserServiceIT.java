@@ -1,6 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ServiceITContext;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
@@ -8,36 +8,22 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(TestcontainersConfiguration.class)
-@ActiveProfiles("test")
 @DisplayName("UserService integration tests")
-public class UserServiceIT {
-
-    @MockitoSpyBean
-    private PasswordEncoder passwordEncoder;
+public class UserServiceIT extends ServiceITContext {
 
     @Autowired
     private UserService userService;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private TransactionTemplate transactionTemplate;
 
     private final String username = "username";
     private final String password = "password55";

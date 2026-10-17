@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api;
 
+import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,6 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ServiceITContext;
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
@@ -15,19 +15,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,21 +33,13 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(TestcontainersConfiguration.class)
-@ActiveProfiles("test")
 @DisplayName("ProductService integration tests")
-public class ProductServiceIT {
-
-    @MockitoSpyBean
-    private ProductMapper productMapper;
+public class ProductServiceIT extends ServiceITContext {
 
     @Autowired
     private ProductService productService;
     @Autowired
     private ProductRepository productRepository;
-    @Autowired
-    private TransactionTemplate transactionTemplate;
 
     private final String authenticatedUsername = "operator1";
     private final String productName = "original product";

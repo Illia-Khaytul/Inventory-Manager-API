@@ -1,65 +1,21 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.E2ETestContext;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
-import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
-import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.client.RestTestClient;
-import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
-@AutoConfigureRestTestClient
-@ActiveProfiles("test")
 @DisplayName("User management API end-to-end tests")
-public class UserManagementE2EIT {
-
-    @Autowired
-    private RestTestClient restClient;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserSessionRepository sessionRepository;
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    private final String username = "username";
-    private final String password = "valid_pa55word";
-
-    @BeforeEach
-    void beforeEach(){
-        userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.OPERATOR));
-    }
-
-    @AfterEach
-    void afterEach(){
-        refreshTokenRepository.deleteAll();
-        sessionRepository.deleteAll();
-        userRepository.deleteAll();
-    }
+public class UserManagementE2EIT extends E2ETestContext {
 
     @Test
     @DisplayName("User creates new customer, logs in, changes password, then deletes customer, new customer gets deleted")

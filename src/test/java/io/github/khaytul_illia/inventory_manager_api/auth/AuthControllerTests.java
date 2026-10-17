@@ -3,31 +3,15 @@ package io.github.khaytul_illia.inventory_manager_api.auth;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
-import io.github.khaytul_illia.inventory_manager_api.common.validation.SizePropertyValidator;
-import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 
@@ -38,31 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthController.class)
-@Import({
-    SecurityConfig.class,
-    JwtRsaPemKeyConfig.class,
-    JwtConfig.class,
-    JwtAuthenticationErrorHandler.class,
-    AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class,
-    SizePropertyValidator.class,
-    ValidationProperties.class
-})
-@TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
-@ActiveProfiles("test")
 @DisplayName("AuthController tests")
-public class AuthControllerTests {
-
-    @MockitoBean
-    private AuthService authService;
-    @MockitoBean
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+public class AuthControllerTests extends ControllerTestContext {
 
     @Nested
     @DisplayName("login endpoint tests")

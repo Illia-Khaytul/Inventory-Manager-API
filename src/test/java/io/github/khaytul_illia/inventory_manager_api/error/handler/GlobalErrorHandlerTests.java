@@ -1,34 +1,17 @@
 package io.github.khaytul_illia.inventory_manager_api.error.handler;
 
-import io.github.khaytul_illia.inventory_manager_api.DummyController;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ErrorHandlerTestContext;
 import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
-import io.github.khaytul_illia.inventory_manager_api.error.exception.*;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import tools.jackson.databind.ObjectMapper;
 
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,22 +20,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DummyController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(properties = "logging.level.io.github.khaytul_illia.inventory_manager_api=DEBUG")
-@ActiveProfiles("test")
 @DisplayName("GlobalErrorHandler tests")
-public class GlobalErrorHandlerTests {
-
-    @MockitoSpyBean
-    private DummyController dummyController;
-    @MockitoBean
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+public class GlobalErrorHandlerTests extends ErrorHandlerTestContext {
 
     @ParameterizedTest
     @MethodSource("provideUnexpectedExceptions")
