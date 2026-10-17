@@ -76,6 +76,8 @@ public class TokenService {
 
         refreshToken.setUsed(true);
 
+        refreshTokenRepository.saveAndFlush(refreshToken);
+
         return refreshToken;
     }
 

@@ -168,6 +168,8 @@ public class TokenServiceTests {
 
             doReturn(foundRefreshToken)
                 .when(tokenServiceSpy).loadRefreshToken(tokenValue);
+            when(refreshTokenRepository.saveAndFlush(foundRefreshToken))
+                .thenReturn(foundRefreshToken);
 
             //Act
             RefreshToken refreshToken = tokenServiceSpy.useRefreshToken(tokenValue);
