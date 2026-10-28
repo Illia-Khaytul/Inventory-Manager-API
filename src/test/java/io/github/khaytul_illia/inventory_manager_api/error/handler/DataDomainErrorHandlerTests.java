@@ -1,7 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.error.handler;
 
 import io.github.khaytul_illia.inventory_manager_api.support.context.ErrorHandlerTestContext;
-import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -12,15 +11,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
-import java.io.UnsupportedEncodingException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.assertRegularErrorResponse;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,14 +33,13 @@ public class DataDomainErrorHandlerTests extends ErrorHandlerTestContext {
             .when(dummyController).dummyOperation();
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
             )
-            .andExpect(status().isConflict())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.CONFLICT, exception.getMessage());
-            });
+            .andExpect(status().isConflict());
+
+        assertRegularErrorResponse(result, HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @Test
@@ -58,14 +52,13 @@ public class DataDomainErrorHandlerTests extends ErrorHandlerTestContext {
             .when(dummyController).dummyOperation();
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
             )
-            .andExpect(status().isNotFound())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, exception.getMessage());
-            });
+            .andExpect(status().isNotFound());
+
+        assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
     @ParameterizedTest
@@ -76,14 +69,13 @@ public class DataDomainErrorHandlerTests extends ErrorHandlerTestContext {
             .when(dummyController).dummyOperation();
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
             )
-            .andExpect(status().isConflict())
-            .andExpect(result -> {
-                assertRegularErrorResponse(result, HttpStatus.CONFLICT, "Concurrent modification error");
-            });
+            .andExpect(status().isConflict());
+
+        assertRegularErrorResponse(result, HttpStatus.CONFLICT, "Concurrent modification error");
     }
 
     /*
@@ -101,27 +93,6 @@ public class DataDomainErrorHandlerTests extends ErrorHandlerTestContext {
                 new ObjectOptimisticLockingFailureException("message", new RuntimeException())
             )
         );
-    }
-
-    /*
-            Helper methods
-     */
-
-    private void assertErrorResponse(ErrorResponse response, HttpStatus status, String message){
-        assertThat(response.timestamp()).isCloseTo(Instant.now(), within(1, ChronoUnit.MINUTES));
-        assertThat(response.status()).isEqualTo(status.value());
-        assertThat(response.message()).isEqualTo(message);
-    }
-
-    private void assertRegularErrorResponse(MvcResult result, HttpStatus status, String message) throws UnsupportedEncodingException {
-        ErrorResponse response = deserializeErrorResponse(result);
-
-        assertErrorResponse(response, status, message);
-        assertThat(response.data()).isEmpty();
-    }
-
-    private ErrorResponse deserializeErrorResponse(MvcResult result) throws UnsupportedEncodingException {
-        return objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
     }
 
 }

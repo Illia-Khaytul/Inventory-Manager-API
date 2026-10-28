@@ -4,7 +4,6 @@ import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerT
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,11 +11,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.ResultActions;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
+
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertNoContentResponse;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertUserResponse;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("UserController tests")
@@ -38,15 +41,14 @@ public class UserControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.username").value(response.username()))
-                .andExpect(jsonPath("$.role").value(response.role().name()));
+                .andExpect(status().isCreated());
+
+            assertUserResponse(result, response);
 
             verify(userService).createUser(request, User.UserRole.CUSTOMER);
         }
@@ -67,8 +69,7 @@ public class UserControllerTests extends ControllerTestContext {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()));
+                .andExpect(status().isCreated());
 
             verify(userService).createUser(request, User.UserRole.CUSTOMER);
         }
@@ -95,15 +96,14 @@ public class UserControllerTests extends ControllerTestContext {
             CreateUserRequest request = new CreateUserRequest(username, password);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.username").value(usernameMessage))
-                .andExpect(jsonPath("$.data.password").value(passwordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("username", usernameMessage, "password", passwordMessage));
         }
 
     }
@@ -124,15 +124,14 @@ public class UserControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.username").value(response.username()))
-                .andExpect(jsonPath("$.role").value(response.role().name()));
+                .andExpect(status().isCreated());
+
+            assertUserResponse(result, response);
 
             verify(userService).createUser(request, User.UserRole.OPERATOR);
         }
@@ -145,13 +144,14 @@ public class UserControllerTests extends ControllerTestContext {
             CreateUserRequest request = new CreateUserRequest("username", "password");
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
@@ -161,13 +161,14 @@ public class UserControllerTests extends ControllerTestContext {
             CreateUserRequest request = new CreateUserRequest("username", "password");
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -192,15 +193,14 @@ public class UserControllerTests extends ControllerTestContext {
             CreateUserRequest request = new CreateUserRequest(username, password);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.username").value(usernameMessage))
-                .andExpect(jsonPath("$.data.password").value(passwordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("username", usernameMessage, "password", passwordMessage));
         }
 
     }
@@ -220,15 +220,13 @@ public class UserControllerTests extends ControllerTestContext {
                 .when(userService).changePassword(request);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(userService).changePassword(request);
         }
@@ -240,13 +238,14 @@ public class UserControllerTests extends ControllerTestContext {
             PasswordChangeRequest request = new PasswordChangeRequest("oldPassword", "newPassword");
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -271,15 +270,14 @@ public class UserControllerTests extends ControllerTestContext {
             PasswordChangeRequest request = new PasswordChangeRequest(oldPassword, newPassword);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.old_password").value(oldPasswordMessage))
-                .andExpect(jsonPath("$.data.new_password").value(newPasswordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("old_password", oldPasswordMessage, "new_password", newPasswordMessage));
         }
 
     }
@@ -296,13 +294,11 @@ public class UserControllerTests extends ControllerTestContext {
                 .when(userService).deleteUser();
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/users")
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(userService).deleteUser();
         }
@@ -311,11 +307,12 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/users")
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
     }

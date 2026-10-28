@@ -7,11 +7,10 @@ import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
-import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.e2e.AuthRequestUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +26,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginTokenResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
         String loginRefreshToken = loginTokenResponse.refreshToken();
 
@@ -37,7 +36,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Refresh access
         RefreshTokenRequest refreshAccessRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        AccessTokenResponse refreshTokenResponse = performSuccessfulRefreshAccess(refreshAccessRequest, loginAccessToken);
+        AccessTokenResponse refreshTokenResponse = authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, username, loginAccessToken);
         String refreshAccessToken = refreshTokenResponse.accessToken();
         String refreshRefreshToken = refreshTokenResponse.refreshToken();
 
@@ -51,7 +50,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Logout
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest(refreshRefreshToken);
 
-        performLogout(logoutRequest, refreshAccessToken);
+        authRequestUtils.performLogout(logoutRequest, refreshAccessToken);
 
         assertThat(refreshTokenRepository.count()).isEqualTo(2);
         assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse();
@@ -63,7 +62,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginTokenResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
         String loginRefreshToken = loginTokenResponse.refreshToken();
 
@@ -73,7 +72,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Refresh access
         RefreshTokenRequest refreshAccessRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        performSuccessfulRefreshAccess(refreshAccessRequest, loginAccessToken);
+        authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, username, loginAccessToken);
 
         String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
@@ -84,7 +83,7 @@ public class AuthE2EIT extends E2ETestContext {
         assertThat(session.isValid()).isTrue();
 
         //Refresh access with used token
-        performErrorRefreshAccess(refreshAccessRequest, HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired");
+        authRequestUtils.performErrorRefreshAccess(refreshAccessRequest, HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired");
 
         assertThat(refreshTokenRepository.count()).isEqualTo(2);
         assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse();
@@ -96,7 +95,7 @@ public class AuthE2EIT extends E2ETestContext {
         //First login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse firstLoginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse firstLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String firstAccessToken = firstLoginResponse.accessToken();
         String firstSessionToken = firstLoginResponse.refreshToken();
 
@@ -104,7 +103,7 @@ public class AuthE2EIT extends E2ETestContext {
         assertThat(refreshTokenRepository.count()).isEqualTo(1);
 
         //Second login
-        AccessTokenResponse secondLoginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse secondLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String secondAccessToken = secondLoginResponse.accessToken();
         String secondSessionToken = secondLoginResponse.refreshToken();
 
@@ -117,7 +116,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Logout first session
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest(firstSessionToken);
 
-        performLogout(logoutRequest, firstAccessToken);
+        authRequestUtils.performLogout(logoutRequest, firstAccessToken);
 
         String hashedFirstSessionToken = tokenFactory.hashTokenValue(firstSessionToken);
         String hashedSecondSessionToken = tokenFactory.hashTokenValue(secondSessionToken);
@@ -133,7 +132,7 @@ public class AuthE2EIT extends E2ETestContext {
         //First login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse firstLoginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse firstLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String firstAccessToken = firstLoginResponse.accessToken();
         String firstSessionToken = firstLoginResponse.refreshToken();
 
@@ -141,7 +140,7 @@ public class AuthE2EIT extends E2ETestContext {
         assertThat(refreshTokenRepository.count()).isEqualTo(1);
 
         //Second login
-        AccessTokenResponse secondLoginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse secondLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String secondAccessToken = secondLoginResponse.accessToken();
         String secondSessionToken = secondLoginResponse.refreshToken();
 
@@ -152,7 +151,7 @@ public class AuthE2EIT extends E2ETestContext {
         assertThat(refreshTokenRepository.count()).isEqualTo(2);
 
         //Logout all
-        performLogoutAll(firstAccessToken);
+        authRequestUtils.performLogoutAll(firstAccessToken);
 
         String hashedFirstSessionToken = tokenFactory.hashTokenValue(firstSessionToken);
         String hashedSecondSessionToken = tokenFactory.hashTokenValue(secondSessionToken);
@@ -168,7 +167,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginTokenResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
         String loginRefreshToken = loginTokenResponse.refreshToken();
 
@@ -178,7 +177,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Logout
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        performLogout(logoutRequest, loginAccessToken);
+        authRequestUtils.performLogout(logoutRequest, loginAccessToken);
 
         String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
@@ -190,7 +189,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Refresh access
         RefreshTokenRequest refreshAccessRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        performErrorRefreshAccess(refreshAccessRequest, HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired");
+        authRequestUtils.performErrorRefreshAccess(refreshAccessRequest, HttpStatus.UNAUTHORIZED, "Refresh token is used or session is invalid or expired");
 
         assertThat(refreshTokenRepository.count()).isEqualTo(1);
         assertThat(refreshTokenRepository.findById(loginRefreshTokenEntry.getId()).orElseThrow().isUsed()).isFalse();
@@ -203,7 +202,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginTokenResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
         String loginRefreshToken = loginTokenResponse.refreshToken();
 
@@ -213,7 +212,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Logout
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        performLogout(logoutRequest, loginAccessToken);
+        authRequestUtils.performLogout(logoutRequest, loginAccessToken);
 
         String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
@@ -223,93 +222,10 @@ public class AuthE2EIT extends E2ETestContext {
         assertThat(session.isValid()).isFalse();
 
         //Logout same session
-        performLogout(logoutRequest, loginAccessToken);
+        authRequestUtils.performLogout(logoutRequest, loginAccessToken);
 
         assertThat(refreshTokenRepository.findById(loginRefreshTokenEntry.getId()).orElseThrow().isUsed()).isFalse();
         assertThat(sessionRepository.findById(session.getId()).orElseThrow().isValid()).isFalse();
-    }
-
-    /*
-            Helper methods
-     */
-
-    private AccessTokenResponse performSuccessfulLogin(LoginRequest request){
-        AccessTokenResponse response = restClient
-            .post()
-            .uri("/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(AccessTokenResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.subject()).isEqualTo(request.username());
-        assertThat(response.accessToken()).isNotBlank();
-        assertThat(response.refreshToken()).isNotBlank();
-
-        return response;
-    }
-
-    private AccessTokenResponse performSuccessfulRefreshAccess(RefreshTokenRequest request, String accessToken){
-        AccessTokenResponse response = restClient
-            .post()
-            .uri("/auth/refresh-access")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(AccessTokenResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.subject()).isEqualTo(username);
-
-        String refreshAccessToken = response.accessToken();
-        String refreshRefreshToken = response.refreshToken();
-
-        assertThat(refreshAccessToken).isNotBlank();
-        assertThat(refreshRefreshToken).isNotBlank();
-        assertThat(refreshAccessToken).isNotEqualTo(accessToken);
-        assertThat(refreshRefreshToken).isNotEqualTo(request.refreshToken());
-
-        return response;
-    }
-
-    private void performErrorRefreshAccess(RefreshTokenRequest request, HttpStatus status, String errorMessage){
-        ErrorResponse errorResponse = restClient
-            .post()
-            .uri("/auth/refresh-access")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isEqualTo(status.value())
-            .returnResult(ErrorResponse.class).getResponseBody();
-
-        assertThat(errorResponse).isNotNull();
-        assertThat(errorResponse.status()).isEqualTo(status.value());
-        assertThat(errorResponse.message()).isEqualTo(errorMessage);
-    }
-
-    private void performLogout(RefreshTokenRequest request, String accessToken){
-        restClient
-            .post()
-            .uri("/auth/logout")
-            .header("Authorization", "Bearer " + accessToken)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isNoContent()
-            .expectBody(Void.class);
-    }
-
-    private void performLogoutAll(String accessToken){
-        restClient
-            .post()
-            .uri("/auth/logout-all")
-            .header("Authorization", "Bearer " + accessToken)
-            .exchange()
-            .expectStatus().isNoContent()
-            .expectBody(Void.class);
     }
 
 }

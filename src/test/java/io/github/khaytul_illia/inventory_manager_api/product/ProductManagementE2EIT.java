@@ -9,24 +9,19 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStock
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.e2e.ProductRequestUtils;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.TestDataUtils.persistAuditedEntities;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Product management API end-to-end tests")
@@ -34,12 +29,16 @@ public class ProductManagementE2EIT extends E2ETestContext {
 
     @Autowired
     private ProductRepository productRepository;
+    private ProductRequestUtils requestUtils;
 
     private Product product;
 
     @BeforeEach
     void beforeEach(){
-        createNewAuditedEntities(
+        requestUtils = new ProductRequestUtils(restClient, objectMapper);
+
+        persistAuditedEntities(
+            operator,
             () -> product = productRepository.save(new Product(null, "Original Product", null, 0, new BigDecimal("99.99"), null, null, null, null, null))
         );
     }
@@ -55,13 +54,13 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String accessToken = loginResponse.accessToken();
 
         //Create product
         CreateProductRequest createRequest = new CreateProductRequest("Cool Product", null, new BigDecimal("99.99"));
 
-        ProductResponse createResponse = performSuccessfulCreateProduct(createRequest, accessToken);
+        ProductResponse createResponse = requestUtils.performSuccessfulCreateProduct(createRequest, port, accessToken);
         long productId = createResponse.id();
 
         assertThat(productRepository.existsById(productId)).isTrue();
@@ -69,13 +68,13 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Change product stock
         ModifyStockRequest stockRequest = new ModifyStockRequest(10);
 
-        performSuccessfulChangeProductStock(productId, createResponse.stock(), stockRequest, accessToken);
+        requestUtils.performSuccessfulChangeProductStock(productId, createResponse.stock(), stockRequest, accessToken);
 
         Product stockProduct = productRepository.findById(productId).orElseThrow();
         assertThat(stockProduct.getStock()).isEqualTo(stockRequest.stockChange());
 
         //Delete product
-        performSuccessfulDeleteProduct(productId, accessToken);
+        requestUtils.performSuccessfulDeleteProduct(productId, accessToken);
 
         assertThat(productRepository.existsById(productId)).isFalse();
     }
@@ -86,7 +85,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String accessToken = loginResponse.accessToken();
 
         //Update product
@@ -95,7 +94,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
         String newPrice = "110.50";
         UpdateProductRequest updateRequest = new UpdateProductRequest(newName, null, new BigDecimal(newPrice));
 
-        performSuccessfulUpdateProduct(productId, updateRequest, accessToken);
+        requestUtils.performSuccessfulUpdateProduct(productId, updateRequest, accessToken);
 
         Product stockProduct = productRepository.findById(productId).orElseThrow();
         assertThat(stockProduct.getName()).isEqualTo(newName);
@@ -103,7 +102,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
         assertThat(stockProduct.getPrice()).isEqualTo(newPrice);
 
         //Get product
-        ProductResponse getResponse = performSuccessfulGetProductWithAuth(product.getId(), accessToken);
+        ProductResponse getResponse = requestUtils.performSuccessfulGetProductWithAuth(product.getId(), accessToken);
 
         assertThat(getResponse.createdAt()).isNotNull();
         assertThat(getResponse.createdBy()).isNotNull();
@@ -117,16 +116,16 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Login
         LoginRequest loginRequest = new LoginRequest(username, password);
 
-        AccessTokenResponse loginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String accessToken = loginResponse.accessToken();
 
         //Delete product
-        performSuccessfulDeleteProduct(product.getId(), accessToken);
+        requestUtils.performSuccessfulDeleteProduct(product.getId(), accessToken);
 
         assertThat(productRepository.existsById(product.getId())).isFalse();
 
         //Delete product again
-        performSuccessfulDeleteProduct(product.getId(), accessToken);
+        requestUtils.performSuccessfulDeleteProduct(product.getId(), accessToken);
 
         assertThat(productRepository.existsById(product.getId())).isFalse();
     }
@@ -138,7 +137,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
         String customerUsername = username + "_customer";
         userRepository.save(new User(null, customerUsername, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
 
-        createNewAuditedEntities(() -> {
+        persistAuditedEntities(operator, () -> {
             productRepository.save(new Product(null, "Product-1", null, 0, new BigDecimal("10"), null, null, null, null, null));
             productRepository.save(new Product(null, "Product-2", null, 10, new BigDecimal("5.9"), null, null, null, null, null));
             productRepository.save(new Product(null, "Product-3", null, 25, new BigDecimal("61.6"), null, null, null, null, null));
@@ -152,7 +151,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
             "maxPrice", "50"
         );
 
-        PaginatedResponse<ProductShortResponse> pageResponse = performSuccessfulGetProducts(paginationAndFiltering);
+        PaginatedResponse<ProductShortResponse> pageResponse = requestUtils.performSuccessfulGetProducts(paginationAndFiltering);
 
         List<ProductShortResponse> pageContent = pageResponse.content();
         assertThat(pageContent).isNotEmpty();
@@ -161,7 +160,7 @@ public class ProductManagementE2EIT extends E2ETestContext {
         ProductShortResponse product2 = pageContent.get(1);
 
         //Get product
-        ProductResponse getResponse1 = performSuccessfulGetProductWithNoAuth(product1.id());
+        ProductResponse getResponse1 = requestUtils.performSuccessfulGetProductWithNoAuth(product1.id());
 
         assertThat(getResponse1.name()).isEqualTo(product1.name());
         assertThat(getResponse1.createdAt()).isNull();
@@ -172,159 +171,17 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Login customer
         LoginRequest loginRequest = new LoginRequest(customerUsername, password);
 
-        AccessTokenResponse loginResponse = performSuccessfulLogin(loginRequest);
+        AccessTokenResponse loginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String accessToken = loginResponse.accessToken();
 
         //Get product
-        ProductResponse getResponse2 = performSuccessfulGetProductWithAuth(product2.id(), accessToken);
+        ProductResponse getResponse2 = requestUtils.performSuccessfulGetProductWithAuth(product2.id(), accessToken);
 
         assertThat(getResponse2.name()).isEqualTo(product2.name());
         assertThat(getResponse2.createdAt()).isNull();
         assertThat(getResponse2.createdBy()).isNull();
         assertThat(getResponse2.modifiedAt()).isNull();
         assertThat(getResponse2.modifiedBy()).isNull();
-    }
-
-    /*
-            Helper methods
-     */
-
-    private ProductResponse performSuccessfulCreateProduct(CreateProductRequest request, String accessToken){
-        RestTestClient.ResponseSpec responseSpec = restClient
-            .post()
-            .uri("/products")
-            .header("Authorization", "Bearer " + accessToken)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange();
-
-        ProductResponse response = responseSpec.returnResult(ProductResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isNotNull();
-
-        responseSpec
-            .expectStatus().isCreated()
-            .expectHeader().location(String.format("http://localhost:%s/products/%s", port, response.id()));
-
-        return response;
-    }
-
-    private void performSuccessfulUpdateProduct(long productId, UpdateProductRequest request, String accessToken){
-        ProductResponse response = restClient
-            .patch()
-            .uri("/products/{productId}", productId)
-            .header("Authorization", "Bearer " + accessToken)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(ProductResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isEqualTo(productId);
-        assertThat(response.stock()).isEqualTo(0);
-    }
-
-    private void performSuccessfulChangeProductStock(long productId, int originalStock, ModifyStockRequest request, String accessToken){
-        ProductResponse response = restClient
-            .patch()
-            .uri("/products/{productId}/stock", productId)
-            .header("Authorization", "Bearer " + accessToken)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(ProductResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isEqualTo(productId);
-        assertThat(response.stock()).isEqualTo(originalStock + request.stockChange());
-    }
-
-    private ProductResponse performSuccessfulGetProductWithAuth(long productId, String accessToken){
-        ProductResponse response = restClient
-            .get()
-            .uri("/products/{productId}", productId)
-            .header("Authorization", "Bearer " + accessToken)
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(ProductResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isEqualTo(productId);
-
-        return response;
-    }
-
-    private ProductResponse performSuccessfulGetProductWithNoAuth(long productId){
-        ProductResponse response = restClient
-            .get()
-            .uri("/products/{productId}", productId)
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(ProductResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isEqualTo(productId);
-
-        return response;
-    }
-
-    private PaginatedResponse<ProductShortResponse> performSuccessfulGetProducts(Map<String, String> paginationAndFiltering){
-        PaginatedResponse<ProductShortResponse> paginatedResponse = restClient
-            .get()
-            .uri(UriComponentsBuilder
-                .fromUriString("/products")
-                .queryParams(MultiValueMap.fromSingleValue(paginationAndFiltering))
-                .toUriString()
-            )
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(new ParameterizedTypeReference<PaginatedResponse<ProductShortResponse>>() {}).getResponseBody();
-
-        assertThat(paginatedResponse).isNotNull();
-        assertThat(paginatedResponse.content()).isNotNull();
-
-        return paginatedResponse;
-    }
-
-    private void performSuccessfulDeleteProduct(long productId, String accessToken){
-        restClient
-            .delete()
-            .uri("/products/{productId}", productId)
-            .header("Authorization", "Bearer " + accessToken)
-            .exchange()
-            .expectStatus().isNoContent()
-            .expectBody(Void.class);
-    }
-
-    private AccessTokenResponse performSuccessfulLogin(LoginRequest request){
-        AccessTokenResponse response = restClient
-            .post()
-            .uri("/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(objectMapper.writeValueAsString(request))
-            .exchange()
-            .expectStatus().isOk()
-            .returnResult(AccessTokenResponse.class).getResponseBody();
-
-        assertThat(response).isNotNull();
-        assertThat(response.subject()).isEqualTo(request.username());
-        assertThat(response.accessToken()).isNotBlank();
-        assertThat(response.refreshToken()).isNotBlank();
-
-        return response;
-    }
-
-    private void createNewAuditedEntities(Runnable operation){
-        SecurityContextHolder.getContext().setAuthentication(
-            new TestingAuthenticationToken(username, password, "ROLE_" + User.UserRole.OPERATOR.name())
-        );
-
-        operation.run();
-
-        SecurityContextHolder.getContext().setAuthentication(null);
     }
 
 }

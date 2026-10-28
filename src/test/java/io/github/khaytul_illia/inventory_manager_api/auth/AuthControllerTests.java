@@ -4,7 +4,6 @@ import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,14 +11,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.Instant;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertAccessTokenResponse;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertNoContentResponse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("AuthController tests")
@@ -53,19 +55,14 @@ public class AuthControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.issuer").value(response.issuer()))
-                .andExpect(jsonPath("$.issued_at").value(response.issuedAt().toString()))
-                .andExpect(jsonPath("$.expires_at").value(response.expiresAt().toString()))
-                .andExpect(jsonPath("$.subject").value(response.subject()))
-                .andExpect(jsonPath("$.role").value(response.role()))
-                .andExpect(jsonPath("$.access_token").value(response.accessToken()))
-                .andExpect(jsonPath("$.refresh_token").value(response.refreshToken()));
+                .andExpect(status().isOk());
+
+            assertAccessTokenResponse(result, response);
 
             verify(authService).login(any(LoginRequest.class));
         }
@@ -123,15 +120,14 @@ public class AuthControllerTests extends ControllerTestContext {
             LoginRequest request = new LoginRequest(username, password);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.username").value(usernameMessage))
-                .andExpect(jsonPath("$.data.password").value(passwordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("username", usernameMessage, "password", passwordMessage));
 
             verify(authService, never()).login(any(LoginRequest.class));
         }
@@ -163,19 +159,14 @@ public class AuthControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/refresh-access")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.issuer").value(response.issuer()))
-                .andExpect(jsonPath("$.issued_at").value(response.issuedAt().toString()))
-                .andExpect(jsonPath("$.expires_at").value(response.expiresAt().toString()))
-                .andExpect(jsonPath("$.subject").value(response.subject()))
-                .andExpect(jsonPath("$.role").value(response.role()))
-                .andExpect(jsonPath("$.access_token").value(response.accessToken()))
-                .andExpect(jsonPath("$.refresh_token").value(response.refreshToken()));
+                .andExpect(status().isOk());
+
+            assertAccessTokenResponse(result, response);
 
             verify(authService).refreshAccess(any(RefreshTokenRequest.class));
         }
@@ -228,14 +219,16 @@ public class AuthControllerTests extends ControllerTestContext {
             RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/refresh-access")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.refresh_token").value(refreshTokenMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("refresh_token", refreshTokenMessage));
+
+            verify(authService, never()).refreshAccess(any(RefreshTokenRequest.class));
         }
 
     }
@@ -255,15 +248,13 @@ public class AuthControllerTests extends ControllerTestContext {
                 when(authService).logout(any(RefreshTokenRequest.class));
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(authService).logout(any(RefreshTokenRequest.class));
         }
@@ -278,13 +269,16 @@ public class AuthControllerTests extends ControllerTestContext {
                 when(authService).logout(any(RefreshTokenRequest.class));
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
+
+            verify(authService, never()).logout(any(RefreshTokenRequest.class));
         }
 
         @ParameterizedTest
@@ -307,14 +301,16 @@ public class AuthControllerTests extends ControllerTestContext {
             RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.refresh_token").value(refreshTokenMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("refresh_token", refreshTokenMessage));
+
+            verify(authService, never()).logout(any(RefreshTokenRequest.class));
         }
 
     }
@@ -332,13 +328,11 @@ public class AuthControllerTests extends ControllerTestContext {
                 when(authService).logoutAll();
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/logout-all")
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(authService).logoutAll();
         }
@@ -351,11 +345,14 @@ public class AuthControllerTests extends ControllerTestContext {
                 when(authService).logoutAll();
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/auth/logout-all")
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
+
+            verify(authService, never()).logoutAll();
         }
 
     }

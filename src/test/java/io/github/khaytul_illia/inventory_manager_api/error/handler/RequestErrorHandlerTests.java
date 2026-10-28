@@ -2,7 +2,6 @@ package io.github.khaytul_illia.inventory_manager_api.error.handler;
 
 import io.github.khaytul_illia.inventory_manager_api.support.DummyController;
 import io.github.khaytul_illia.inventory_manager_api.support.context.ErrorHandlerTestContext;
-import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -10,18 +9,16 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
-import java.io.UnsupportedEncodingException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("RequestErrorHandler tests")
@@ -36,13 +33,14 @@ public class RequestErrorHandlerTests extends ErrorHandlerTestContext {
         Map<String, List<String>> expectedErrors
     ) throws Exception {
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 patch("/dummy/{id}", id)
                     .param("query", query)
             )
-            .andExpect(status().isBadRequest())
-            .andExpect(result -> assertValidationErrorResponse(result, "Invalid request parameters", expectedErrors));
+            .andExpect(status().isBadRequest());
+
+        assertValidationErrorResponse(result, expectedErrors);
     }
 
     @ParameterizedTest
@@ -53,14 +51,15 @@ public class RequestErrorHandlerTests extends ErrorHandlerTestContext {
         Map<String, List<String>> expectedErrors
     ) throws Exception {
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 post("/dummy")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidRequest))
             )
-            .andExpect(status().isBadRequest())
-            .andExpect(result -> assertValidationErrorResponse(result, "Invalid request parameters", expectedErrors));
+            .andExpect(status().isBadRequest());
+
+        assertValidationErrorResponse(result, expectedErrors);
     }
 
     @Test
@@ -70,68 +69,63 @@ public class RequestErrorHandlerTests extends ErrorHandlerTestContext {
         String value = "not a long";
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 patch("/dummy/{id}", value)
             )
-            .andExpect(status().isBadRequest())
-            .andExpect(result -> {
-                ErrorResponse response = deserializeErrorResponse(result);
-                Map<String, Object> data = response.data();
+            .andExpect(status().isBadRequest());
 
-                assertErrorResponse(response, HttpStatus.BAD_REQUEST, "Invalid request parameter type");
-                assertThat(data.get("parameter")).isEqualTo("id");
-                assertThat(data.get("received_value")).isEqualTo(value);
-                assertThat(data.get("required_type")).isEqualTo("long");
-            });
+        assertErrorResponse(result, HttpStatus.BAD_REQUEST, "Invalid request parameter type");
+        result
+            .andExpect(jsonPath("$.data.parameter").value("id"))
+            .andExpect(jsonPath("$.data.received_value").value(value))
+            .andExpect(jsonPath("$.data.required_type").value("long"));
     }
 
     @Test
     @DisplayName("Should return 400 Bad Request when receiving an unreadable request body")
     void shouldReturn400_whenUnreadableRequestBody() throws Exception{
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 post("/dummy")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("not a json")
             )
-            .andExpect(status().isBadRequest())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.BAD_REQUEST, "Malformed request body"));
+            .andExpect(status().isBadRequest());
+
+        assertRegularErrorResponse(result, HttpStatus.BAD_REQUEST, "Malformed request body");
     }
 
     @Test
     @DisplayName("Should return 415 Unsupported Media Type when receiving request body of an unsupported media type")
     void shouldReturn415_whenUnsupportedRequestBodyType() throws Exception {
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 post("/dummy")
                     .contentType(MediaType.TEXT_PLAIN)
                     .content("plain text")
             )
-            .andExpect(status().isUnsupportedMediaType())
-            .andExpect(result -> {
-                ErrorResponse response = deserializeErrorResponse(result);
-                Map<String, Object> data = response.data();
+            .andExpect(status().isUnsupportedMediaType());
 
-                assertErrorResponse(response, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported request media type");
-                assertThat(data.get("received")).isEqualTo("text");
-                //noinspection unchecked
-                assertThat((List<String>) data.get("supported")).contains(MediaType.APPLICATION_JSON_VALUE);
-            });
+        assertErrorResponse(result, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported request media type");
+        result
+            .andExpect(jsonPath("$.data.received").value("text"))
+            .andExpect(jsonPath("$.data.supported").value(hasItems(MediaType.APPLICATION_JSON_VALUE)));
     }
 
     @Test
     @DisplayName("Should return 404 Not Found when accessing resource does not exist")
     void shouldReturn404_whenResourceNotFound() throws Exception{
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/non-existent-resource")
             )
-            .andExpect(status().isNotFound())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, "Resource not found"));
+            .andExpect(status().isNotFound());
+
+        assertRegularErrorResponse(result, HttpStatus.NOT_FOUND, "Resource not found");
     }
 
     /*
@@ -176,36 +170,6 @@ public class RequestErrorHandlerTests extends ErrorHandlerTestContext {
                 Map.of("value1", List.of("must not be null"), "value2", List.of("must not be empty", "size must be between 2 and 5"))
             )
         );
-    }
-
-    /*
-            Helper methods
-     */
-
-    private void assertErrorResponse(ErrorResponse response, HttpStatus status, String message){
-        assertThat(response.timestamp()).isCloseTo(Instant.now(), within(1, ChronoUnit.MINUTES));
-        assertThat(response.status()).isEqualTo(status.value());
-        assertThat(response.message()).isEqualTo(message);
-    }
-
-    private void assertRegularErrorResponse(MvcResult result, HttpStatus status, String message) throws UnsupportedEncodingException {
-        ErrorResponse response = deserializeErrorResponse(result);
-
-        assertErrorResponse(response, status, message);
-        assertThat(response.data()).isEmpty();
-    }
-
-    private void assertValidationErrorResponse(MvcResult result, String message, Map<String, List<String>> expectedErrors) throws UnsupportedEncodingException {
-        ErrorResponse response = deserializeErrorResponse(result);
-
-        assertErrorResponse(response, HttpStatus.BAD_REQUEST, message);
-        assertThat(response.data().keySet()).containsExactlyInAnyOrderElementsOf(expectedErrors.keySet());
-        //noinspection unchecked
-        response.data().forEach((field, errors) -> assertThat((List<String>) errors).containsExactlyInAnyOrderElementsOf(expectedErrors.get(field)));
-    }
-
-    private ErrorResponse deserializeErrorResponse(MvcResult result) throws UnsupportedEncodingException {
-        return objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
     }
 
 }

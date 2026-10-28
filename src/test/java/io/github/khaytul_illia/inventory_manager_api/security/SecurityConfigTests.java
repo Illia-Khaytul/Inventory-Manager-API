@@ -1,7 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.security;
 
 import io.github.khaytul_illia.inventory_manager_api.support.DummyController;
-import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
 import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
@@ -23,20 +22,18 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.servlet.ResultActions;
 
-import java.io.UnsupportedEncodingException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.assertNoAuthErrorResponse;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.assertRegularErrorResponse;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -67,8 +64,6 @@ public class SecurityConfigTests {
     private RSAPrivateKey jwtPrivateKey;
     @Autowired
     private RSAPublicKey jwtPublicKey;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("Should generate a valid authentication token with user details from the JWT")
@@ -121,12 +116,13 @@ public class SecurityConfigTests {
     @DisplayName("Should return 401 Unauthorized when accessing without a JWT")
     void shouldReturn401_whenNoJwt() throws Exception {
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
             )
-            .andExpect(status().isUnauthorized())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, "Authentication required to access this resource"));
+            .andExpect(status().isUnauthorized());
+
+        assertNoAuthErrorResponse(result);
     }
 
     @ParameterizedTest
@@ -138,13 +134,14 @@ public class SecurityConfigTests {
         headers.setBearerAuth(jwt);
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
                     .headers(headers)
             )
-            .andExpect(status().isUnauthorized())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, "Invalid or expired access token"));
+            .andExpect(status().isUnauthorized());
+
+        assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, "Invalid or expired access token");
     }
 
     @Test
@@ -155,17 +152,18 @@ public class SecurityConfigTests {
         headers.set("Authorization", "Bearer unsupported_jwt_character_{}");
 
         //Act and Assert
-        mockMvc
+        ResultActions result = mockMvc
             .perform(
                 get("/dummy")
                     .headers(headers)
             )
-            .andExpect(status().isUnauthorized())
-            .andExpect(result -> assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, "Access token cannot be resolved"));
+            .andExpect(status().isUnauthorized());
+
+        assertRegularErrorResponse(result, HttpStatus.UNAUTHORIZED, "Access token cannot be resolved");
     }
 
     /*
-            Provider methods
+            Test data provider methods
      */
 
     Stream<Arguments> provideInvalidOrExpiredJwts(){
@@ -204,23 +202,6 @@ public class SecurityConfigTests {
     /*
             Helper methods
      */
-
-    private void assertErrorResponse(ErrorResponse response, HttpStatus status, String message){
-        assertThat(response.timestamp()).isCloseTo(Instant.now(), within(1, ChronoUnit.MINUTES));
-        assertThat(response.status()).isEqualTo(status.value());
-        assertThat(response.message()).isEqualTo(message);
-    }
-
-    private void assertRegularErrorResponse(MvcResult result, HttpStatus status, String message) throws UnsupportedEncodingException {
-        ErrorResponse response = deserializeErrorResponse(result);
-
-        assertErrorResponse(response, status, message);
-        assertThat(response.data()).isEmpty();
-    }
-
-    private ErrorResponse deserializeErrorResponse(MvcResult result) throws UnsupportedEncodingException {
-        return objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-    }
 
     private Jwt generateJwt(JwtEncoder jwtEncoder, Instant timestamp, SignatureAlgorithm algorithm){
         return generateJwt(jwtEncoder, timestamp, algorithm, Map.of());

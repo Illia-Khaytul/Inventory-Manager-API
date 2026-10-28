@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.TestDataUtils.buildSession;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.TestDataUtils.buildUser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("UserSessionRepository tests")
@@ -292,18 +294,6 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
             );
         }
 
-    }
-
-    /*
-            Helper methods
-     */
-
-    private static User buildUser(String username){
-        return new User(null, username, "password", User.UserRole.CUSTOMER);
-    }
-
-    private static UserSession buildSession(boolean valid, Instant createdAt, User user){
-        return new UserSession(null, valid, createdAt, createdAt.plusSeconds(3600), user);
     }
     
 }

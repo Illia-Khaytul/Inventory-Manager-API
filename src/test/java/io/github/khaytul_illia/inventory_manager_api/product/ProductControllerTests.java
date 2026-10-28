@@ -9,8 +9,6 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
-import jakarta.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,6 +17,7 @@ import org.junit.jupiter.params.provider.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.MultiValueMap;
 
 import java.math.BigDecimal;
@@ -27,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.*;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -40,14 +40,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @DisplayName("ProductController tests")
 public class ProductControllerTests extends ControllerTestContext {
-
-    private final String defaultRole = User.UserRole.OPERATOR.name();
-
-    @BeforeEach
-    void beforeEach() {
-        when(securityUtils.getAuthenticatedUserRole())
-            .thenReturn(defaultRole);
-    }
 
     @Nested
     @DisplayName("createProduct endpoint tests")
@@ -63,26 +55,21 @@ public class ProductControllerTests extends ControllerTestContext {
             //Arrange
             Instant createdAt = Instant.now();
             String createdBy = "operator";
-            ProductResponse response = new ProductResponse(1L, "product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, null, null);
+            ProductResponse response = new ProductResponse(1L, "product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
 
             when(productService.createProduct(any(CreateProductRequest.class)))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", String.format("http://localhost/products/%s", response.id())))
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.created_at").exists())
-                .andExpect(jsonPath("$.created_by").exists())
-                .andExpect(jsonPath("$.modified_at").doesNotExist())
-                .andExpect(jsonPath("$.modified_by").doesNotExist());
+                .andExpect(header().string("Location", String.format("http://localhost/products/%s", response.id())));
+
+            assertProductResponse(result, response);
 
             verify(productService).createProduct(any(CreateProductRequest.class));
         }
@@ -92,26 +79,28 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -130,16 +119,18 @@ public class ProductControllerTests extends ControllerTestContext {
             CreateProductRequest request = new CreateProductRequest(name, description, price);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.name").value(nameMessage))
-                .andExpect(jsonPath("$.data.description").value(descriptionMessage))
-                .andExpect(jsonPath("$.data.price").value(priceMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of(
+                "name", nameMessage,
+                "description", descriptionMessage,
+                "price", priceMessage
+            ));
         }
 
         /*
@@ -193,19 +184,14 @@ public class ProductControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.created_at").exists())
-                .andExpect(jsonPath("$.created_by").exists())
-                .andExpect(jsonPath("$.modified_at").exists())
-                .andExpect(jsonPath("$.modified_by").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).updateProduct(anyLong(), any(UpdateProductRequest.class));
         }
@@ -215,26 +201,28 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -255,17 +243,19 @@ public class ProductControllerTests extends ControllerTestContext {
             UpdateProductRequest request = new UpdateProductRequest(name, description, price);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.product_id").value(productIdMessage))
-                .andExpect(jsonPath("$.data.name").value(nameMessage))
-                .andExpect(jsonPath("$.data.description").value(descriptionMessage))
-                .andExpect(jsonPath("$.data.price").value(priceMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of(
+                "product_id", productIdMessage,
+                "name", nameMessage,
+                "description", descriptionMessage,
+                "price", priceMessage
+            ));
         }
 
         /*
@@ -324,19 +314,14 @@ public class ProductControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.created_at").exists())
-                .andExpect(jsonPath("$.created_by").exists())
-                .andExpect(jsonPath("$.modified_at").exists())
-                .andExpect(jsonPath("$.modified_by").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).changeProductStock(anyLong(), any(ModifyStockRequest.class));
         }
@@ -346,26 +331,28 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -387,15 +374,14 @@ public class ProductControllerTests extends ControllerTestContext {
             ModifyStockRequest request = new ModifyStockRequest(stockChange);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.product_id").value(productIdMessage))
-                .andExpect(jsonPath("$.data.stock_change").value(stockChangeMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage, "stock_change", stockChangeMessage));
         }
 
     }
@@ -417,19 +403,16 @@ public class ProductControllerTests extends ControllerTestContext {
             //Arrange
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
+            when(securityUtils.getAuthenticatedUserRole())
+                .thenReturn(User.UserRole.OPERATOR.name());
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.created_at").exists())
-                .andExpect(jsonPath("$.created_by").exists())
-                .andExpect(jsonPath("$.modified_at").exists())
-                .andExpect(jsonPath("$.modified_by").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).getProduct(anyLong());
         }
@@ -440,25 +423,18 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
         void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
             //Arrange
-            reset(securityUtils);
-
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
             when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(role);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.created_at").doesNotExist())
-                .andExpect(jsonPath("$.created_by").doesNotExist())
-                .andExpect(jsonPath("$.modified_at").doesNotExist())
-                .andExpect(jsonPath("$.modified_by").doesNotExist());
+                .andExpect(status().isOk());
+
+            assertCustomerProductResponse(result, response);
 
             verify(productService).getProduct(anyLong());
         }
@@ -475,12 +451,12 @@ public class ProductControllerTests extends ControllerTestContext {
             String productIdMessage
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.product_id").value(productIdMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage));
         }
 
     }
@@ -503,15 +479,14 @@ public class ProductControllerTests extends ControllerTestContext {
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products")
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page").value(response.page()))
-                .andExpect(jsonPath("$.page_size").value(response.pageSize()))
-                .andExpect(jsonPath("$.total_pages").value(response.totalPages()))
-                .andExpect(jsonPath("$.total_elements").value(response.totalElements()))
-                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(status().isOk());
+
+            assertPaginatedResponse(result, response);
+
+            result
                 .andExpect(jsonPath("$.content", hasSize(2)))
                 .andExpect(jsonPath("$.content[0].id").value(productResponse1.id()))
                 .andExpect(jsonPath("$.content[1].id").value(productResponse2.id()));
@@ -541,21 +516,18 @@ public class ProductControllerTests extends ControllerTestContext {
         @MethodSource("provideInvalidPaginationAndFiltering")
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 400 Bad Request when invalid modify stock request fields")
-        void shouldReturn400_whenInvalidModifyStockRequest(
+        void shouldReturn400_whenInvalidProductFiltering(
             MultiValueMap<String, String> queryParams,
             Map<String, String> errorMessages
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products")
                         .queryParams(queryParams)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.name_contains").value(errorMessages.get("nameContains")))
-                .andExpect(jsonPath("$.data.min_stock").value(errorMessages.get("minStock")))
-                .andExpect(jsonPath("$.data.min_price").value(errorMessages.get("minPrice")))
-                .andExpect(jsonPath("$.data.max_price").value(errorMessages.get("maxPrice")));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, errorMessages);
         }
 
             /*
@@ -568,30 +540,30 @@ public class ProductControllerTests extends ControllerTestContext {
             return Stream.of(
                 Arguments.of(
                     MultiValueMap.fromSingleValue(Map.of(
-                        "nameContains", longName,
-                        "minStock", "-1",
-                        "minPrice", "-1",
-                        "maxPrice", "-1"
+                        "name_contains", longName,
+                        "min_stock", "-1",
+                        "min_price", "-1",
+                        "max_price", "-1"
                     )),
                     Map.of(
-                        "nameContains", "size must be between 0 and 100",
-                        "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
-                        "maxPrice", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
+                        "name_contains", "size must be between 0 and 100",
+                        "min_stock", "must be greater than or equal to 0",
+                        "min_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
+                        "max_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                     )
                 ),
                 Arguments.of(
                     MultiValueMap.fromSingleValue(Map.of(
-                        "nameContains", "   ",
-                        "minStock", "-1",
-                        "minPrice", Integer.MAX_VALUE + ".01",
-                        "maxPrice", Integer.MAX_VALUE + ".01"
+                        "name_contains", "   ",
+                        "min_stock", "-1",
+                        "min_price", Integer.MAX_VALUE + ".01",
+                        "max_price", Integer.MAX_VALUE + ".01"
                     )),
                     Map.of(
-                        "nameContains", "must be null or have at least one non-whitespace character",
-                        "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
-                        "maxPrice", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
+                        "name_contains", "must be null or have at least one non-whitespace character",
+                        "min_stock", "must be greater than or equal to 0",
+                        "min_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
+                        "max_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                     )
                 )
             );
@@ -614,13 +586,11 @@ public class ProductControllerTests extends ControllerTestContext {
                 .when(productService).deleteProduct(anyLong());
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(productService).deleteProduct(anyLong());
         }
@@ -630,22 +600,24 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -661,12 +633,12 @@ public class ProductControllerTests extends ControllerTestContext {
             String productIdMessage
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.product_id").value(productIdMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage));
         }
 
     }

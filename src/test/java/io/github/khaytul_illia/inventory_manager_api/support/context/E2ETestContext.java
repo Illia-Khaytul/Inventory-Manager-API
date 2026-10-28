@@ -3,6 +3,7 @@ package io.github.khaytul_illia.inventory_manager_api.support.context;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfig;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.e2e.AuthRequestUtils;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -41,10 +42,14 @@ public abstract class E2ETestContext {
 
     protected final String username = "username";
     protected final String password = "valid_pa55word";
+    protected User operator;
+    protected AuthRequestUtils authRequestUtils;
 
     @BeforeEach
     void createOperator(){
-        userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.OPERATOR));
+        authRequestUtils = new AuthRequestUtils(restClient, objectMapper);
+
+        operator = userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.OPERATOR));
     }
 
     @AfterEach
