@@ -11,6 +11,8 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -54,7 +55,7 @@ public class ProductServiceTests {
     @DisplayName("createProduct tests")
     class CreateProductTests {
 
-        private final CreateProductRequest request = new CreateProductRequest("product_name", null, BigDecimal.ONE);
+        private final CreateProductRequest request = ProductTestDataFactory.DEFAULT_CREATE_REQUEST;
 
         @Test
         @DisplayName("Should throw DuplicateEntryException when product name is not unique")
@@ -75,10 +76,8 @@ public class ProductServiceTests {
         @DisplayName("Should create new product when product name is unique")
         void shouldCreateNewProduct_whenProductNameIsUnique() {
             //Arrange
-            Product product = new Product();
-            product.setId(1L);
-            product.setName(request.name());
-            ProductResponse expectedResponse = new ProductResponse(product.getId(), product.getName(), null, 0, null, null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productRepository.existsByName(request.name()))
                 .thenReturn(false);
@@ -110,7 +109,7 @@ public class ProductServiceTests {
     class UpdateProductTests {
 
         private final long productId = 1L;
-        private final UpdateProductRequest request = new UpdateProductRequest("product_name", null, BigDecimal.ONE);
+        private final UpdateProductRequest request = ProductTestDataFactory.DEFAULT_UPDATE_REQUEST;
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
@@ -132,8 +131,8 @@ public class ProductServiceTests {
         void shouldReturnProductResponse_whenRequestIsEmpty() {
             //Arrange
             UpdateProductRequest request = new UpdateProductRequest(null, null, null);
-            Product product = new Product();
-            ProductResponse productResponse = new ProductResponse(1L, "Original Name", null, 0, new BigDecimal("11.11"), null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse productResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
@@ -156,8 +155,7 @@ public class ProductServiceTests {
         @DisplayName("Should throw DuplicateEntryException when new product name is not unique")
         void shouldThrowDuplicateEntryException_whenNewProductNameIsNotUnique() {
             //Arrange
-            Product product = new Product();
-            product.setName(request.name() + "_different");
+            Product product = ProductTestDataFactory.existingDefaultProduct();
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
@@ -183,10 +181,9 @@ public class ProductServiceTests {
         @DisplayName("Should not throw DuplicateEntryException when new product name is null or equal to old product name")
         void shouldNotThrowDuplicateEntryException_whenNewProductNameIsNullOrEqualToOldName(String oldName, String newName) {
             //Arrange
-            UpdateProductRequest request = new UpdateProductRequest(newName, "description", null);
-            Product product = new Product();
-            product.setName(oldName);
-            ProductResponse productResponse = new ProductResponse(1L, newName, null, 0, new BigDecimal("11.11"), null, null, null, null);
+            UpdateProductRequest request = new UpdateProductRequest(newName, "placeholder", null);
+            Product product = ProductTestDataFactory.defaults().name(oldName).build();
+            ProductResponse productResponse = ProductTestDataFactory.defaults().id(1L).name(newName).toResponse();
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
@@ -213,9 +210,8 @@ public class ProductServiceTests {
         @DisplayName("Should update the found product when the new product name is unique")
         void shouldUpdateProduct_whenNewProductNameIsUnique() {
             //Arrange
-            Product product = new Product();
-            product.setName(request.name() + "_different");
-            ProductResponse productResponse = new ProductResponse(1L, request.name(), null, 0, new BigDecimal("11.11"), null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse productResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
@@ -249,15 +245,14 @@ public class ProductServiceTests {
     class ChangeProductStockTests {
 
         private final long productId = 1L;
-        private final String authenticatedUsername = "operator";
-        private final ModifyStockRequest request = new ModifyStockRequest(10);
+        private final ModifyStockRequest request = ProductTestDataFactory.DEFAULT_MODIFY_STOCK_REQUEST;
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
         void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
             //Arrange
             when(securityUtils.getAuthenticatedUsername())
-                .thenReturn(authenticatedUsername);
+                .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
             when(productRepository.findById(productId))
@@ -277,10 +272,10 @@ public class ProductServiceTests {
         @DisplayName("Should throw InvalidStockModificationException when the product stock was not modified")
         void shouldThrowInvalidStockModificationException_whenProductStockNotModified() {
             //Arrange
-            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
 
             when(securityUtils.getAuthenticatedUsername())
-                .thenReturn(authenticatedUsername);
+                .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
             when(productRepository.findById(productId))
@@ -307,11 +302,11 @@ public class ProductServiceTests {
         @DisplayName("Should modify product stock when product stock change is valid")
         void shouldModifyProductStock_whenProductStockIsValid() {
             //Arrange
-            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
-            ProductResponse expectedResponse = new ProductResponse(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(securityUtils.getAuthenticatedUsername())
-                .thenReturn(authenticatedUsername);
+                .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(1);
             when(productRepository.findById(productId))
@@ -360,8 +355,8 @@ public class ProductServiceTests {
         @DisplayName("Should get product when product exists by id")
         void shouldGetProduct_whenProductExists() {
             //Arrange
-            Product product = new Product(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null, null);
-            ProductResponse expectedResponse = new ProductResponse(1L, "Original Product", null, 10, new BigDecimal("10.10"), null, null, null, null);
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
@@ -391,10 +386,10 @@ public class ProductServiceTests {
         void shouldGetProductPageWithPaginationAndFiltering() {
             //Arrange
             Pageable pagination = PageRequest.of(0, 10);
-            ProductFiltering filtering = new ProductFiltering("Product", null, null, new BigDecimal(100));
+            ProductFiltering filtering = new ProductFiltering("Product", null, null, null);
             Specification<Product> spec = Specification.allOf();
             Page<Product> page = new PageImpl<>(List.of(), pagination, 0);
-            PaginatedResponse<ProductShortResponse> expectedResponse = new PaginatedResponse<>(0, 10, 1, 0, List.of());
+            PaginatedResponse<ProductShortResponse> expectedResponse = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;
 
             when(specificationBuilder.buildSpecificationFromFiltering(filtering))
                 .thenReturn(spec);
@@ -418,7 +413,6 @@ public class ProductServiceTests {
         }
 
     }
-
 
     @Nested
     @DisplayName("deleteProduct tests")

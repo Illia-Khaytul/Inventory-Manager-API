@@ -1,6 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.auth.session;
 
 import io.github.khaytul_illia.inventory_manager_api.support.context.RepositoryTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,8 +16,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static io.github.khaytul_illia.inventory_manager_api.support.utils.TestDataUtils.buildSession;
-import static io.github.khaytul_illia.inventory_manager_api.support.utils.TestDataUtils.buildUser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("UserSessionRepository tests")
@@ -65,7 +66,7 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
         }
 
         private static Arguments noSessionsCase(){
-            User owner = buildUser("username");
+            User owner = UserTestDataFactory.newDefaultUser();
 
             return Arguments.of(
                 List.of(), owner, 0
@@ -73,46 +74,49 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
         }
 
         private static Arguments onlyOtherUserSessionsCase(){
-            User owner = buildUser("username");
-            User otherUser = buildUser("otherUser");
-            Instant now = Instant.now();
-            UserSession validOtherUserSession1 = buildSession(true, now, otherUser);
-            UserSession validOtherUserSession2 = buildSession(true, now, otherUser);
+            User owner = UserTestDataFactory.newDefaultUser();
+            User otherUser = UserTestDataFactory.newUniqueUser();
 
             return Arguments.of(
-                List.of(validOtherUserSession1, validOtherUserSession2), owner, 0
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(otherUser),
+                    UserSessionTestDataFactory.newUserSession(otherUser)
+                ),
+                owner, 0
             );
         }
 
         private static Arguments validOwnerAndOtherUserSessionsCase(){
-            User owner = buildUser("username");
-            User otherUser = buildUser("otherUser");
-            Instant now = Instant.now();
-            UserSession validOwnerSession1 = buildSession(true, now, owner);
-            UserSession validOwnerSession2 = buildSession(true, now, owner);
-            UserSession validOtherUserSession1 = buildSession(true, now, otherUser);
-            UserSession validOtherUserSession2 = buildSession(true, now, otherUser);
+            User owner = UserTestDataFactory.newDefaultUser();
+            User otherUser = UserTestDataFactory.newUniqueUser();
 
             return Arguments.of(
-                List.of(validOwnerSession1, validOwnerSession2, validOtherUserSession1, validOtherUserSession2), owner, 2
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(owner),
+                    UserSessionTestDataFactory.newUserSession(owner),
+                    UserSessionTestDataFactory.newUserSession(otherUser),
+                    UserSessionTestDataFactory.newUserSession(otherUser)
+                ),
+                owner, 2
             );
         }
 
         private static Arguments validAndInvalidOwnerSessionsAndValidForOtherUserCase(){
-            User owner = buildUser("username");
-            User otherUser = buildUser("otherUser");
             Instant now = Instant.now();
-            UserSession validOwnerSession1 = buildSession(true, now, owner);
-            UserSession validOwnerSession2 = buildSession(true, now, owner);
-            UserSession invalidOwnerSession = buildSession(false, now, owner);
-            UserSession expiredOwnerSession = buildSession(true, now.minusSeconds(36000), owner);
-            UserSession expiredAndInvalidOwnerSession = buildSession(false, now.minusSeconds(36000), owner);
-            UserSession validOtherUserSession1 = buildSession(true, now, otherUser);
-            UserSession validOtherUserSession2 = buildSession(true, now, otherUser);
+            User owner = UserTestDataFactory.newDefaultUser();
+            User otherUser = UserTestDataFactory.newUniqueUser();
 
             return Arguments.of(
-                List.of(validOwnerSession1, validOwnerSession2, invalidOwnerSession, expiredOwnerSession, expiredAndInvalidOwnerSession,
-                    validOtherUserSession1, validOtherUserSession2), owner, 2
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(owner),
+                    UserSessionTestDataFactory.newUserSession(owner),
+                    UserSessionTestDataFactory.newUserSession(false, now, owner),
+                    UserSessionTestDataFactory.newUserSession(true, now.minusSeconds(36000), owner),
+                    UserSessionTestDataFactory.newUserSession(false, now.minusSeconds(36000), owner),
+                    UserSessionTestDataFactory.newUserSession(otherUser),
+                    UserSessionTestDataFactory.newUserSession(otherUser)
+                ),
+                owner, 2
             );
         }
 
@@ -181,25 +185,22 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
         }
 
         private static Arguments provideTargetSessionAlone(){
-            Instant now = Instant.now();
-            User user = buildUser("username");
-            UserSession session = buildSession(true, now, user);
-
+            User user = UserTestDataFactory.newDefaultUser();
+            
             return Arguments.of(
-                session, List.of()
+                UserSessionTestDataFactory.newUserSession(user), List.of()
             );
         }
 
         private static Arguments provideTargetAndOtherSessions(){
-            Instant now = Instant.now();
-            User user = buildUser("username");
-            UserSession target = buildSession(true, now, user);
-            UserSession other1 = buildSession(true, now, user);
-            UserSession other2 = buildSession(true, now, user);
+            User user = UserTestDataFactory.newDefaultUser();
 
             return Arguments.of(
-                target,
-                List.of(other1, other2)
+                UserSessionTestDataFactory.newUserSession(user),
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(user),
+                    UserSessionTestDataFactory.newUserSession(user)
+                )
             );
         }
         
@@ -208,8 +209,6 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
     @Nested
     @DisplayName("invalidateAllUserSessions tests")
     class InvalidateAllUserSessionsTests{
-
-        private static final String username = "username";
 
         @ParameterizedTest
         @MethodSource("provideUserSessions")
@@ -228,7 +227,7 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
             entityManager.clear();
 
             //Act
-            sessionRepository.invalidateAllUserSessions(username);
+            sessionRepository.invalidateAllUserSessions(TestDataConstants.USER_USERNAME);
 
             //Assert
             targetSessions.forEach(
@@ -255,42 +254,44 @@ public class UserSessionRepositoryTests extends RepositoryTestContext {
         }
 
         private static Arguments provideValidOwnedSessions(){
-            Instant now = Instant.now();
-            User user = buildUser(username);
-            UserSession validOwned1 = buildSession(true, now, user);
-            UserSession validOwned2 = buildSession(true, now, user);
+            User user = UserTestDataFactory.newDefaultUser();
 
             return Arguments.of(
-                List.of(validOwned1, validOwned2),
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(user),
+                    UserSessionTestDataFactory.newUserSession(user)
+                ),
                 List.of()
             );
         }
 
         private static Arguments provideValidAndInvalidOwnedSessions(){
             Instant now = Instant.now();
-            User user = buildUser(username);
-            UserSession validOwned = buildSession(true, now, user);
-            UserSession validExpiredOwned = buildSession(true, now.minusSeconds(36000), user);
-            UserSession invalidOwned = buildSession(false, now, user);
+            User user = UserTestDataFactory.newDefaultUser();
 
             return Arguments.of(
-                List.of(validOwned, validExpiredOwned, invalidOwned),
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(user),
+                    UserSessionTestDataFactory.newUserSession(true, now.minusSeconds(36000), user),
+                    UserSessionTestDataFactory.newUserSession(false, now, user)
+                ),
                 List.of()
             );
         }
 
         private static Arguments provideValidOwnedAndUnownedSessions(){
-            Instant now = Instant.now();
-            User targetUser = buildUser(username);
-            User otherUser = buildUser(username + "_other");
-            UserSession validOwned1 = buildSession(true, now, targetUser);
-            UserSession validOwned2 = buildSession(true, now, targetUser);
-            UserSession validUnowned1 = buildSession(true, now, otherUser);
-            UserSession validUnowned2 = buildSession(true, now, otherUser);
+            User targetUser = UserTestDataFactory.newDefaultUser();
+            User otherUser = UserTestDataFactory.newUniqueUser();
 
             return Arguments.of(
-                List.of(validOwned1, validOwned2),
-                List.of(validUnowned1, validUnowned2)
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(targetUser),
+                    UserSessionTestDataFactory.newUserSession(targetUser)
+                ),
+                List.of(
+                    UserSessionTestDataFactory.newUserSession(otherUser),
+                    UserSessionTestDataFactory.newUserSession(otherUser)
+                )
             );
         }
 

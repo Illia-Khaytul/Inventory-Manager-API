@@ -1,5 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +23,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("BaseOperatorSeeder tests")
 public class BaseOperatorSeederTests {
 
-    private final String baseUsername = "username";
-    private final String basePassword = "password";
+    private final String baseUsername = TestDataConstants.USER_USERNAME;
     @Mock
     private UserService userService;
     @Mock
@@ -33,7 +34,7 @@ public class BaseOperatorSeederTests {
     void beforeEach(){
         baseOperatorSeeder = new BaseOperatorSeeder(
             baseUsername,
-            basePassword,
+            TestDataConstants.USER_PASSWORD,
             userService,
             userRepository
         );
@@ -68,7 +69,7 @@ public class BaseOperatorSeederTests {
     @DisplayName("Should throw IllegalStateException when base user already exists but is not an OPERATOR")
     void shouldThrowIllegalStateException_whenBaseUserExistsButNotOperator(User.UserRole role){
         //Arrange
-        User user = new User(1L, baseUsername, basePassword + "_hashed", role);
+        User user = UserTestDataFactory.builder().username(baseUsername).role(role).build();
         when(userRepository.findByUsername(baseUsername))
             .thenReturn(Optional.of(user));
 
@@ -85,7 +86,7 @@ public class BaseOperatorSeederTests {
     @DisplayName("Should do nothing when base OPERATOR user exists")
     void shouldDoNothing_whenBaseOperatorUserExists(){
         //Arrange
-        User user = new User(1L, baseUsername, basePassword + "_hashed", User.UserRole.OPERATOR);
+        User user = UserTestDataFactory.existingDefaultOperator();
         when(userRepository.findByUsername(baseUsername))
             .thenReturn(Optional.of(user));
 

@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.user.password;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidPasswordException;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,9 +39,9 @@ public class UserPasswordValidatorTests {
 
     @Test
     @DisplayName("Should do nothing when password is valid")
-    void should_when(){
+    void shouldDoNothing_whenPasswordIsValid(){
         //Arrange
-        String validPassword = "validPassword656";
+        String validPassword = TestDataConstants.USER_PASSWORD;
 
         //Act
         passwordValidator.validateUserPassword(validPassword);

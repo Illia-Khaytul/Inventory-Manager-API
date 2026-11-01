@@ -3,6 +3,8 @@ package io.github.khaytul_illia.inventory_manager_api.support.context;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionRepository;
 import io.github.khaytul_illia.inventory_manager_api.auth.token.RefreshTokenRepository;
 import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfig;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.support.utils.e2e.AuthRequestUtils;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
@@ -40,8 +42,6 @@ public abstract class E2ETestContext {
     @LocalServerPort
     protected int port;
 
-    protected final String username = "username";
-    protected final String password = "valid_pa55word";
     protected User operator;
     protected AuthRequestUtils authRequestUtils;
 
@@ -49,7 +49,11 @@ public abstract class E2ETestContext {
     void createOperator(){
         authRequestUtils = new AuthRequestUtils(restClient, objectMapper);
 
-        operator = userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.OPERATOR));
+        operator = userRepository.save(UserTestDataFactory.defaults()
+            .password(passwordEncoder.encode(TestDataConstants.USER_PASSWORD))
+            .role(User.UserRole.OPERATOR)
+            .build()
+        );
     }
 
     @AfterEach

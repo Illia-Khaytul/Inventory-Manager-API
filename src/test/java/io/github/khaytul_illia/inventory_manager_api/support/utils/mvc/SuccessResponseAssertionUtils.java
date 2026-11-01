@@ -6,6 +6,7 @@ import io.github.khaytul_illia.inventory_manager_api.product.response.ProductRes
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,7 +58,8 @@ public class SuccessResponseAssertionUtils {
             .andExpect(jsonPath("$.page_size").value(expected.pageSize()))
             .andExpect(jsonPath("$.total_pages").value(expected.totalPages()))
             .andExpect(jsonPath("$.total_elements").value(expected.totalElements()))
-            .andExpect(jsonPath("$.content").isArray());
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content", hasSize((int) expected.totalElements())));
     }
 
     public static void assertNoContentResponse(ResultActions result) throws Exception{

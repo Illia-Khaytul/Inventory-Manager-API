@@ -4,6 +4,8 @@ import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.RefreshTokenTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.ResultActions;
 
-import java.time.Instant;
 import java.util.Map;
 
 import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
@@ -36,20 +37,8 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK when login is successful")
         void shouldReturn200_whenSuccessfulLogin() throws Exception{
             //Arrange
-            LoginRequest request = new LoginRequest(
-                "username",
-                "password"
-            );
-            Instant now = Instant.now();
-            AccessTokenResponse response = new AccessTokenResponse(
-                "issuer",
-                now,
-                now.plusSeconds(900),
-                "username",
-                "CUSTOMER",
-                "access token",
-                "refresh token"
-            );
+            LoginRequest request = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
+            AccessTokenResponse response = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(authService.login(any(LoginRequest.class)))
                 .thenReturn(response);
@@ -71,20 +60,8 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK when accessed with no authentication")
         void shouldReturn200_whenNoAuthentication() throws Exception{
             //Arrange
-            LoginRequest request = new LoginRequest(
-                "username",
-                "password"
-            );
-            Instant now = Instant.now();
-            AccessTokenResponse response = new AccessTokenResponse(
-                "issuer",
-                now,
-                now.plusSeconds(900),
-                "username",
-                "CUSTOMER",
-                "access token",
-                "refresh token"
-            );
+            LoginRequest request = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
+            AccessTokenResponse response = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(authService.login(any(LoginRequest.class)))
                 .thenReturn(response);
@@ -143,17 +120,8 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK when successfully refreshed access")
         void shouldReturn200_whenSuccessfulRefreshAccess() throws Exception{
             //Arrange
-            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
-            Instant now = Instant.now();
-            AccessTokenResponse response = new AccessTokenResponse(
-                "issuer",
-                now,
-                now.plusSeconds(900),
-                "username",
-                "CUSTOMER",
-                "access token",
-                "new refresh token"
-            );
+            RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
+            AccessTokenResponse response = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(authService.refreshAccess(any(RefreshTokenRequest.class)))
                 .thenReturn(response);
@@ -175,17 +143,8 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK when accessed with no authentication")
         void shouldReturn200_whenNoAuthentication() throws Exception{
             //Arrange
-            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
-            Instant now = Instant.now();
-            AccessTokenResponse response = new AccessTokenResponse(
-                "issuer",
-                now,
-                now.plusSeconds(900),
-                "username",
-                "CUSTOMER",
-                "access token",
-                "new refresh token"
-            );
+            RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
+            AccessTokenResponse response = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(authService.refreshAccess(any(RefreshTokenRequest.class)))
                 .thenReturn(response);
@@ -242,7 +201,7 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 204 No Content when logout is successful")
         void shouldReturn204_whenSuccessfulLogout() throws Exception{
             //Arrange
-            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+            RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
             doNothing().
                 when(authService).logout(any(RefreshTokenRequest.class));
@@ -263,7 +222,7 @@ public class AuthControllerTests extends ControllerTestContext {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception{
             //Arrange
-            RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+            RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
             doNothing().
                 when(authService).logout(any(RefreshTokenRequest.class));

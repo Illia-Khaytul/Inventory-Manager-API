@@ -1,6 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.auth.session;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.UserSessionLimitExceededException;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,9 +69,7 @@ public class UserSessionServiceTests {
         @DisplayName("Should create and persist a new user session when the user has not reached the max open session limit")
         void shouldCreateAndPersistNewSession_whenOpenSessionLimitIsNotReached(){
             //Arrange
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            Instant now = Instant.now();
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
+            UserSession session = UserSessionTestDataFactory.existingUserSession();
 
             when(sessionRepository.countOpenUserSessions(userId))
                 .thenReturn(0);
@@ -95,12 +96,12 @@ public class UserSessionServiceTests {
     @DisplayName("invalidateSession tests")
     class InvalidateSessionTests{
 
-        private final Long sessionId = 1L;
-
         @Test
         @DisplayName("Should invalidate user session by id")
         void shouldInvalidateSessionById(){
             //Arrange
+            Long sessionId = 1L;
+
             doNothing()
                 .when(sessionRepository).invalidateSessionById(sessionId);
 
@@ -117,12 +118,12 @@ public class UserSessionServiceTests {
     @DisplayName("invalidateAllUserSessions tests")
     class InvalidateAllUserSessionsTests{
 
-        private final String username = "username";
-
         @Test
         @DisplayName("Should invalidate all user sessions by username")
-        void shouldInvalidateAllUserSssionsByUsername(){
+        void shouldInvalidateAllUserSessionsByUsername(){
             //Arrange
+            String username = TestDataConstants.USER_USERNAME;
+
             doNothing()
                 .when(sessionRepository).invalidateAllUserSessions(username);
 

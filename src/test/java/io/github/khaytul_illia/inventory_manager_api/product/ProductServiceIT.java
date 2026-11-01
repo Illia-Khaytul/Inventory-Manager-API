@@ -9,7 +9,9 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFilt
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.TestAuthenticationUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,7 +22,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.TransactionDefinition;
 
@@ -46,27 +47,22 @@ public class ProductServiceIT extends ServiceITContext {
     @Qualifier("productRepository")
     private ProductRepository realProductRepository;
 
-    private final String authenticatedUsername = "operator1";
-    private final String productName = "original product";
-    private final BigDecimal price = new BigDecimal("20.05");
     private Product product;
 
     @BeforeEach
     void beforeEach() {
+        TestAuthenticationUtils.setOperatorAuthentication();
+
         transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
-        SecurityContextHolder.getContext().setAuthentication(
-            new TestingAuthenticationToken(authenticatedUsername, "password", "ROLE_" + User.UserRole.OPERATOR.name())
-        );
-
-        product = productRepository.save(new Product(null, productName, null, 100, price, null, null, null, null, null));
+        product = productRepository.save(ProductTestDataFactory.defaults().stock(100).build());
     }
 
     @AfterEach
     void afterEach() {
-        SecurityContextHolder.getContext().setAuthentication(null);
-
         productRepository.deleteAll();
+
+        TestAuthenticationUtils.resetAuthentication();
     }
 
     @Nested
@@ -77,7 +73,7 @@ public class ProductServiceIT extends ServiceITContext {
         @DisplayName("Should create new product with the provided data")
         void shouldCreateNewProduct() {
             //Arrange
-            CreateProductRequest request = new CreateProductRequest(productName + "_unique", null, price);
+            CreateProductRequest request = ProductTestDataFactory.uniqueCreateProductRequest();
 
             //Act
             ProductResponse response = productService.createProduct(request);
@@ -89,7 +85,7 @@ public class ProductServiceIT extends ServiceITContext {
             assertThat(response.id()).isNotNull();
             assertThat(response.stock()).isEqualTo(0);
             assertThat(response.createdAt()).isCloseTo(now, within(10, ChronoUnit.SECONDS));
-            assertThat(response.createdBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.createdBy()).isEqualTo(TestDataConstants.USER_USERNAME);
             assertThat(response.modifiedAt()).isNull();
             assertThat(response.modifiedBy()).isNull();
 
@@ -102,9 +98,7 @@ public class ProductServiceIT extends ServiceITContext {
     @DisplayName("updateProduct integration tests")
     class UpdateProductIT {
 
-        private final String newName = productName + "_new";
-        private final BigDecimal newPrice = new BigDecimal("101.99");
-        private final UpdateProductRequest request = new UpdateProductRequest(newName, null, newPrice);
+        private final UpdateProductRequest request = ProductTestDataFactory.DEFAULT_UPDATE_REQUEST;
 
         @Test
         @DisplayName("Should throw EntityNotFoundException when product is deleted mid-operation")
@@ -149,8 +143,9 @@ public class ProductServiceIT extends ServiceITContext {
                 .isInstanceOf(OptimisticLockingFailureException.class);
 
             Product modifiedProduct = productRepository.findById(product.getId()).orElseThrow();
-            assertThat(modifiedProduct.getName()).isEqualTo(productName);
-            assertThat(modifiedProduct.getPrice()).isEqualTo(price);
+            assertThat(modifiedProduct.getName()).isEqualTo(TestDataConstants.PRODUCT_NAME);
+            assertThat(modifiedProduct.getDescription()).isEqualTo(TestDataConstants.PRODUCT_DESCRIPTION);
+            assertThat(modifiedProduct.getPrice()).isEqualTo(TestDataConstants.PRODUCT_PRICE);
         }
 
         @Test
@@ -179,8 +174,9 @@ public class ProductServiceIT extends ServiceITContext {
             assertThat(response.id()).isEqualTo(product.getId());
 
             Product modifiedProduct = productRepository.findById(product.getId()).orElseThrow();
-            assertThat(modifiedProduct.getName()).isEqualTo(newName);
-            assertThat(modifiedProduct.getPrice()).isEqualTo(newPrice);
+            assertThat(modifiedProduct.getName()).isEqualTo(request.name());
+            assertThat(modifiedProduct.getDescription()).isEqualTo(TestDataConstants.PRODUCT_DESCRIPTION);
+            assertThat(modifiedProduct.getPrice()).isEqualTo(request.price());
         }
 
         @Test
@@ -195,16 +191,18 @@ public class ProductServiceIT extends ServiceITContext {
             //Assert
             assertThat(response).isNotNull();
             assertThat(response.id()).isEqualTo(product.getId());
-            assertThat(response.name()).isEqualTo(newName);
-            assertThat(response.price()).isEqualTo(newPrice);
+            assertThat(response.name()).isEqualTo(request.name());
+            assertThat(response.description()).isEqualTo(TestDataConstants.PRODUCT_DESCRIPTION);
+            assertThat(response.price()).isEqualTo(request.price());
             assertThat(response.createdAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
-            assertThat(response.createdBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.createdBy()).isEqualTo(TestDataConstants.USER_USERNAME);
             assertThat(response.modifiedAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
-            assertThat(response.modifiedBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.modifiedBy()).isEqualTo(TestDataConstants.USER_USERNAME);
 
             Product modifiedProduct = productRepository.findById(product.getId()).orElseThrow();
-            assertThat(modifiedProduct.getName()).isEqualTo(newName);
-            assertThat(modifiedProduct.getPrice()).isEqualTo(newPrice);
+            assertThat(modifiedProduct.getName()).isEqualTo(request.name());
+            assertThat(modifiedProduct.getDescription()).isEqualTo(TestDataConstants.PRODUCT_DESCRIPTION);
+            assertThat(modifiedProduct.getPrice()).isEqualTo(request.price());
         }
 
     }
@@ -217,7 +215,7 @@ public class ProductServiceIT extends ServiceITContext {
         @DisplayName("Should change product stock")
         void shouldChangeProductStock() {
             //Arrange
-            ModifyStockRequest request = new ModifyStockRequest(10);
+            ModifyStockRequest request = ProductTestDataFactory.DEFAULT_MODIFY_STOCK_REQUEST;
             int originalStock = product.getStock();
             int originalVersion = product.getVersion();
 
@@ -230,9 +228,9 @@ public class ProductServiceIT extends ServiceITContext {
             assertThat(response.id()).isEqualTo(product.getId());
             assertThat(response.stock()).isEqualTo(originalStock + request.stockChange());
             assertThat(response.createdAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
-            assertThat(response.createdBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.createdBy()).isEqualTo(TestDataConstants.USER_USERNAME);
             assertThat(response.modifiedAt()).isCloseTo(now, within(1, ChronoUnit.MINUTES));
-            assertThat(response.modifiedBy()).isEqualTo(authenticatedUsername);
+            assertThat(response.modifiedBy()).isEqualTo(TestDataConstants.USER_USERNAME);
 
             Product modifiedProduct = productRepository.findById(product.getId()).orElseThrow();
             assertThat(modifiedProduct.getStock()).isEqualTo(originalStock + request.stockChange());
@@ -254,7 +252,7 @@ public class ProductServiceIT extends ServiceITContext {
             //Assert
             assertThat(response).isNotNull();
             assertThat(response.id()).isEqualTo(product.getId());
-            assertThat(response.name()).isEqualTo(productName);
+            assertThat(response.name()).isEqualTo(product.getName());
         }
 
     }
@@ -267,12 +265,11 @@ public class ProductServiceIT extends ServiceITContext {
 
         @BeforeEach
         void beforeEach() {
-            Instant now = Instant.now();
-            Product product1 = productRepository.save(new Product(null, "product1aaa", null, 0, new BigDecimal("10"), now, "operator1", null, null, null));
-            Product product2 = productRepository.save(new Product(null, "product2aba", null, 10, new BigDecimal("10.01"), now, "operator1", null, null, null));
-            Product product3 = productRepository.save(new Product(null, "product3abc", null, 5, new BigDecimal("20"), now, "operator1", null, null, null));
-            Product product4 = productRepository.save(new Product(null, "product4acb", null, 6, new BigDecimal("5.6"), now, "operator1", null, null, null));
-            Product product5 = productRepository.save(new Product(null, "product5cba", null, 7, new BigDecimal("9.3"), now, "operator1", null, null, null));
+            Product product1 = productRepository.save(ProductTestDataFactory.newProduct("product1aaa", 0, "10"));
+            Product product2 = productRepository.save(ProductTestDataFactory.newProduct("product2aba", 10, "10.01"));
+            Product product3 = productRepository.save(ProductTestDataFactory.newProduct("product3abc", 5, "20"));
+            Product product4 = productRepository.save(ProductTestDataFactory.newProduct("product4acb", 6, "5.6"));
+            Product product5 = productRepository.save(ProductTestDataFactory.newProduct("product5cba", 7, "9.3"));
             products = List.of(product1, product2, product3, product4, product5);
 
             productRepository.deleteById(product.getId());

@@ -1,6 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
 import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
@@ -34,8 +35,8 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 201 Created when successfully created new user with CUSTOMER role")
         void shouldReturn201_whenSuccessfullyCreatedCustomer() throws Exception{
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.CUSTOMER);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.DEFAULT_CUSTOMER_RESPONSE;
 
             when(userService.createUser(request, User.UserRole.CUSTOMER))
                 .thenReturn(response);
@@ -57,8 +58,8 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 201 Created when accessed with no authentication")
         void shouldReturn201_whenNoAuthentication() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.CUSTOMER);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.DEFAULT_CUSTOMER_RESPONSE;
 
             when(userService.createUser(request, User.UserRole.CUSTOMER))
                 .thenReturn(response);
@@ -117,8 +118,8 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 201 Created when successfully created new user with OPERATOR role")
         void shouldReturn201_whenSuccessfullyCreatedOperator() throws Exception{
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.OPERATOR);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.defaults().id(1L).role(User.UserRole.OPERATOR).toResponse();
 
             when(userService.createUser(request, User.UserRole.OPERATOR))
                 .thenReturn(response);
@@ -141,7 +142,7 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
 
             //Act and Assert
             ResultActions result = mockMvc.perform(
@@ -158,7 +159,7 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
 
             //Act and Assert
             ResultActions result = mockMvc.perform(
@@ -214,7 +215,7 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 204 No Content when successfully changed authenticated user password")
         void shouldReturn204_whenSuccessfullyChangedUserPassword() throws Exception{
             //Arrange
-            PasswordChangeRequest request = new PasswordChangeRequest("oldPassword", "newPassword");
+            PasswordChangeRequest request = UserTestDataFactory.DEFAULT_PASSWORD_CHANGE_REQUEST;
 
             doNothing()
                 .when(userService).changePassword(request);
@@ -235,7 +236,7 @@ public class UserControllerTests extends ControllerTestContext {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Arrange
-            PasswordChangeRequest request = new PasswordChangeRequest("oldPassword", "newPassword");
+            PasswordChangeRequest request = UserTestDataFactory.DEFAULT_PASSWORD_CHANGE_REQUEST;
 
             //Act and Assert
             ResultActions result = mockMvc.perform(

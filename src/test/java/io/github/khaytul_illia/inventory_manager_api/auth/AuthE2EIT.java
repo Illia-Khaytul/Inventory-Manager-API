@@ -7,7 +7,7 @@ import io.github.khaytul_illia.inventory_manager_api.auth.request.LoginRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRequest;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
-import io.github.khaytul_illia.inventory_manager_api.support.utils.e2e.AuthRequestUtils;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +24,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in and opens a session, refreshes access to the session, then logs out and closes it")
     void userLogin_refreshAccess_logout_sessionGetsClosed(){
         //Login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
@@ -36,7 +36,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Refresh access
         RefreshTokenRequest refreshAccessRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        AccessTokenResponse refreshTokenResponse = authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, username, loginAccessToken);
+        AccessTokenResponse refreshTokenResponse = authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, loginRequest.username(), loginAccessToken);
         String refreshAccessToken = refreshTokenResponse.accessToken();
         String refreshRefreshToken = refreshTokenResponse.refreshToken();
 
@@ -60,7 +60,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in and opens a session, refreshes access first with a valid token, then with a used one, the session gets closed automatically")
     void userLogin_refreshAccess_refreshAccessWithUsedToken_sessionGetsClosed(){
         //Login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
@@ -72,7 +72,7 @@ public class AuthE2EIT extends E2ETestContext {
         //Refresh access
         RefreshTokenRequest refreshAccessRequest = new RefreshTokenRequest(loginRefreshToken);
 
-        authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, username, loginAccessToken);
+        authRequestUtils.performSuccessfulRefreshAccess(refreshAccessRequest, loginRequest.username(), loginAccessToken);
 
         String hashedLoginRefreshToken = tokenFactory.hashTokenValue(loginRefreshToken);
         RefreshToken loginRefreshTokenEntry = refreshTokenRepository.findByTokenValue(hashedLoginRefreshToken).orElseThrow();
@@ -93,7 +93,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in twice and opens two sessions, then logs out of the first one, the second one remains open")
     void userLogin_loginAgain_logoutFirstSession_secondSessionRemainsOpen(){
         //First login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse firstLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String firstAccessToken = firstLoginResponse.accessToken();
@@ -130,7 +130,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in twice and opens two sessions, then logs out of all sessions, all sessions get closed")
     void userLogin_loginAgain_logoutAll_allSessionsGetClosed(){
         //First login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse firstLoginResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String firstAccessToken = firstLoginResponse.accessToken();
@@ -165,7 +165,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in and opens a session, logs out and closes it, then tries to refresh access to that session, nothing happens, session already closed")
     void userLogin_logout_refreshAccess_nothingHappens(){
         //Login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();
@@ -200,7 +200,7 @@ public class AuthE2EIT extends E2ETestContext {
     @DisplayName("User logs in and opens a session, logs out and closes it, then logs out for the same session again, nothing happens, session already closed")
     void userLogin_logout_logoutAgain_nothingHappens(){
         //Login
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         AccessTokenResponse loginTokenResponse = authRequestUtils.performSuccessfulLogin(loginRequest);
         String loginAccessToken = loginTokenResponse.accessToken();

@@ -3,6 +3,8 @@ package io.github.khaytul_illia.inventory_manager_api.user;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.DuplicateEntryException;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidPasswordException;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.password.UserPasswordValidator;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
@@ -41,9 +43,9 @@ public class UserServiceTests {
     @DisplayName("createUser tests")
     class CreateUserTests{
 
-        private final String username = "username";
-        private final String password = "password";
-        private final CreateUserRequest request = new CreateUserRequest(username, password);
+        private final CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+        private final String username = request.username();
+        private final String password = request.password();
         private final User.UserRole role = User.UserRole.CUSTOMER;
 
         @Test
@@ -67,8 +69,8 @@ public class UserServiceTests {
         @DisplayName("Should create new user when the provided username is unique")
         void shouldCreateNewUser_whenUsernameIsUnique(){
             //Arrange
-            User user = new User(1L, username, password, role);
-            UserResponse userResponse = new UserResponse(1L, username, role);
+            User user = UserTestDataFactory.existingDefaultUser();
+            UserResponse userResponse = UserTestDataFactory.DEFAULT_CUSTOMER_RESPONSE;
 
             doNothing()
                 .when(passwordValidator).validateUserPassword(password);
@@ -99,9 +101,9 @@ public class UserServiceTests {
     @DisplayName("changePassword tests")
     class ChangePasswordTests{
 
-        private final String newPassword = "newPassword";
-        private final String oldPassword = "oldPassword";
-        private final PasswordChangeRequest request = new PasswordChangeRequest(oldPassword, newPassword);
+        private final PasswordChangeRequest request = UserTestDataFactory.DEFAULT_PASSWORD_CHANGE_REQUEST;
+        private final String newPassword = request.newPassword();
+        private final String oldPassword = request.oldPassword();
 
         @Test
         @DisplayName("Should throw InvalidPasswordException when the new password is the same as the old password")
@@ -124,7 +126,7 @@ public class UserServiceTests {
         @DisplayName("Should throw InvalidPasswordException when the provided old password does not match the existing old password")
         void shouldThrowInvalidPasswordException_whenProvidedAndExistingOldPasswordsDoNotMatch(){
             //Arrange
-            User authenticatedUser = new User(1L, "username", oldPassword + "_hash", User.UserRole.CUSTOMER);
+            User authenticatedUser = UserTestDataFactory.existingDefaultUser();
 
             doNothing()
                 .when(passwordValidator).validateUserPassword(newPassword);
@@ -152,7 +154,7 @@ public class UserServiceTests {
         @DisplayName("Should change user password when the new password is valid")
         void shouldChangeUserPassword_whenNewPasswordIsValid(){
             //Arrange
-            User authenticatedUser = new User(1L, "username", oldPassword, User.UserRole.CUSTOMER);
+            User authenticatedUser = UserTestDataFactory.existingDefaultUser();
 
             doNothing()
                 .when(passwordValidator).validateUserPassword(newPassword);
@@ -185,7 +187,7 @@ public class UserServiceTests {
         @DisplayName("Should delete the authenticated user account")
         void shouldDeleteUserAccount(){
             //Arrange
-            String username = "username";
+            String username = TestDataConstants.USER_USERNAME;
 
             when(securityUtils.getAuthenticatedUsername())
                 .thenReturn(username);

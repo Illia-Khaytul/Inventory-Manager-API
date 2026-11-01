@@ -1,6 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.security;
 
 import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFoundException;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.TestAuthenticationUtils;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.*;
@@ -49,12 +52,12 @@ public class SecurityUtilsTests {
     @DisplayName("loadAuthenticatedUser tests")
     class LoadAuthenticatedUserTests{
 
-        private final String username = "username";
-
         @Test
         @DisplayName("Should throw EntityNotFoundException when the authenticated user does not exist")
         void shouldThrowEntityNotFoundException_whenAuthenticatedUserDoesNotExist(){
             //Arrange
+            String username = TestDataConstants.USER_USERNAME;
+
             doReturn(username)
                 .when(securityUtilsSpy).getAuthenticatedUsername();
             when(userRepository.findByUsername(username))
@@ -73,7 +76,8 @@ public class SecurityUtilsTests {
         @DisplayName("Should return the authenticated user when it exists")
         void shouldReturnAuthenticatedUser_whenItExists(){
             //Arrange
-            User foundUser = new User(1L, username, "password", User.UserRole.CUSTOMER);
+            User foundUser = UserTestDataFactory.existingDefaultUser();
+            String username = foundUser.getUsername();
 
             doReturn(username)
                 .when(securityUtilsSpy).getAuthenticatedUsername();
@@ -122,8 +126,8 @@ public class SecurityUtilsTests {
         @DisplayName("Should return authenticated username when authenticated username is not null or blank")
         void shouldReturnUsername_whenAuthenticatedUsernamePresent(){
             //Arrange
-            String username = "username";
-            TestingAuthenticationToken authentication = new TestingAuthenticationToken(username, "password", User.UserRole.CUSTOMER.name());
+            String username = TestDataConstants.USER_USERNAME;
+            TestingAuthenticationToken authentication = TestAuthenticationUtils.buildCustomerAuthentication();
 
             doReturn(authentication)
                 .when(securityUtilsSpy).getAuthenticationToken();
@@ -147,7 +151,7 @@ public class SecurityUtilsTests {
         @DisplayName("Should throw IllegalStateException when authenticated user has no roles")
         void shouldThrowIllegalStateException_whenAuthenticatedUserHasNoRole(Collection<GrantedAuthority> authorities){
             //Arrange
-            TestingAuthenticationToken authentication = new TestingAuthenticationToken("username", "password", authorities);
+            TestingAuthenticationToken authentication = TestAuthenticationUtils.buildAuthentication(authorities);
 
             doReturn(authentication)
                 .when(securityUtilsSpy).getAuthenticationToken();
@@ -169,7 +173,7 @@ public class SecurityUtilsTests {
                 new SimpleGrantedAuthority("ROLE_b"),
                 new SimpleGrantedAuthority("ROLE_c")
             );
-            TestingAuthenticationToken authentication = new TestingAuthenticationToken("username", "password", authorities);
+            TestingAuthenticationToken authentication = TestAuthenticationUtils.buildAuthentication(authorities);
 
             doReturn(authentication)
                 .when(securityUtilsSpy).getAuthenticationToken();
@@ -187,7 +191,7 @@ public class SecurityUtilsTests {
         void shouldReturnRole_whenAuthenticatedUserHasOnlyOneRole(){
             //Arrange
             String role = User.UserRole.CUSTOMER.name();
-            TestingAuthenticationToken authentication = new TestingAuthenticationToken("username", "password", "ROLE_" + role);
+            TestingAuthenticationToken authentication = TestAuthenticationUtils.buildAuthentication(List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
             doReturn(authentication)
                 .when(securityUtilsSpy).getAuthenticationToken();
@@ -259,7 +263,7 @@ public class SecurityUtilsTests {
         @DisplayName("Should return the authentication when user is authenticated")
         void shouldReturnAuthentication_whenUserAuthenticated(){
             //Arrange
-            Authentication authentication = new TestingAuthenticationToken("username", "password", "ROLE_" + User.UserRole.CUSTOMER.name());
+            Authentication authentication = TestAuthenticationUtils.buildCustomerAuthentication();
 
             securityContextHolder.when(SecurityContextHolder::getContext)
                 .thenReturn(securityContext);

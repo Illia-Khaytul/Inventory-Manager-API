@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,10 +57,10 @@ public class UserMapperTests {
     static Stream<Arguments> provideUserInstances(){
         return Stream.of(
             Arguments.of(
-                new User(1L, "username", "password", User.UserRole.CUSTOMER)
+                UserTestDataFactory.existingDefaultUser()
             ),
             Arguments.of(
-                new User(2L, "other_user", "password", User.UserRole.OPERATOR)
+                UserTestDataFactory.existingDefaultOperator()
             )
         );
     }

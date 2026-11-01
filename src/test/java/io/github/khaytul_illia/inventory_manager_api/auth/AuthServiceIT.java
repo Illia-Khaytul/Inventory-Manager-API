@@ -9,6 +9,11 @@ import io.github.khaytul_illia.inventory_manager_api.auth.request.RefreshTokenRe
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
+import io.github.khaytul_illia.inventory_manager_api.support.data.RefreshTokenTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.utils.TestAuthenticationUtils;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
@@ -17,15 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,10 +48,6 @@ public class AuthServiceIT extends ServiceITContext {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final String username = "username";
-    private final String password = "password";
-    private final Instant now = Instant.now();
-    private final String tokenValue = UUID.randomUUID().toString();
     private String hashedTokenValue;
     private User user;
     private UserSession session;
@@ -59,13 +55,13 @@ public class AuthServiceIT extends ServiceITContext {
 
     @BeforeEach
     void beforeEach(){
-        hashedTokenValue = tokenFactory.hashTokenValue(tokenValue);
+        hashedTokenValue = tokenFactory.hashTokenValue(TestDataConstants.REFRESH_TOKEN_VALUE);
 
         transactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
         transactionTemplate.executeWithoutResult(status -> {
-            user = userRepository.save(new User(null, username, passwordEncoder.encode(password), User.UserRole.CUSTOMER));
-            session = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
-            refreshToken = refreshTokenRepository.save(new RefreshToken(null, hashedTokenValue, now, false, session, null));
+            user = userRepository.save(UserTestDataFactory.defaults().password(passwordEncoder.encode(TestDataConstants.USER_PASSWORD)).build());
+            session = sessionRepository.save(UserSessionTestDataFactory.newUserSession(user));
+            refreshToken = refreshTokenRepository.save(RefreshTokenTestDataFactory.defaults().tokenValue(hashedTokenValue).session(session).build());
         });
     }
 
@@ -82,7 +78,7 @@ public class AuthServiceIT extends ServiceITContext {
     @DisplayName("login integration tests")
     class LoginIT{
 
-        private final LoginRequest request = new LoginRequest("username", password);
+        private final LoginRequest request = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         @Test
         @DisplayName("Should roll back all database changes when the refresh token value is not unique")
@@ -118,7 +114,7 @@ public class AuthServiceIT extends ServiceITContext {
     @DisplayName("refreshAccess integration tests")
     class RefreshAccessIT{
 
-        private final RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
+        private final RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
         @Test
         @DisplayName("Should invalidate the user session when the refresh token is invalid")
@@ -186,19 +182,18 @@ public class AuthServiceIT extends ServiceITContext {
     @DisplayName("logout integration tests")
     class LogoutIT{
 
-        private final RefreshTokenRequest request = new RefreshTokenRequest(tokenValue);
+        private final RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
         @AfterEach
         void afterEach(){
-            SecurityContextHolder.getContext().setAuthentication(null);
+            TestAuthenticationUtils.resetAuthentication();
         }
 
         @Test
         @DisplayName("Should invalidate user session when refresh token belongs to authenticated user")
         void shouldInvalidateSession_whenRefreshTokenBelongsToAuthenticatedUser(){
             //Arrange
-            Authentication authentication = new TestingAuthenticationToken(username, "password", User.UserRole.CUSTOMER.name());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            TestAuthenticationUtils.setCustomerAuthentication();
 
             //Act
             authService.logout(request);
@@ -215,16 +210,16 @@ public class AuthServiceIT extends ServiceITContext {
 
         @AfterEach
         void afterEach(){
-            SecurityContextHolder.getContext().setAuthentication(null);
+            TestAuthenticationUtils.resetAuthentication();
         }
 
         @Test
         @DisplayName("Should invalidate all owned user sessions")
         void shouldInvalidateAllUserSessions(){
             //Arrange
-            Authentication authentication = new TestingAuthenticationToken(username, "password", User.UserRole.CUSTOMER.name());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserSession differentSession = sessionRepository.save(new UserSession(null, true, now, now.plusSeconds(3600), user));
+            TestAuthenticationUtils.setCustomerAuthentication();
+
+            UserSession differentSession = sessionRepository.save(UserSessionTestDataFactory.newUserSession(user));
 
             //Act
             authService.logoutAll();

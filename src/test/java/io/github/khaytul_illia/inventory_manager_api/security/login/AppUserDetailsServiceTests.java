@@ -1,5 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.security.login;
 
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +33,7 @@ public class AppUserDetailsServiceTests {
     @DisplayName("Should throw UsernameNotFoundException when user does not exist by username")
     void shouldThrowUsernameNotFoundException_whenUserDoesNotExist(){
         //Arrange
-        String username = "username";
+        String username = TestDataConstants.USER_USERNAME;
 
         when(userRepository.findByUsername(username))
             .thenReturn(Optional.empty());
@@ -48,7 +50,7 @@ public class AppUserDetailsServiceTests {
     @DisplayName("Should return AppUserDetails when user exists by username")
     void shouldReturnAppUserDetails_whenUserExists(){
         //Arrange
-        User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
+        User user = UserTestDataFactory.existingDefaultUser();
 
         when(userRepository.findByUsername(user.getUsername()))
             .thenReturn(Optional.of(user));

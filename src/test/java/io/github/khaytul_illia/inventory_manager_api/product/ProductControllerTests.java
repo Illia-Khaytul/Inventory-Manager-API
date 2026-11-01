@@ -8,6 +8,7 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFilt
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,14 +22,11 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.MultiValueMap;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
 import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.*;
-import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -45,17 +43,14 @@ public class ProductControllerTests extends ControllerTestContext {
     @DisplayName("createProduct endpoint tests")
     class CreateProductTests {
 
-        private final String price = "99.99";
-        private final CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
+        private final CreateProductRequest request = ProductTestDataFactory.DEFAULT_CREATE_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 201 Created when successfully created new product")
         void shouldReturn201_whenSuccessfullyCreatedProduct() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            ProductResponse response = new ProductResponse(1L, "product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.createProduct(any(CreateProductRequest.class)))
                 .thenReturn(response);
@@ -167,18 +162,15 @@ public class ProductControllerTests extends ControllerTestContext {
     @DisplayName("updateProduct endpoint tests")
     class UpdateProductTests {
 
-        private final long productId = 1L;
-        private final String price = "99.99";
-        private final UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
+        private final Long productId = 1L;
+        private final UpdateProductRequest request = ProductTestDataFactory.DEFAULT_UPDATE_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully updated a product")
         void shouldReturn200_whenSuccessfullyUpdatedProduct() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            ProductResponse response = new ProductResponse(1L, "new_product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.updateProduct(anyLong(), any(UpdateProductRequest.class)))
                 .thenReturn(response);
@@ -298,17 +290,14 @@ public class ProductControllerTests extends ControllerTestContext {
     class ChangeProductStockTests {
 
         private final long productId = 1L;
-        private final ModifyStockRequest request = new ModifyStockRequest(10);
+        private final ModifyStockRequest request = ProductTestDataFactory.DEFAULT_MODIFY_STOCK_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully changed product stock")
         void shouldReturn200_whenSuccessfullyModifiedProductStock() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            String price = "99.99";
-            ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.changeProductStock(anyLong(), any(ModifyStockRequest.class)))
                 .thenReturn(response);
@@ -391,16 +380,14 @@ public class ProductControllerTests extends ControllerTestContext {
     class GetProductTests {
 
         private final long productId = 1L;
-        private final Instant createdAt = Instant.now();
-        private final String createdBy = "operator";
-        private final String price = "99.99";
-        private final ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK and product audit fields when accessed as OPERATOR")
         void shouldReturn200WithAuditing_whenAccessedAsOperator() throws Exception {
             //Arrange
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
+
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
             when(securityUtils.getAuthenticatedUserRole())
@@ -423,6 +410,8 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
         void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
             //Arrange
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
+
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
             when(securityUtils.getAuthenticatedUserRole())
@@ -465,16 +454,13 @@ public class ProductControllerTests extends ControllerTestContext {
     @DisplayName("getProducts endpoint tests")
     class GetProductsTests {
 
+        private final PaginatedResponse<ProductShortResponse> response = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;
+
         @Test
         @WithMockUser
         @DisplayName("Should return 200 OK when successfully gotten a page of products")
         void shouldReturn200_whenSuccessfullyGottenPageOfProducts() throws Exception {
             //Arrange
-            String price = "55.55";
-            ProductShortResponse productResponse1 = new ProductShortResponse(1L, "Original Product", 10, new BigDecimal(price));
-            ProductShortResponse productResponse2 = new ProductShortResponse(2L, "Original Product 2", 5, new BigDecimal(price));
-            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of(productResponse1, productResponse2));
-
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
 
@@ -485,11 +471,9 @@ public class ProductControllerTests extends ControllerTestContext {
                 .andExpect(status().isOk());
 
             assertPaginatedResponse(result, response);
-
-            result
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].id").value(productResponse1.id()))
-                .andExpect(jsonPath("$.content[1].id").value(productResponse2.id()));
+            for(int i = 0; i < response.content().size(); i++){
+                result.andExpect(jsonPath("$.content[%s].id", i).value(response.content().get(i).id()));
+            }
 
             verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
         }
@@ -498,8 +482,6 @@ public class ProductControllerTests extends ControllerTestContext {
         @DisplayName("Should return 200 OK when accessed with no authentication")
         void shouldReturn200_whenNoAuthentication() throws Exception {
             //Arrange
-            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of());
-
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
 

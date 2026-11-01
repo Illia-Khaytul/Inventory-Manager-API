@@ -1,6 +1,8 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
 import io.github.khaytul_illia.inventory_manager_api.support.context.RepositoryTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,7 @@ public class UserRepositoryTests extends RepositoryTestContext {
         @DisplayName("Should return false when user does not exist by username")
         void shouldReturnFalse_whenUserDoesNotExist() {
             //Act
-            boolean exists = userRepository.existsByUsername("not existent");
+            boolean exists = userRepository.existsByUsername(TestDataConstants.USER_USERNAME);
 
             //Assert
             assertThat(exists).isFalse();
@@ -39,7 +41,7 @@ public class UserRepositoryTests extends RepositoryTestContext {
         @DisplayName("Should return true when user exists by username")
         void shouldReturnTrue_whenUserExists() {
             //Arrange
-            User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
+            User user = UserTestDataFactory.newDefaultUser();
 
             entityManager.persistAndFlush(user);
             entityManager.clear();
@@ -61,7 +63,7 @@ public class UserRepositoryTests extends RepositoryTestContext {
         @DisplayName("Should return empty Optional when user does not exist by username")
         void shouldReturnEmptyOptional_whenUserDoesNotExist() {
             //Act
-            Optional<User> foundUser = userRepository.findByUsername("not existent");
+            Optional<User> foundUser = userRepository.findByUsername(TestDataConstants.USER_USERNAME);
 
             //Assert
             assertThat(foundUser).isEmpty();
@@ -71,7 +73,7 @@ public class UserRepositoryTests extends RepositoryTestContext {
         @DisplayName("Should return Optional with user when user exists by username")
         void shouldReturnUserOptional_whenUserExists() {
             //Arrange
-            User user = new User(null, "username", "password", User.UserRole.CUSTOMER);
+            User user = UserTestDataFactory.newDefaultUser();
 
             entityManager.persistAndFlush(user);
             entityManager.clear();
@@ -136,15 +138,15 @@ public class UserRepositoryTests extends RepositoryTestContext {
             return Stream.of(
                 //Target session alone
                 Arguments.of(
-                    new User(null, "username", "password", User.UserRole.CUSTOMER),
+                    UserTestDataFactory.newDefaultUser(),
                     List.of()
                 ),
                 //Target and other sessions
                 Arguments.of(
-                    new User(null, "username", "password", User.UserRole.CUSTOMER),
+                    UserTestDataFactory.newDefaultUser(),
                     List.of(
-                        new User(null, "other1", "password", User.UserRole.CUSTOMER),
-                        new User(null, "other2", "password", User.UserRole.CUSTOMER)
+                        UserTestDataFactory.newUniqueUser(),
+                        UserTestDataFactory.newUniqueUser()
                     )
                 )
             );
