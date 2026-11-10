@@ -40,7 +40,7 @@ public class JwtAuthenticationErrorHandler implements AuthenticationEntryPoint {
             return;
         }
 
-        log.info("Caught {} - {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {} - {}", e.getClass().getName(), e.getMessage());
 
         String message = switch (e) {
             case InvalidBearerTokenException ignored -> "Invalid or expired access token";

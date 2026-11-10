@@ -63,7 +63,7 @@ public class ProductService {
         return productMapper.toResponse(product);
     }
 
-    @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3)
+    @Retryable(includes = OptimisticLockingFailureException.class, maxRetriesString = "${app.product.update.max-retries}")
     @Transactional
     public ProductResponse updateProduct(long productId, UpdateProductRequest request) {
         log.info("Updating product with id {}", productId);
@@ -104,7 +104,7 @@ public class ProductService {
         log.debug("Applying stock modification");
 
         Instant modifiedAt = Instant.now();
-        String modifiedBy = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        String modifiedBy = securityUtils.getAuthenticatedUsername();
         int updatedRows = productRepository.changeProductStock(productId, request.stockChange(), modifiedAt, modifiedBy);
 
         log.debug("Loading modified product");

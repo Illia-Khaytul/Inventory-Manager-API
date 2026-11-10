@@ -1,5 +1,7 @@
 package io.github.khaytul_illia.inventory_manager_api.user.request;
 
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,11 +18,11 @@ import jakarta.validation.constraints.Size;
 public record CreateUserRequest(
 
     @NotBlank
-    @Size(max = 50)
+    @SizeProperty(key = ValidationProperties.PropertyKey.USER_USERNAME)
     String username,
 
     @NotBlank
-    @Size(max = 50)
+    @SizeProperty(key = ValidationProperties.PropertyKey.USER_PASSWORD)
     String password
 
 ) {

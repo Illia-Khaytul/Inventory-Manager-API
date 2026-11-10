@@ -20,7 +20,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractJacksonHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -107,7 +106,6 @@ public class RoleBasedViewResolverTests {
         private MethodParameter returnType;
         private MediaType selectedContentType;
         private Class<? extends HttpMessageConverter<?>> selectedConverterType;
-        private Jwt jwtMock;
 
         @BeforeEach
         void beforeEach() {
@@ -115,18 +113,15 @@ public class RoleBasedViewResolverTests {
             selectedContentType = mock(MediaType.class);
             //noinspection unchecked
             selectedConverterType = (Class<? extends HttpMessageConverter<?>>) (Class<?>) AbstractJacksonHttpMessageConverter.class;
-            jwtMock = mock(Jwt.class);
         }
 
         @ParameterizedTest
         @NullSource
         @ValueSource(strings = {"CUSTOMER"})
-        @DisplayName("Should return RestrictedView hint when authenticated user is not an OPERATOR")
+        @DisplayName("Should return no view hint when authenticated user is not an OPERATOR")
         void shouldReturnNoViewHint_whenRoleNotOperator(String role) {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(role);
 
             //Act
@@ -135,14 +130,14 @@ public class RoleBasedViewResolverTests {
             //Assert
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
-            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.RestrictedView.class);
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
         }
 
         @Test
-        @DisplayName("Should return RestrictedView hint when SecurityUtils throws")
+        @DisplayName("Should return no view hint when SecurityUtils throws")
         void shouldReturnNoViewHint_whenSecurityUtilsThrows() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenThrow(new RuntimeException());
 
             //Act
@@ -151,16 +146,14 @@ public class RoleBasedViewResolverTests {
             //Assert
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
-            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.RestrictedView.class);
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
         }
 
         @Test
-        @DisplayName("Should return no view hint when authenticated user is OPERATOR")
+        @DisplayName("Should return OperatorView hint when authenticated user is OPERATOR")
         void shouldReturnNoViewHint_whenRoleOperator() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwtMock);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(User.UserRole.OPERATOR.name());
 
             //Act
@@ -168,7 +161,8 @@ public class RoleBasedViewResolverTests {
 
             //Assert
             assertThat(hints).isNotNull();
-            assertThat(hints).isEmpty();
+            assertThat(hints).containsKey(JsonView.class.getName());
+            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.OperatorView.class);
         }
 
     }

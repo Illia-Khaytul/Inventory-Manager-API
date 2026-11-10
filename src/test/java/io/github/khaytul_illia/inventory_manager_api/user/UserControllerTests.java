@@ -1,59 +1,30 @@
 package io.github.khaytul_illia.inventory_manager_api.user;
 
-import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.request.CreateUserRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.request.PasswordChangeRequest;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.servlet.ResultActions;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
+
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertNoContentResponse;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.assertUserResponse;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
-@Import({
-    SecurityConfig.class,
-    JwtRsaPemKeyConfig.class,
-    JwtConfig.class,
-    JwtAuthenticationErrorHandler.class,
-    AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class
-})
-@ActiveProfiles("test")
 @DisplayName("UserController tests")
-public class UserControllerTests {
-
-    @MockitoBean
-    private UserService userService;
-    @MockitoBean
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+public class UserControllerTests extends ControllerTestContext {
 
     @Nested
     @DisplayName("createCustomer endpoint tests")
@@ -64,22 +35,21 @@ public class UserControllerTests {
         @DisplayName("Should return 201 Created when successfully created new user with CUSTOMER role")
         void shouldReturn201_whenSuccessfullyCreatedCustomer() throws Exception{
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.CUSTOMER);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.DEFAULT_CUSTOMER_RESPONSE;
 
             when(userService.createUser(request, User.UserRole.CUSTOMER))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.username").value(response.username()))
-                .andExpect(jsonPath("$.role").value(response.role().name()));
+                .andExpect(status().isCreated());
+
+            assertUserResponse(result, response);
 
             verify(userService).createUser(request, User.UserRole.CUSTOMER);
         }
@@ -88,8 +58,8 @@ public class UserControllerTests {
         @DisplayName("Should return 201 Created when accessed with no authentication")
         void shouldReturn201_whenNoAuthentication() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.CUSTOMER);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.DEFAULT_CUSTOMER_RESPONSE;
 
             when(userService.createUser(request, User.UserRole.CUSTOMER))
                 .thenReturn(response);
@@ -100,8 +70,7 @@ public class UserControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()));
+                .andExpect(status().isCreated());
 
             verify(userService).createUser(request, User.UserRole.CUSTOMER);
         }
@@ -128,15 +97,14 @@ public class UserControllerTests {
             CreateUserRequest request = new CreateUserRequest(username, password);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.username").value(usernameMessage))
-                .andExpect(jsonPath("$.data.password").value(passwordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("username", usernameMessage, "password", passwordMessage));
         }
 
     }
@@ -150,22 +118,21 @@ public class UserControllerTests {
         @DisplayName("Should return 201 Created when successfully created new user with OPERATOR role")
         void shouldReturn201_whenSuccessfullyCreatedOperator() throws Exception{
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
-            UserResponse response = new UserResponse(1L, "username", User.UserRole.OPERATOR);
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
+            UserResponse response = UserTestDataFactory.defaults().id(1L).role(User.UserRole.OPERATOR).toResponse();
 
             when(userService.createUser(request, User.UserRole.OPERATOR))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.username").value(response.username()))
-                .andExpect(jsonPath("$.role").value(response.role().name()));
+                .andExpect(status().isCreated());
+
+            assertUserResponse(result, response);
 
             verify(userService).createUser(request, User.UserRole.OPERATOR);
         }
@@ -175,32 +142,34 @@ public class UserControllerTests {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong´role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Arrange
-            CreateUserRequest request = new CreateUserRequest("username", "password");
+            CreateUserRequest request = UserTestDataFactory.DEFAULT_CREATE_REQUEST;
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -225,15 +194,14 @@ public class UserControllerTests {
             CreateUserRequest request = new CreateUserRequest(username, password);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/users/operators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.username").value(usernameMessage))
-                .andExpect(jsonPath("$.data.password").value(passwordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("username", usernameMessage, "password", passwordMessage));
         }
 
     }
@@ -247,21 +215,19 @@ public class UserControllerTests {
         @DisplayName("Should return 204 No Content when successfully changed authenticated user password")
         void shouldReturn204_whenSuccessfullyChangedUserPassword() throws Exception{
             //Arrange
-            PasswordChangeRequest request = new PasswordChangeRequest("oldPassword", "newPassword");
+            PasswordChangeRequest request = UserTestDataFactory.DEFAULT_PASSWORD_CHANGE_REQUEST;
 
             doNothing()
                 .when(userService).changePassword(request);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(userService).changePassword(request);
         }
@@ -270,16 +236,17 @@ public class UserControllerTests {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Arrange
-            PasswordChangeRequest request = new PasswordChangeRequest("oldPassword", "newPassword");
+            PasswordChangeRequest request = UserTestDataFactory.DEFAULT_PASSWORD_CHANGE_REQUEST;
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -304,15 +271,14 @@ public class UserControllerTests {
             PasswordChangeRequest request = new PasswordChangeRequest(oldPassword, newPassword);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/users/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.oldPassword").value(oldPasswordMessage))
-                .andExpect(jsonPath("$.data.newPassword").value(newPasswordMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("old_password", oldPasswordMessage, "new_password", newPasswordMessage));
         }
 
     }
@@ -329,13 +295,11 @@ public class UserControllerTests {
                 .when(userService).deleteUser();
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/users")
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(userService).deleteUser();
         }
@@ -344,11 +308,12 @@ public class UserControllerTests {
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/users")
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
     }

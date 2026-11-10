@@ -14,7 +14,7 @@ public class JpaAuditingConfig {
 
     @Bean
     public AuditorAware<String> authAuditorProvider(SecurityUtils securityUtils){
-        return () -> Optional.of(securityUtils.getAuthenticatedUserAccessToken().getSubject());
+        return () -> Optional.of(securityUtils.getAuthenticatedUsername());
     }
 
 }

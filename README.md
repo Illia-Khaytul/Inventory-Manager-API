@@ -74,46 +74,20 @@ The project follows a domain oriented structure:
 
 ## 6. Application Properties
 
-**Base operator seeder enable flag:** `spring.application.base_operator.seeder.enable`
-
-Whether to automatically create a base OPERATOR user or not.
-
-It is `true` by default.
-
-**Base operator credentials:** `spring.application.base_operator.username/password`
-
-Username and password the base operator will have. 
-Password must follow the configured validation rules.
-
-**Max user session limit:** `spring.application.security.user_sessions.limit`
-
-The maximum amount of open sessions a user can have at once.
-
-**User session lifetime:** `spring.application.security.user_sessions.lifetime`
-
-Defines how long can a session remain open in seconds.
-
-Sessions are usually long-lived, so the current value is 60 days (5184000 seconds).
-
-**RSA key sources:** `spring.application.security.jwt.private/public_key_source`
-
-The URIs of the private and public keys used for access token (JWT) encoding/decoding.
-
-Must follow Spring's Resource property format.
-In this case the key pair is stored as `.pem` files in the classpath (`classpath:` prefix).
-
-**Access token lifetime:** `spring.application.security.jwt.lifetime`
-
-Defines how long is an access token valid for in seconds.
-
-Access tokens are usually short-lived, so the current value is only 15 minutes (900 seconds).
-
-**Access token issuer:** `spring.application.security.jwt.issuer`
-
-The issuer of the access token (this application).
-
-The current value is `localhost:8080` (local) for development purposes.
-It should be changed to the production domain name or server URI for deployment in the [production properties](src/main/resources/application-prod.yaml) file under the same path.
+The project defines multiple custom application properties used as both validation and constant values:
+- `app.auth.user-session.limit`: maximum amount of open sessions a user can have at once.
+- `app.auth.user-session.lifetime`: how long can a session remain open in seconds.
+- `app.auth.refres-token.*`: value limits for incoming refresh token validation.
+- `app.auth.jwt.private/public_key_source`: URIs of the private and public keys used for access token (JWT) encoding/decoding, must follow Spring's Resource property format.
+- `app.auth.jwt.lifetime`: how long is an access token valid for in seconds.
+- `app.auth.jwt.issuer`: issuer of the access token (this application).
+- `app.product.name/description/price.*`: value limits for incoming product data validation.
+- `app.product.update.max-retries`: max retries allowed on the update product operation.
+- `app.user.password.*`: constraints used for password validation.
+- `app.user.password.bcrypt.strength`: password encoding strength using BCrypt.
+- `app.user.username.*`: value limits for username validation.
+- `app.user.base-operator.username/password`: username and password the base operator will have, password must follow the configured validation rules.
+- `app.user.base-operator.seeder.enabled`: whether to automatically create a base OPERATOR user or not, `true` by default.
 
 ## 7. Getting Started
 
@@ -378,3 +352,12 @@ mvn test
 ## 11. Design Documentation
 
 The design documentation is located at the [docs](docs/1-overview.md) folder.
+
+## 12. Known Limitations
+
+- The application is currently using pem files to store the RSA keys used for JWT encoding/decoding. 
+In a production ready application the keys would be stored in a key wallet or provided by an external secured API.
+- Max session and max placed order user limits can only be enforced programmatically. 
+It is possible for the limit to be exceeded during concurrent operations.
+- The logout and logout all endpoints currently require authentication.
+This means that if the user reaches the session limit and somehow loses all its refresh tokens, it will be locked out from the application until some session finally expires.

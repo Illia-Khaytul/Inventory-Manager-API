@@ -4,10 +4,13 @@ import io.github.khaytul_illia.inventory_manager_api.error.exception.EntityNotFo
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import io.github.khaytul_illia.inventory_manager_api.user.UserRepository;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Objects;
 
 @Component
 public class SecurityUtils {
@@ -20,27 +23,50 @@ public class SecurityUtils {
 
     @Transactional
     public User loadAuthenticatedUser(){
-        String username = getAuthenticatedUserAccessToken().getSubject();
+        String username = getAuthenticatedUsername();
 
         return userRepository.findByUsername(username)
             .orElseThrow(() -> new EntityNotFoundException("Authenticated user '%s' does not exist", username));
     }
 
-    public Jwt getAuthenticatedUserAccessToken(){
+    public String getAuthenticatedUsername(){
+        Authentication authentication = getAuthenticationToken();
+
+        String authenticatedUsername = authentication.getName();
+        if(authenticatedUsername == null || authenticatedUsername.isBlank()){
+            throw new IllegalStateException("Authenticated username is not specified");
+        }
+
+        return authenticatedUsername;
+    }
+
+    public String getAuthenticatedUserRole(){
+        Authentication authentication = getAuthenticationToken();
+
+        List<String> foundRoles = authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .filter(Objects::nonNull)
+            .filter(authority -> authority.startsWith("ROLE_"))
+            .toList();
+
+        int roleCount = foundRoles.size();
+        if(roleCount == 0){
+            throw new IllegalStateException("Authenticated user has no role");
+        }
+        if(roleCount > 1){
+            throw new IllegalStateException("Authenticated user has more than 1 role " + foundRoles);
+        }
+
+        return foundRoles.getFirst().substring(5);
+    }
+
+    public Authentication getAuthenticationToken(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || !authentication.isAuthenticated()){
             throw new IllegalStateException("User is not authenticated");
         }
 
-        Object principal = authentication.getPrincipal();
-        if(principal == null){
-            throw new IllegalStateException("User principal is null");
-        }
-        if(!(principal instanceof Jwt)){
-            throw new IllegalStateException(String.format("User is authenticated with '%s' instead of a JWT access token", principal.getClass().getSimpleName()));
-        }
-
-        return (Jwt) principal;
+        return authentication;
     }
 
 }

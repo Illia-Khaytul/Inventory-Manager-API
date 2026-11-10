@@ -21,9 +21,9 @@ public class TokenFactory {
     private final JwtEncoder jwtEncoder;
 
     public TokenFactory(
-        @Value("${spring.application.security.jwt.lifetime}")
+        @Value("${app.auth.jwt.lifetime}")
         int accessTokenLifetime,
-        @Value("${spring.application.security.jwt.issuer}")
+        @Value("${app.auth.jwt.issuer}")
         String accessTokenIssuer,
         JwtEncoder jwtEncoder
     ) {

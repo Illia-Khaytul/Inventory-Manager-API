@@ -11,6 +11,10 @@ import io.github.khaytul_illia.inventory_manager_api.error.exception.FailedLogin
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
 import io.github.khaytul_illia.inventory_manager_api.security.login.AppUserDetails;
+import io.github.khaytul_illia.inventory_manager_api.support.data.RefreshTokenTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,9 +27,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.jwt.Jwt;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -51,7 +53,7 @@ public class AuthServiceTests {
     @DisplayName("login tests")
     class LoginTests{
 
-        private final LoginRequest request = new LoginRequest("username", "password");
+        private final LoginRequest request = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
 
         @Test
         @DisplayName("Should throw FailedLoginAuthenticationException when user fails to authenticate")
@@ -75,21 +77,10 @@ public class AuthServiceTests {
         @DisplayName("Should create new session and return access and refresh tokens when user authenticated successfully")
         void shouldCreateSessionAndReturnTokens_whenUserAuthenticatedSuccessfully() {
             //Arrange
-            User user = new User(1L, request.username(), request.password(), User.UserRole.CUSTOMER);
+            UserSession session = UserSessionTestDataFactory.existingUserSession();
+            User user = session.getUser();
             AppUserDetails userDetails = new AppUserDetails(user);
-            Instant now = Instant.now();
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            String issuer = "http://localhost:8080/api/v1";
-            String accessTokenValue = "access token value";
-            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(
-                issuer,
-                now,
-                now.plusSeconds(900),
-                user.getUsername(),
-                user.getRole().name(),
-                accessTokenValue,
-                "refresh token value"
-            );
+            AccessTokenResponse accessTokenResponse = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
@@ -117,27 +108,15 @@ public class AuthServiceTests {
     @DisplayName("refreshAccess tests")
     class RefreshAccessTests{
 
-        private final RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+        private final RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
         @Test
         @DisplayName("Should use refresh token and return new access and refresh tokens")
         void shouldUseRefreshTokenAndReturnNewTokens() {
             //Arrange
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken refreshToken = new RefreshToken(1L, request.refreshToken(), now, true, session, 1);
-            String issuer = "http://localhost:8080/api/v1";
-            String accessTokenValue = "access token value";
-            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(
-                issuer,
-                now,
-                now.plusSeconds(900),
-                user.getUsername(),
-                user.getRole().name(),
-                accessTokenValue,
-                refreshToken.getTokenValue()
-            );
+            RefreshToken refreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
+            UserSession session = refreshToken.getSession();
+            AccessTokenResponse accessTokenResponse = RefreshTokenTestDataFactory.DEFAULT_ACCESS_RESPONSE;
 
             when(tokenService.useRefreshToken(request.refreshToken()))
                 .thenReturn(refreshToken);
@@ -162,7 +141,7 @@ public class AuthServiceTests {
     @DisplayName("logout tests")
     class LogoutTests{
 
-        private final RefreshTokenRequest request = new RefreshTokenRequest("refresh token value");
+        private final RefreshTokenRequest request = RefreshTokenTestDataFactory.DEFAULT_REFRESH_TOKEN_REQUEST;
 
         @Test
         @DisplayName("Should return nothing when refresh token is not found by token value")
@@ -183,25 +162,19 @@ public class AuthServiceTests {
         @DisplayName("Should return nothing when user session does not belong to the authenticated user")
         void shouldReturnNothing_whenSessionDoesNotBelongToAuthenticatedUser(){
             //Arrange
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
+            RefreshToken refreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
 
             when(tokenService.loadRefreshToken(request.refreshToken()))
                 .thenReturn(refreshToken);
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
-                .thenReturn(user.getUsername() + "_different");
+            when(securityUtils.getAuthenticatedUsername())
+                .thenReturn(TestDataConstants.USER_USERNAME + "_different");
 
             //Act
             authService.logout(request);
 
             //Assert
             verify(tokenService).loadRefreshToken(request.refreshToken());
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService, never()).invalidateSession(anyLong());
         }
 
@@ -209,18 +182,13 @@ public class AuthServiceTests {
         @DisplayName("Should return nothing and invalidate session when session belongs to authenticated user")
         void shouldReturnNothingAndInvalidateSession_whenSessionBelongsToAuthenticatedUser(){
             //Arrange
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
-            Jwt jwt = mock(Jwt.class);
+            RefreshToken refreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
+            UserSession session = refreshToken.getSession();
 
             when(tokenService.loadRefreshToken(request.refreshToken()))
                 .thenReturn(refreshToken);
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
-                .thenReturn(user.getUsername());
+            when(securityUtils.getAuthenticatedUsername())
+                .thenReturn(TestDataConstants.USER_USERNAME);
             doNothing()
                 .when(sessionService).invalidateSession(session.getId());
 
@@ -229,7 +197,7 @@ public class AuthServiceTests {
 
             //Assert
             verify(tokenService).loadRefreshToken(request.refreshToken());
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService).invalidateSession(anyLong());
         }
 
@@ -243,12 +211,9 @@ public class AuthServiceTests {
         @DisplayName("Should return nothing and invalidate all user sessions")
         void shouldReturnNothingAndInvalidateAllUserSessions(){
             //Arrange
-            String username = "username";
-            Jwt jwt = mock(Jwt.class);
+            String username = TestDataConstants.USER_USERNAME;
 
-            when(securityUtils.getAuthenticatedUserAccessToken())
-                .thenReturn(jwt);
-            when(jwt.getSubject())
+            when(securityUtils.getAuthenticatedUsername())
                 .thenReturn(username);
             doNothing()
                 .when(sessionService).invalidateAllUserSessions(username);
@@ -257,7 +222,7 @@ public class AuthServiceTests {
             authService.logoutAll();
 
             //Assert
-            verify(securityUtils).getAuthenticatedUserAccessToken();
+            verify(securityUtils).getAuthenticatedUsername();
             verify(sessionService).invalidateAllUserSessions(username);
         }
 

@@ -1,6 +1,9 @@
 package io.github.khaytul_illia.inventory_manager_api.auth.token;
 
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +49,7 @@ public class TokenFactoryTests {
     @DisplayName("Should build RefreshToken entity")
     void shouldBuildRefreshToken(String tokenHash, UserSession session){
         //Arrange
-        String tokenValue = "refresh token value";
+        String tokenValue = TestDataConstants.REFRESH_TOKEN_VALUE;
 
         TokenFactory tokenFactorySpy = spy(tokenFactory);
         doReturn(tokenHash)
@@ -118,34 +121,29 @@ public class TokenFactoryTests {
      */
 
     static Stream<Arguments> provideRefreshTokenBuildParameters(){
-        User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-        Instant createdAt1 = Instant.parse("2026-10-01T18:20:00Z");
-        Instant createdAt2 = Instant.parse("2026-10-11T12:56:00Z");
-        UserSession session1 = new UserSession(1L, true, createdAt1, createdAt1.plusSeconds(3600), user);
-        UserSession session2 = new UserSession(2L, true, createdAt2, createdAt2.plusSeconds(3600), user);
+        User user = UserTestDataFactory.existingDefaultUser();
 
         return Stream.of(
             Arguments.of(
-                "token_value_1", session1
+                TestDataConstants.REFRESH_TOKEN_VALUE + "_1",
+                UserSessionTestDataFactory.existingUserSession(true, Instant.parse("2026-10-01T18:20:00Z"), user)
             ),
             Arguments.of(
-                "different_value", session2
+                TestDataConstants.REFRESH_TOKEN_VALUE + "_2",
+                UserSessionTestDataFactory.existingUserSession(true, Instant.parse("2026-10-11T12:56:00Z"), user)
             )
         );
     }
 
     static Stream<Arguments> provideAccessTokenBuildParameters(){
-        Instant createdAt1 = Instant.parse("2026-10-01T18:20:00Z");
-        Instant createdAt2 = Instant.parse("2026-10-11T12:56:00Z");
-        User user1 = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-        User user2 = new User(2L, "another", "password", User.UserRole.OPERATOR);
-
         return Stream.of(
             Arguments.of(
-                createdAt1, user1
+                Instant.parse("2026-10-01T18:20:00Z"),
+                UserTestDataFactory.existingDefaultUser()
             ),
             Arguments.of(
-                createdAt2, user2
+                Instant.parse("2026-10-11T12:56:00Z"),
+                UserTestDataFactory.existingDefaultOperator()
             )
         );
     }

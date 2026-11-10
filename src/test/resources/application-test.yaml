@@ -1,8 +1,10 @@
-spring:
-  application:
-    base_operator:
+app:
+  user:
+    base-operator:
       seeder:
-        enable: false
+        enabled: false
+
+spring:
   mvc:
     servlet:
       path: /

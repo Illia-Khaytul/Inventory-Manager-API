@@ -29,7 +29,7 @@ public class AuthorizationErrorHandler implements AccessDeniedHandler {
         HttpServletResponse response,
         AccessDeniedException e
     ) throws IOException {
-        log.info("Caught {}: {}", e.getClass().getName(), e.getMessage());
+        log.debug("Caught {}: {}", e.getClass().getName(), e.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN, "Forbidden from accessing this resource");
 

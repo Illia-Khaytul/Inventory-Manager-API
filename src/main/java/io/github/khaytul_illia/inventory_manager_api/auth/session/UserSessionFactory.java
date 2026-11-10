@@ -14,7 +14,7 @@ public class UserSessionFactory {
     private final UserRepository userRepository;
 
     public UserSessionFactory(
-        @Value("${spring.application.security.user_sessions.lifetime}")
+        @Value("${app.auth.user-session.lifetime}")
         int userSessionLifetime,
         UserRepository userRepository
     ) {

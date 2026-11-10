@@ -1,12 +1,14 @@
-package io.github.khaytul_illia.inventory_manager_api;
+package io.github.khaytul_illia.inventory_manager_api.support;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import org.springframework.context.annotation.Profile;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = "/dummy")
+@Profile("test")
 public class DummyController {
 
     @PostMapping(path = "")

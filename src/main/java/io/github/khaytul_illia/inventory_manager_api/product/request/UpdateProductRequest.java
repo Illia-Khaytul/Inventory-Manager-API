@@ -2,8 +2,10 @@ package io.github.khaytul_illia.inventory_manager_api.product.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.khaytul_illia.inventory_manager_api.common.validation.NullOrNotBlank;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.RangeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.SizeProperty;
+import io.github.khaytul_illia.inventory_manager_api.common.validation.ValidationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
@@ -20,16 +22,14 @@ import java.math.BigDecimal;
 public record UpdateProductRequest(
 
     @NullOrNotBlank
-    @Size(max = 100)
+    @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_NAME)
     String name,
 
     @NullOrNotBlank
-    @Size(max = 1000)
+    @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_DESCRIPTION)
     String description,
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @PositiveOrZero
-    @DecimalMax("2147483647")
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal price
 
 ) {

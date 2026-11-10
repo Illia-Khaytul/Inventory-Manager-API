@@ -97,7 +97,7 @@ public class AuthService {
 
         log.debug("Checking if the found session belongs to the authenticated user");
 
-        String authenticatedUserUsername = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        String authenticatedUserUsername = securityUtils.getAuthenticatedUsername();
         if(!user.getUsername().equals(authenticatedUserUsername)){
             return;
         }
@@ -110,7 +110,7 @@ public class AuthService {
     public void logoutAll(){
         log.info("Logout from all sessions");
 
-        String username = securityUtils.getAuthenticatedUserAccessToken().getSubject();
+        String username = securityUtils.getAuthenticatedUsername();
 
         sessionService.invalidateAllUserSessions(username);
 

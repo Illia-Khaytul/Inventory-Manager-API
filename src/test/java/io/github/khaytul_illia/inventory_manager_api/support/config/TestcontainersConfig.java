@@ -1,4 +1,4 @@
-package io.github.khaytul_illia.inventory_manager_api;
+package io.github.khaytul_illia.inventory_manager_api.support.config;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -10,7 +10,7 @@ import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 @ImportAutoConfiguration(ServiceConnectionAutoConfiguration.class)
-public class TestcontainersConfiguration {
+public class TestcontainersConfig {
 
 	@Bean
 	@ServiceConnection

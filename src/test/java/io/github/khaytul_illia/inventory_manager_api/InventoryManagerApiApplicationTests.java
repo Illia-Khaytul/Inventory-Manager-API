@@ -1,5 +1,6 @@
 package io.github.khaytul_illia.inventory_manager_api;
 
+import io.github.khaytul_illia.inventory_manager_api.support.config.TestcontainersConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)
+@Import(TestcontainersConfig.class)
 @ActiveProfiles("test")
 @DisplayName("Application loading tests")
 class InventoryManagerApiApplicationTests {

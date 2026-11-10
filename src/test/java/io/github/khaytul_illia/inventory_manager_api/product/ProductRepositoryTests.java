@@ -1,6 +1,8 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
-import io.github.khaytul_illia.inventory_manager_api.TestcontainersConfiguration;
+import io.github.khaytul_illia.inventory_manager_api.support.context.RepositoryTestContext;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,13 +11,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -24,17 +20,11 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(TestcontainersConfiguration.class)
-@ActiveProfiles("test")
 @DisplayName("ProductRepository tests")
-public class ProductRepositoryTests {
+public class ProductRepositoryTests extends RepositoryTestContext {
 
     @Autowired
     private ProductRepository productRepository;
-    @Autowired
-    private TestEntityManager entityManager;
 
     @Nested
     @DisplayName("existsByName tests")
@@ -78,21 +68,18 @@ public class ProductRepositoryTests {
          */
 
         static Stream<Arguments> provideProducts(){
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-
             return Stream.of(
                 //Target session alone
                 Arguments.of(
-                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    ProductTestDataFactory.newDefaultProduct(),
                     List.of()
                 ),
                 //Target and other sessions
                 Arguments.of(
-                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    ProductTestDataFactory.newDefaultProduct(),
                     List.of(
-                        new Product(null, "other1", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
-                        new Product(null, "other2", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null)
+                        ProductTestDataFactory.newUniqueProduct(),
+                        ProductTestDataFactory.newUniqueProduct()
                     )
                 )
             );
@@ -105,13 +92,13 @@ public class ProductRepositoryTests {
     class ChangeProductStockTests{
 
         private final Instant modifiedAt = Instant.now();
-        private final String modifiedBy = "operator";
+        private final String modifiedBy = TestDataConstants.USER_USERNAME;
 
         @Test
         @DisplayName("Should do nothing when product does not exist by id")
         void shouldDoNothing_whenProductDoesNotExist(){
             //Arrange
-            Product target = new Product(null, "product_name", null, 10, BigDecimal.ONE, modifiedAt, modifiedBy, null, null, null);
+            Product target = ProductTestDataFactory.newDefaultProduct();
             int stockChange = 10;
 
             entityManager.persistAndFlush(target);
@@ -130,7 +117,7 @@ public class ProductRepositoryTests {
         @DisplayName("Should not modify stock when the changed stock is negative")
         void shouldNotModifyStock_whenChangedStockIsNegative(){
             //Arrange
-            Product target = new Product(null, "product_name", null, 10, BigDecimal.ONE, modifiedAt, modifiedBy, null, null, null);
+            Product target = ProductTestDataFactory.newDefaultProduct();
             int stockChange = -100;
 
             entityManager.persistAndFlush(target);
@@ -149,7 +136,7 @@ public class ProductRepositoryTests {
         void shouldModifyStock_whenChangedStockIsValid(int stockChange){
             //Arrange
             int originalStock = 10;
-            Product target = new Product(null, "product_name", null, originalStock, BigDecimal.ONE, modifiedAt, modifiedBy, null, null, null);
+            Product target = ProductTestDataFactory.defaults().stock(originalStock).build();
 
             entityManager.persistAndFlush(target);
             entityManager.clear();
@@ -217,21 +204,18 @@ public class ProductRepositoryTests {
          */
     
         static Stream<Arguments> provideProducts(){
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-
             return Stream.of(
                 //Target session alone
                 Arguments.of(
-                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    ProductTestDataFactory.newDefaultProduct(),
                     List.of()
                 ),
                 //Target and other sessions
                 Arguments.of(
-                    new Product(null, "product_name", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
+                    ProductTestDataFactory.newDefaultProduct(),
                     List.of(
-                        new Product(null, "other1", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null),
-                        new Product(null, "other2", null, 0, BigDecimal.ONE, createdAt, createdBy, null, null, null)
+                        ProductTestDataFactory.newUniqueProduct(),
+                        ProductTestDataFactory.newUniqueProduct()
                     )
                 )
             );

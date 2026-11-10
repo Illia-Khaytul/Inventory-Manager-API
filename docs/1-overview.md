@@ -8,6 +8,7 @@
 5. [Operations](5-operations.md)
 6. [Error Handling](6-error_handling.md)
 7. [Testing](7-testing.md)
+8. [Additional Elements](8-additional_elements.md)
 
 ## 2. Goals
 

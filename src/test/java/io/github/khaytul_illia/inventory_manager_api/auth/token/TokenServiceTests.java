@@ -4,6 +4,10 @@ import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenRe
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSession;
 import io.github.khaytul_illia.inventory_manager_api.auth.session.UserSessionService;
 import io.github.khaytul_illia.inventory_manager_api.error.exception.InvalidRefreshTokenException;
+import io.github.khaytul_illia.inventory_manager_api.support.data.RefreshTokenTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserSessionTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.UserTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,19 +51,20 @@ public class TokenServiceTests {
     @DisplayName("createAccessRefreshTokenPair tests")
     class CreateAccessRefreshTokenPairTests{
 
-        private final Instant createdAt = Instant.now();
-        private final User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-        private final UserSession session = new UserSession(1L, true, createdAt, createdAt.plusSeconds(3600), user);
+        private final RefreshToken refreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
+        private final UserSession session = refreshToken.getSession();
+        private final User user = session.getUser();
 
         @Test
         @DisplayName("Should create new access and refresh tokens")
         void shouldCreateNewAccessAndRefreshTokens() throws Exception {
             //Arrange
-            RefreshToken refreshToken = new RefreshToken(1L, "refresh token value", createdAt, false, session, 1);
+            Instant createdAt = Instant.now();
+            String username = user.getUsername();
             Jwt accessTokenMock = mock(Jwt.class);
             String issuer = "http://localhost:8080/api/v1";
             Instant expiresAt = createdAt.plusSeconds(900);
-            String accessTokenValue = "access token value";
+            String accessTokenValue = TestDataConstants.ACCESS_TOKEN_VALUE;
 
             when(tokenFactory.buildRefreshToken(anyString(), any(Instant.class), any(UserSession.class)))
                 .thenReturn(refreshToken);
@@ -74,7 +79,7 @@ public class TokenServiceTests {
             when(accessTokenMock.getExpiresAt())
                 .thenReturn(expiresAt);
             when(accessTokenMock.getSubject())
-                .thenReturn(user.getUsername());
+                .thenReturn(username);
             when(accessTokenMock.getClaimAsString("roles"))
                 .thenReturn(user.getRole().name());
             when(accessTokenMock.getTokenValue())
@@ -88,7 +93,7 @@ public class TokenServiceTests {
             assertThat(response.issuer()).isEqualTo(issuer);
             assertThat(response.issuedAt()).isEqualTo(createdAt);
             assertThat(response.expiresAt()).isEqualTo(expiresAt);
-            assertThat(response.subject()).isEqualTo(user.getUsername());
+            assertThat(response.subject()).isEqualTo(username);
             assertThat(response.role()).isEqualTo(user.getRole().name());
             assertThat(response.accessToken()).isEqualTo(accessTokenValue);
             assertThat(response.refreshToken()).hasSize(36);
@@ -104,7 +109,7 @@ public class TokenServiceTests {
     @DisplayName("useRefreshToken tests")
     class UseRefreshTokenTests{
 
-        private final String tokenValue = "token value";
+        private final String tokenValue = TestDataConstants.REFRESH_TOKEN_VALUE;
         private TokenService tokenServiceSpy;
 
         @BeforeEach
@@ -160,13 +165,12 @@ public class TokenServiceTests {
         @DisplayName("Should mark the refresh token as used when refresh token is valid")
         void shouldUseRefreshToken_whenRefreshTokenIsValid(){
             //Arrange
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken foundRefreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
+            RefreshToken foundRefreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
 
             doReturn(foundRefreshToken)
                 .when(tokenServiceSpy).loadRefreshToken(tokenValue);
+            when(refreshTokenRepository.saveAndFlush(foundRefreshToken))
+                .thenReturn(foundRefreshToken);
 
             //Act
             RefreshToken refreshToken = tokenServiceSpy.useRefreshToken(tokenValue);
@@ -185,20 +189,19 @@ public class TokenServiceTests {
          */
 
         static Stream<Arguments> provideValidSessionInvalidRefreshTokens(){
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession validSession = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            UserSession expiredSession = new UserSession(1L, true, now, now.minusSeconds(3600), user);
+            User user = UserTestDataFactory.existingDefaultUser();
+            UserSession validSession = UserSessionTestDataFactory.existingUserSession(user);
+            UserSession expiredSession = UserSessionTestDataFactory.existingUserSession(true, Instant.now().minusSeconds(36000), user);
 
             return Stream.of(
                 //Refresh token is used
                 Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, true, validSession, 1),
+                    RefreshTokenTestDataFactory.existingUniqueRefreshToken(true, validSession),
                     List.of("Detected refresh token reuse")
                 ),
                 //Refresh token session is expired
                 Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, false, expiredSession, 1),
+                    RefreshTokenTestDataFactory.existingUniqueRefreshToken(expiredSession),
                     List.of("Attempted access to an expired session")
                 )
             );
@@ -206,19 +209,19 @@ public class TokenServiceTests {
 
         static Stream<Arguments> provideInvalidSessionRefreshTokens(){
             Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession invalidSession = new UserSession(1L, false, now, now.plusSeconds(3600), user);
-            UserSession invalidAndExpiredSession = new UserSession(1L, false, now, now.minusSeconds(3600), user);
+            User user = UserTestDataFactory.existingDefaultUser();
+            UserSession invalidSession = UserSessionTestDataFactory.existingUserSession(false, now, user);
+            UserSession invalidAndExpiredSession = UserSessionTestDataFactory.existingUserSession(false, now.minusSeconds(36000), user);
 
             return Stream.of(
                 //Refresh token session is invalid
                 Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, false, invalidSession, 1),
+                    RefreshTokenTestDataFactory.existingUniqueRefreshToken(invalidSession),
                     List.of("Attempted access to an invalidated session")
                 ),
                 //Refresh token is used and session is invalid and expired
                 Arguments.of(
-                    new RefreshToken(1L, "refresh token value", now, true, invalidAndExpiredSession, 1),
+                    RefreshTokenTestDataFactory.existingUniqueRefreshToken(true, invalidAndExpiredSession),
                     List.of("Detected refresh token reuse", "Attempted access to an invalidated session", "Attempted access to an expired session")
                 )
             );
@@ -230,7 +233,7 @@ public class TokenServiceTests {
     @DisplayName("loadRefreshToken tests")
     class LoadRefreshTokenTests{
 
-        private final String tokenValue = "token value";
+        private final String tokenValue = TestDataConstants.REFRESH_TOKEN_VALUE;
 
         @Test
         @DisplayName("Should throw InvalidRefreshTokenException when refresh token is not found")
@@ -258,10 +261,7 @@ public class TokenServiceTests {
         @DisplayName("Should return found refresh token when it exists by token value")
         void shouldReturnRefreshToken_whenItExists(){
             //Arrange
-            Instant now = Instant.now();
-            User user = new User(1L, "username", "password", User.UserRole.CUSTOMER);
-            UserSession session = new UserSession(1L, true, now, now.plusSeconds(3600), user);
-            RefreshToken foundRefreshToken = new RefreshToken(1L, "refresh token value", now, false, session, 1);
+            RefreshToken foundRefreshToken = RefreshTokenTestDataFactory.existingDefaultRefreshToken();
 
             when(tokenFactory.hashTokenValue(tokenValue))
                 .thenReturn(tokenValue);

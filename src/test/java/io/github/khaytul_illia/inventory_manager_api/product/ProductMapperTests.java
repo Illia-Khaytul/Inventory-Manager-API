@@ -5,6 +5,8 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
+import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -16,7 +18,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -135,47 +136,39 @@ public class ProductMapperTests {
      */
 
     static Stream<Arguments> provideProductInstances() {
-        Instant createdAt = Instant.now();
-        Instant modifiedAt = Instant.parse("2026-10-05T18:55:10Z");
-        BigDecimal price = new BigDecimal("20.55");
-
         return Stream.of(
             //Full product entity
             Arguments.of(
-                new Product(1L, "product name", "description", 10, price, createdAt, "operator1", modifiedAt, "operator2", 1)
+                ProductTestDataFactory.newUniqueProduct(10, "20.25")
             ),
             //Null description and modified at/by fields
             Arguments.of(
-                new Product(2L, "different product", null, 1, price, createdAt, "operator1", null, null, 2)
+                ProductTestDataFactory.defaults().audited().stock(1).price("19.99").build()
             )
         );
     }
 
     static Stream<Arguments> provideProductUpdateData() {
-        String name = "Original Product";
-        String description = "Long description...";
-        BigDecimal price = new BigDecimal("11.11");
-        String newName = "new name";
-        String newDescription = "new description";
-        BigDecimal newPrice = new BigDecimal("25.25");
+        String newName = TestDataConstants.PRODUCT_NAME + "_new";
+        String newPrice = "1" + TestDataConstants.PRODUCT_PRICE;
 
         return Stream.of(
             //All fields set
             Arguments.of(
-                new Product(null, name, description, 0, price, null, null, null, null, null),
-                new Product(null, newName, newDescription, 0, newPrice, null, null, null, null, null),
-                new UpdateProductRequest(newName, newDescription, newPrice)
+                ProductTestDataFactory.newDefaultProduct(),
+                ProductTestDataFactory.newProduct(newName, 0, TestDataConstants.PRODUCT_PRICE),
+                new UpdateProductRequest(newName, null, null)
             ),
             //Some fields missing
             Arguments.of(
-                new Product(null, name, description, 0, price, null, null, null, null, null),
-                new Product(null, newName, description, 0, newPrice, null, null, null, null, null),
-                new UpdateProductRequest(newName, null, newPrice)
+                ProductTestDataFactory.newDefaultProduct(),
+                ProductTestDataFactory.newProduct(newName, 0, newPrice),
+                new UpdateProductRequest(newName, null, new BigDecimal(newPrice))
             ),
             //All fields missing
             Arguments.of(
-                new Product(null, name, description, 0, price, null, null, null, null, null),
-                new Product(null, name, description, 0, price, null, null, null, null, null),
+                ProductTestDataFactory.newDefaultProduct(),
+                ProductTestDataFactory.newProduct(TestDataConstants.PRODUCT_NAME, 0, TestDataConstants.PRODUCT_PRICE),
                 new UpdateProductRequest(null, null, null)
             )
         );
@@ -195,8 +188,8 @@ public class ProductMapperTests {
             Arguments.of(
                 new PageImpl<>(
                     List.of(
-                        new Product(1L, "Original Product", null, 0, new BigDecimal(1), null, null, null, null, null),
-                        new Product(2L, "Original Product 2", null, 0, new BigDecimal(1), null, null, null, null, null)
+                        ProductTestDataFactory.existingUniqueProduct(),
+                        ProductTestDataFactory.existingUniqueProduct()
                     ),
                     PageRequest.of(0, 10),
                     2
@@ -206,11 +199,11 @@ public class ProductMapperTests {
             Arguments.of(
                 new PageImpl<>(
                     List.of(
-                        new Product(1L, "Original Product 1", null, 0, new BigDecimal(1), null, null, null, null, null),
-                        new Product(2L, "Original Product 2", null, 0, new BigDecimal(1), null, null, null, null, null),
-                        new Product(3L, "Original Product 3", null, 0, new BigDecimal(1), null, null, null, null, null),
-                        new Product(4L, "Original Product 4", null, 0, new BigDecimal(1), null, null, null, null, null),
-                        new Product(5L, "Original Product 5", null, 0, new BigDecimal(1), null, null, null, null, null)
+                        ProductTestDataFactory.existingUniqueProduct(),
+                        ProductTestDataFactory.existingUniqueProduct(),
+                        ProductTestDataFactory.existingUniqueProduct(),
+                        ProductTestDataFactory.existingUniqueProduct(),
+                        ProductTestDataFactory.existingUniqueProduct()
                     ),
                     PageRequest.of(1, 5),
                     10

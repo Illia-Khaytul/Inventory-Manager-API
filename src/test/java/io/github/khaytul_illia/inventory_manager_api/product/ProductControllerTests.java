@@ -1,48 +1,32 @@
 package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.support.context.ControllerTestContext;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.AuthorizationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtAuthenticationErrorHandler;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtConfig;
-import io.github.khaytul_illia.inventory_manager_api.security.jwt.JwtRsaPemKeyConfig;
+import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
-import jakarta.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.MultiValueMap;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.ErrorResponseAssertionUtils.*;
+import static io.github.khaytul_illia.inventory_manager_api.support.utils.mvc.SuccessResponseAssertionUtils.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -52,76 +36,35 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class)
-@Import({
-    SecurityConfig.class,
-    JwtRsaPemKeyConfig.class,
-    JwtConfig.class,
-    JwtAuthenticationErrorHandler.class,
-    AuthenticationErrorHandler.class,
-    AuthorizationErrorHandler.class
-})
-@ActiveProfiles("test")
 @DisplayName("ProductController tests")
-public class ProductControllerTests {
-
-    @MockitoBean
-    private ProductService productService;
-    @MockitoBean
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private final String defaultRole = User.UserRole.OPERATOR.name();
-    private Jwt jwtMock;
-
-    @BeforeEach
-    void beforeEach() {
-        jwtMock = mock(Jwt.class);
-
-        when(securityUtils.getAuthenticatedUserAccessToken())
-            .thenReturn(jwtMock);
-        when(jwtMock.getClaimAsString("roles"))
-            .thenReturn(defaultRole);
-    }
+public class ProductControllerTests extends ControllerTestContext {
 
     @Nested
     @DisplayName("createProduct endpoint tests")
     class CreateProductTests {
 
-        private final String price = "99.99";
-        private final CreateProductRequest request = new CreateProductRequest("product_name", null, new BigDecimal(price));
+        private final CreateProductRequest request = ProductTestDataFactory.DEFAULT_CREATE_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 201 Created when successfully created new product")
         void shouldReturn201_whenSuccessfullyCreatedProduct() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            ProductResponse response = new ProductResponse(1L, "product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, null, null);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.createProduct(any(CreateProductRequest.class)))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", String.format("http://localhost/products/%s", response.id())))
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").doesNotExist())
-                .andExpect(jsonPath("$.modifiedBy").doesNotExist());
+                .andExpect(header().string("Location", String.format("http://localhost/products/%s", response.id())));
+
+            assertProductResponse(result, response);
 
             verify(productService).createProduct(any(CreateProductRequest.class));
         }
@@ -131,26 +74,28 @@ public class ProductControllerTests {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -169,16 +114,18 @@ public class ProductControllerTests {
             CreateProductRequest request = new CreateProductRequest(name, description, price);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.name").value(nameMessage))
-                .andExpect(jsonPath("$.data.description").value(descriptionMessage))
-                .andExpect(jsonPath("$.data.price").value(priceMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of(
+                "name", nameMessage,
+                "description", descriptionMessage,
+                "price", priceMessage
+            ));
         }
 
         /*
@@ -196,11 +143,11 @@ public class ProductControllerTests {
                 ),
                 Arguments.of(
                     "", "   ", new BigDecimal(-1),
-                    "must not be blank", "must be null or have at least one non-whitespace character", "must be greater than or equal to 0"
+                    "must not be blank", "must be null or have at least one non-whitespace character", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                 ),
                 Arguments.of(
                     "   ", longDescription, new BigDecimal(Integer.MAX_VALUE + ".01"),
-                    "must not be blank", "size must be between 0 and 1000", "must be less than or equal to " + Integer.MAX_VALUE
+                    "must not be blank", "size must be between 0 and 1000", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                 ),
                 Arguments.of(
                     longName, longDescription, null,
@@ -215,36 +162,28 @@ public class ProductControllerTests {
     @DisplayName("updateProduct endpoint tests")
     class UpdateProductTests {
 
-        private final long productId = 1L;
-        private final String price = "99.99";
-        private final UpdateProductRequest request = new UpdateProductRequest("new_product_name", null, new BigDecimal(price));
+        private final Long productId = 1L;
+        private final UpdateProductRequest request = ProductTestDataFactory.DEFAULT_UPDATE_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully updated a product")
         void shouldReturn200_whenSuccessfullyUpdatedProduct() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            ProductResponse response = new ProductResponse(1L, "new_product_name", "description", 0, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.updateProduct(anyLong(), any(UpdateProductRequest.class)))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).updateProduct(anyLong(), any(UpdateProductRequest.class));
         }
@@ -254,26 +193,28 @@ public class ProductControllerTests {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -294,17 +235,19 @@ public class ProductControllerTests {
             UpdateProductRequest request = new UpdateProductRequest(name, description, price);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage))
-                .andExpect(jsonPath("$.data.name").value(nameMessage))
-                .andExpect(jsonPath("$.data.description").value(descriptionMessage))
-                .andExpect(jsonPath("$.data.price").value(priceMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of(
+                "product_id", productIdMessage,
+                "name", nameMessage,
+                "description", descriptionMessage,
+                "price", priceMessage
+            ));
         }
 
         /*
@@ -321,21 +264,21 @@ public class ProductControllerTests {
                     "must be greater than 0",
                     "must be null or have at least one non-whitespace character",
                     "must be null or have at least one non-whitespace character",
-                    "must be greater than or equal to 0"
+                    "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                 ),
                 Arguments.of(
                     -1, "   ", "   ", new BigDecimal(Integer.MAX_VALUE + ".01"),
                     "must be greater than 0",
                     "must be null or have at least one non-whitespace character",
                     "must be null or have at least one non-whitespace character",
-                    "must be less than or equal to " + Integer.MAX_VALUE
+                    "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                 ),
                 Arguments.of(
                     -1, longName, longDescription, new BigDecimal(-1),
                     "must be greater than 0",
                     "size must be between 0 and 100",
                     "size must be between 0 and 1000",
-                    "must be greater than or equal to 0"
+                    "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                 )
             );
         }
@@ -347,35 +290,27 @@ public class ProductControllerTests {
     class ChangeProductStockTests {
 
         private final long productId = 1L;
-        private final ModifyStockRequest request = new ModifyStockRequest(10);
+        private final ModifyStockRequest request = ProductTestDataFactory.DEFAULT_MODIFY_STOCK_REQUEST;
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK when successfully changed product stock")
         void shouldReturn200_whenSuccessfullyModifiedProductStock() throws Exception {
             //Arrange
-            Instant createdAt = Instant.now();
-            String createdBy = "operator";
-            String price = "99.99";
-            ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.changeProductStock(anyLong(), any(ModifyStockRequest.class)))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).changeProductStock(anyLong(), any(ModifyStockRequest.class));
         }
@@ -385,26 +320,28 @@ public class ProductControllerTests {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -426,15 +363,14 @@ public class ProductControllerTests {
             ModifyStockRequest request = new ModifyStockRequest(stockChange);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     patch("/products/{productId}/stock", productId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage))
-                .andExpect(jsonPath("$.data.stockChange").value(stockChangeMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage, "stock_change", stockChangeMessage));
         }
 
     }
@@ -444,31 +380,26 @@ public class ProductControllerTests {
     class GetProductTests {
 
         private final long productId = 1L;
-        private final Instant createdAt = Instant.now();
-        private final String createdBy = "operator";
-        private final String price = "99.99";
-        private final ProductResponse response = new ProductResponse(1L, "product_name", null, 10, new BigDecimal(price), createdAt, createdBy, createdAt, createdBy);
 
         @Test
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 200 OK and product audit fields when accessed as OPERATOR")
         void shouldReturn200WithAuditing_whenAccessedAsOperator() throws Exception {
             //Arrange
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
+
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
+            when(securityUtils.getAuthenticatedUserRole())
+                .thenReturn(User.UserRole.OPERATOR.name());
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.createdBy").exists())
-                .andExpect(jsonPath("$.modifiedAt").exists())
-                .andExpect(jsonPath("$.modifiedBy").exists());
+                .andExpect(status().isOk());
+
+            assertProductResponse(result, response);
 
             verify(productService).getProduct(anyLong());
         }
@@ -479,25 +410,20 @@ public class ProductControllerTests {
         @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
         void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
             //Arrange
-            reset(jwtMock);
+            ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
-            when(jwtMock.getClaimAsString("roles"))
+            when(securityUtils.getAuthenticatedUserRole())
                 .thenReturn(role);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id()))
-                .andExpect(jsonPath("$.name").value(response.name()))
-                .andExpect(jsonPath("$.price").value(price))
-                .andExpect(jsonPath("$.createdAt").doesNotExist())
-                .andExpect(jsonPath("$.createdBy").doesNotExist())
-                .andExpect(jsonPath("$.modifiedAt").doesNotExist())
-                .andExpect(jsonPath("$.modifiedBy").doesNotExist());
+                .andExpect(status().isOk());
+
+            assertCustomerProductResponse(result, response);
 
             verify(productService).getProduct(anyLong());
         }
@@ -514,12 +440,12 @@ public class ProductControllerTests {
             String productIdMessage
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products/{productId}", productId)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage));
         }
 
     }
@@ -528,32 +454,26 @@ public class ProductControllerTests {
     @DisplayName("getProducts endpoint tests")
     class GetProductsTests {
 
+        private final PaginatedResponse<ProductShortResponse> response = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;
+
         @Test
         @WithMockUser
         @DisplayName("Should return 200 OK when successfully gotten a page of products")
         void shouldReturn200_whenSuccessfullyGottenPageOfProducts() throws Exception {
             //Arrange
-            String price = "55.55";
-            ProductShortResponse productResponse1 = new ProductShortResponse(1L, "Original Product", 10, new BigDecimal(price));
-            ProductShortResponse productResponse2 = new ProductShortResponse(2L, "Original Product 2", 5, new BigDecimal(price));
-            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of(productResponse1, productResponse2));
-
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products")
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page").value(response.page()))
-                .andExpect(jsonPath("$.pageSize").value(response.pageSize()))
-                .andExpect(jsonPath("$.totalPages").value(response.totalPages()))
-                .andExpect(jsonPath("$.totalElements").value(response.totalElements()))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].id").value(productResponse1.id()))
-                .andExpect(jsonPath("$.content[1].id").value(productResponse2.id()));
+                .andExpect(status().isOk());
+
+            assertPaginatedResponse(result, response);
+            for(int i = 0; i < response.content().size(); i++){
+                result.andExpect(jsonPath("$.content[%s].id", i).value(response.content().get(i).id()));
+            }
 
             verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
         }
@@ -562,8 +482,6 @@ public class ProductControllerTests {
         @DisplayName("Should return 200 OK when accessed with no authentication")
         void shouldReturn200_whenNoAuthentication() throws Exception {
             //Arrange
-            PaginatedResponse<ProductShortResponse> response = new PaginatedResponse<>(0, 10, 1, 1, List.of());
-
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
 
@@ -580,21 +498,18 @@ public class ProductControllerTests {
         @MethodSource("provideInvalidPaginationAndFiltering")
         @WithMockUser(roles = "OPERATOR")
         @DisplayName("Should return 400 Bad Request when invalid modify stock request fields")
-        void shouldReturn400_whenInvalidModifyStockRequest(
+        void shouldReturn400_whenInvalidProductFiltering(
             MultiValueMap<String, String> queryParams,
             Map<String, String> errorMessages
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products")
                         .queryParams(queryParams)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.nameContains").value(errorMessages.get("nameContains")))
-                .andExpect(jsonPath("$.data.minStock").value(errorMessages.get("minStock")))
-                .andExpect(jsonPath("$.data.minPrice").value(errorMessages.get("minPrice")))
-                .andExpect(jsonPath("$.data.maxPrice").value(errorMessages.get("maxPrice")));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, errorMessages);
         }
 
             /*
@@ -607,30 +522,30 @@ public class ProductControllerTests {
             return Stream.of(
                 Arguments.of(
                     MultiValueMap.fromSingleValue(Map.of(
-                        "nameContains", longName,
-                        "minStock", "-1",
-                        "minPrice", "-1",
-                        "maxPrice", "-1"
+                        "name_contains", longName,
+                        "min_stock", "-1",
+                        "min_price", "-1",
+                        "max_price", "-1"
                     )),
                     Map.of(
-                        "nameContains", "size must be between 0 and 100",
-                        "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be greater than or equal to 0",
-                        "maxPrice", "must be greater than or equal to 0"
+                        "name_contains", "size must be between 0 and 100",
+                        "min_stock", "must be greater than or equal to 0",
+                        "min_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
+                        "max_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                     )
                 ),
                 Arguments.of(
                     MultiValueMap.fromSingleValue(Map.of(
-                        "nameContains", "   ",
-                        "minStock", "-1",
-                        "minPrice", Integer.MAX_VALUE + ".01",
-                        "maxPrice", Integer.MAX_VALUE + ".01"
+                        "name_contains", "   ",
+                        "min_stock", "-1",
+                        "min_price", Integer.MAX_VALUE + ".01",
+                        "max_price", Integer.MAX_VALUE + ".01"
                     )),
                     Map.of(
-                        "nameContains", "must be null or have at least one non-whitespace character",
-                        "minStock", "must be greater than or equal to 0",
-                        "minPrice", "must be less than or equal to " + Integer.MAX_VALUE,
-                        "maxPrice", "must be less than or equal to " + Integer.MAX_VALUE
+                        "name_contains", "must be null or have at least one non-whitespace character",
+                        "min_stock", "must be greater than or equal to 0",
+                        "min_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00",
+                        "max_price", "must be between 0.00 and " + Integer.MAX_VALUE + ".00"
                     )
                 )
             );
@@ -653,13 +568,11 @@ public class ProductControllerTests {
                 .when(productService).deleteProduct(anyLong());
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
-                )
-                .andExpect(status().isNoContent())
-                .andExpect(result -> {
-                    assertThat(result.getResponse().getContentLength()).isEqualTo(0);
-                });
+                );
+
+            assertNoContentResponse(result);
 
             verify(productService).deleteProduct(anyLong());
         }
@@ -669,22 +582,24 @@ public class ProductControllerTests {
         @DisplayName("Should return 403 Forbidden when accessed with authentication but wrong role")
         void shouldReturn403_whenAuthenticatedWithWrongRole() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_FORBIDDEN));
+                .andExpect(status().isForbidden());
+
+            assertForbiddenErrorResponse(result);
         }
 
         @Test
         @DisplayName("Should return 401 Unauthorized when accessed with no authentication")
         void shouldReturn401_whenNoAuthentication() throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_UNAUTHORIZED));
+                .andExpect(status().isUnauthorized());
+
+            assertNoAuthErrorResponse(result);
         }
 
         @ParameterizedTest
@@ -700,12 +615,12 @@ public class ProductControllerTests {
             String productIdMessage
         ) throws Exception {
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     delete("/products/{productId}", productId)
                 )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(HttpServletResponse.SC_BAD_REQUEST))
-                .andExpect(jsonPath("$.data.productId").value(productIdMessage));
+                .andExpect(status().isBadRequest());
+
+            assertSingleErrorValidationErrorResponse(result, Map.of("product_id", productIdMessage));
         }
 
     }

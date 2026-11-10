@@ -20,7 +20,7 @@ public class JwtRsaPemKeyConfig {
 
     @Bean
     public RSAPrivateKey jwtPrivateKey(
-        @Value("${spring.application.security.jwt.private_key_source}") Resource jwtPrivateKeySource
+        @Value("${app.auth.jwt.private-key-source}") Resource jwtPrivateKeySource
     ) throws Exception {
         log.debug("Loading JWT private key from '{}'", jwtPrivateKeySource);
 
@@ -38,7 +38,7 @@ public class JwtRsaPemKeyConfig {
 
     @Bean
     public RSAPublicKey jwtPublicKey(
-        @Value("${spring.application.security.jwt.public_key_source}") Resource jwtPublicKeySource
+        @Value("${app.auth.jwt.public-key-source}") Resource jwtPublicKeySource
     ) throws Exception {
         log.debug("Loading JWT public key from '{}'", jwtPublicKeySource);
 
