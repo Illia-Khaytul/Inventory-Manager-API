@@ -300,27 +300,3 @@ Deletes and existing product by id.
 - This delete operation is idempotent.
 It always returns the same (nothing) regardless of failure or success.
 
-
-
-## Base operator seeder
-
-Implements `CommandLineRunner` and executes once on application start.
-Is instantiated only when the `app.user.base-operator.seeder.enabled` property is set to `true`.
-
-Populates the database with the base OPERATOR user.
-
-**Receives (on initialization):** 
-- String `baseUsername`: required, not blank
-- String `basePassword`: required, not blank
-
-**Steps:**
-1. Checks if base operator already exists.
-If user exists but is not and OPERATOR, throws `IllegalStateException`.
-If exists and is OPERATOR, do nothing.
-2. Create base OPERATOR user (create user operation).
-
-**Returns:** nothing
-
-**Notes:**
-- Throws `IllegalStateException` on initialization if the base operator credentials are null or blank, and when a user with `baseUsername` exists but is not an OPERATOR.
-- Uses the create user operation to create the base OPERATOR user.
