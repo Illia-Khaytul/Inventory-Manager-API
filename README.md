@@ -352,3 +352,12 @@ mvn test
 ## 11. Design Documentation
 
 The design documentation is located at the [docs](docs/1-overview.md) folder.
+
+## 12. Known Limitations
+
+- The application is currently using pem files to store the RSA keys used for JWT encoding/decoding. 
+In a production ready application the keys would be stored in a key wallet or provided by an external secured API.
+- Max session and max placed order user limits can only be enforced programmatically. 
+It is possible for the limit to be exceeded during concurrent operations.
+- The logout and logout all endpoints currently require authentication.
+This means that if the user reaches the session limit and somehow loses all its refresh tokens, it will be locked out from the application until some session finally expires.
