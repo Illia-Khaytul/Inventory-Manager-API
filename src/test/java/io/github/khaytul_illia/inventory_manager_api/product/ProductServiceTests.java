@@ -386,7 +386,7 @@ public class ProductServiceTests {
         void shouldGetProductPageWithPaginationAndFiltering() {
             //Arrange
             Pageable pagination = PageRequest.of(0, 10);
-            ProductFiltering filtering = new ProductFiltering("Product", null, null, null);
+            ProductFiltering filtering = new ProductFiltering("Product", null, null, null, false);
             Specification<Product> spec = Specification.allOf();
             Page<Product> page = new PageImpl<>(List.of(), pagination, 0);
             PaginatedResponse<ProductShortResponse> expectedResponse = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;

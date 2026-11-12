@@ -11,6 +11,7 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
+import io.github.khaytul_illia.inventory_manager_api.user.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -129,7 +131,14 @@ public class ProductService {
     public ProductResponse getProduct(long productId) {
         log.info("Getting product with id {}", productId);
 
-        Product product = productRepository.findByIdAndDeletedAtNull(productId)
+        Optional<Product> foundProduct;
+        if(securityUtils.isAuthenticatedUserOperator()){
+            foundProduct = productRepository.findById(productId);
+        }else{
+            foundProduct = productRepository.findByIdAndDeletedAtNull(productId);
+        }
+
+        Product product = foundProduct
             .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
 
         log.info("Successfully loaded product");
@@ -142,9 +151,9 @@ public class ProductService {
 
         log.debug("Building product specification from filtering");
 
-        Specification<Product> spec = specificationBuilder.buildSpecificationFromFiltering(filtering);
-        spec = spec.and((root, cq, cb) -> cb.isNull(root.get("deletedAt")));
+        filtering = specificationBuilder.scopeFiltersByUserPermission(filtering);
 
+        Specification<Product> spec = specificationBuilder.buildSpecificationFromFiltering(filtering);
         Page<Product> products = productRepository.findAll(spec, pagination);
 
         log.info("Successfully loaded a page of products from a found total of {}", products.getTotalElements());

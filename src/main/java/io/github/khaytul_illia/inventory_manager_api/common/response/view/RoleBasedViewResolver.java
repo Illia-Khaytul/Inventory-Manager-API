@@ -50,15 +50,8 @@ public class RoleBasedViewResolver implements ResponseBodyAdvice<Object> {
         MediaType selectedContentType,
         Class<? extends HttpMessageConverter<?>> selectedConverterType
     ) {
-        String role;
-        try {
-            role = securityUtils.getAuthenticatedUserRole();
-        } catch (Exception ignored) {
-            role = null;
-        }
-
         Class<?> view = ResponseViews.DefaultView.class;
-        if (User.UserRole.OPERATOR.name().equalsIgnoreCase(role)) {
+        if (securityUtils.isAuthenticatedUserOperator()) {
             view = ResponseViews.OperatorView.class;
         }
 

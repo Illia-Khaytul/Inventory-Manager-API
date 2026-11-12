@@ -22,7 +22,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.TransactionDefinition;
 
 import java.math.BigDecimal;
@@ -305,49 +304,49 @@ public class ProductServiceIT extends ServiceITContext {
                 //No filtering, big pagination
                 Arguments.of(
                     PageRequest.of(0, 100),
-                    new ProductFiltering(null, null, null, null),
+                    new ProductFiltering(null, null, null, null, false),
                     new int[]{0, 1, 2, 3, 4},
                     5
                 ),
                 //No filtering, small pagination
                 Arguments.of(
                     PageRequest.of(0, 2),
-                    new ProductFiltering(null, null, null, null),
+                    new ProductFiltering(null, null, null, null, false),
                     new int[]{0, 1},
                     5
                 ),
                 //Name contains filtering
                 Arguments.of(
                     PageRequest.of(0, 10),
-                    new ProductFiltering("ab", null, null, null),
+                    new ProductFiltering("ab", null, null, null, false),
                     new int[]{1, 2},
                     2
                 ),
                 //Min stock filtering
                 Arguments.of(
                     PageRequest.of(0, 10),
-                    new ProductFiltering(null, 6, null, null),
+                    new ProductFiltering(null, 6, null, null, false),
                     new int[]{1, 3, 4},
                     3
                 ),
                 //Min price filtering and sorting
                 Arguments.of(
                     PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "stock")),
-                    new ProductFiltering(null, null, new BigDecimal("10"), null),
+                    new ProductFiltering(null, null, new BigDecimal("10"), null, false),
                     new int[]{0, 2, 1},
                     3
                 ),
                 //Max price filtering
                 Arguments.of(
                     PageRequest.of(0, 10),
-                    new ProductFiltering(null, null, null, new BigDecimal("10")),
+                    new ProductFiltering(null, null, null, new BigDecimal("10"), false),
                     new int[]{0, 3, 4},
                     3
                 ),
                 //Multiple filtering, small pagination and stock sorting
                 Arguments.of(
                     PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "stock")),
-                    new ProductFiltering("b", null, new BigDecimal("9"), null),
+                    new ProductFiltering("b", null, new BigDecimal("9"), null, false),
                     new int[]{2, 4},
                     3
                 )
