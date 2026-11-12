@@ -156,6 +156,7 @@ public class ProductController {
 
     @GetMapping(path = "")
     @ResponseStatus(HttpStatus.OK)
+    @RoleBasedJsonView
     @Operation(
         summary = "Get page of products",
         description = """

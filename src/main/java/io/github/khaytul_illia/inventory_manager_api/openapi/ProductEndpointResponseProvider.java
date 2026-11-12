@@ -46,6 +46,8 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             null,
+            null,
+            null,
             null
         );
         ErrorResponse createProduct400ResponseBlankCase = formatErrorResponse(
@@ -127,7 +129,9 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
         );
         ErrorResponse updateProduct400ResponseProductId = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -234,7 +238,9 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
         );
         ErrorResponse changeProductStock400ResponseProductId = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -323,7 +329,9 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
         );
         ProductResponse getProductSuccessResponseCustomer = new ProductResponse(
             1L,
@@ -331,6 +339,8 @@ public class ProductEndpointResponseProvider {
             "product description if any",
             110,
             new BigDecimal("20.05"),
+            null,
+            null,
             null,
             null,
             null,
@@ -379,9 +389,9 @@ public class ProductEndpointResponseProvider {
             1,
             3,
             List.of(
-                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99")),
-                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99")),
-                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"))
+                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99"), false),
+                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99"), false),
+                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"), false)
             )
         );
         ErrorResponse getProducts400ResponseSizeCase1 = formatErrorResponse(

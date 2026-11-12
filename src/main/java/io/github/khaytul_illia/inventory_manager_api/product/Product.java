@@ -17,7 +17,13 @@ import java.sql.Types;
 import java.time.Instant;
 
 @Entity
-@Table(name = "products")
+@Table(
+    name = "products",
+    uniqueConstraints = @UniqueConstraint(
+        name = "unique_not_deleted_name",
+        columnNames = {"name", "deleted_at"}
+    )
+)
 @EntityListeners(AuditingEntityListener.class)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -29,7 +35,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
 
     @JdbcTypeCode(Types.LONGVARCHAR)
@@ -56,6 +62,12 @@ public class Product {
     @Column(name = "modified_by")
     @LastModifiedBy
     private String modifiedBy;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
 
     @Version
     private Integer version;

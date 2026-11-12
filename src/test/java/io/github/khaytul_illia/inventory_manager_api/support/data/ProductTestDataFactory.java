@@ -150,15 +150,15 @@ public class ProductTestDataFactory {
         }
 
         public Product build(){
-            return new Product(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, 1);
+            return new Product(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, null, null, 1);
         }
 
         public ProductResponse toResponse(){
-            return new ProductResponse(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy);
+            return new ProductResponse(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, null, null);
         }
 
         public ProductShortResponse toShortResponse(){
-            return new ProductShortResponse(id, name, stock, price);
+            return new ProductShortResponse(id, name, stock, price, false);
         }
 
         public CreateProductRequest toCreateRequest(){

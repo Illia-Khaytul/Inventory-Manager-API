@@ -41,7 +41,7 @@ public class ProductRepositoryTests extends RepositoryTestContext {
             entityManager.clear();
 
             //Act
-            boolean exists = productRepository.existsByName(target.getName());
+            boolean exists = productRepository.existsByNameAndDeletedAtNull(target.getName());
 
             //Assert
             assertThat(exists).isTrue();
@@ -57,7 +57,7 @@ public class ProductRepositoryTests extends RepositoryTestContext {
             entityManager.clear();
 
             //Act
-            boolean exists = productRepository.existsByName(target.getName());
+            boolean exists = productRepository.existsByNameAndDeletedAtNull(target.getName());
 
             //Assert
             assertThat(exists).isFalse();
@@ -173,7 +173,7 @@ public class ProductRepositoryTests extends RepositoryTestContext {
             entityManager.clear();
             
             //Act
-            productRepository.deleteProductById(target.getId());
+            productRepository.deleteProductById(target.getId(), null);
             
             //Assert
             assertThat(productRepository.existsById(target.getId())).isFalse();
@@ -192,7 +192,7 @@ public class ProductRepositoryTests extends RepositoryTestContext {
             entityManager.clear();
             
             //Act
-            productRepository.deleteProductById(target.getId());
+            productRepository.deleteProductById(target.getId(), null);
             
             //Assert
             assertThat(productRepository.existsById(target.getId())).isFalse();

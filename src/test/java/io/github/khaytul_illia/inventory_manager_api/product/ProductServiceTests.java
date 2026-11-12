@@ -61,7 +61,7 @@ public class ProductServiceTests {
         @DisplayName("Should throw DuplicateEntryException when product name is not unique")
         void shouldThrowDuplicateEntryException_whenProductNameIsNotUnique() {
             //Arrange
-            when(productRepository.existsByName(request.name()))
+            when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(true);
 
             //Act and Assert
@@ -69,7 +69,7 @@ public class ProductServiceTests {
                 .isInstanceOf(DuplicateEntryException.class)
                 .hasMessage(String.format("Product with name '%s' already exists", request.name()));
 
-            verify(productRepository).existsByName(request.name());
+            verify(productRepository).existsByNameAndDeletedAtNull(request.name());
         }
 
         @Test
@@ -79,7 +79,7 @@ public class ProductServiceTests {
             Product product = ProductTestDataFactory.existingDefaultProduct();
             ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
-            when(productRepository.existsByName(request.name()))
+            when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(false);
             when(productMapper.buildProduct(request))
                 .thenReturn(product);
@@ -96,7 +96,7 @@ public class ProductServiceTests {
             assertThat(response.id()).isEqualTo(expectedResponse.id());
             assertThat(response.name()).isEqualTo(expectedResponse.name());
 
-            verify(productRepository).existsByName(request.name());
+            verify(productRepository).existsByNameAndDeletedAtNull(request.name());
             verify(productMapper).buildProduct(request);
             verify(productRepository).save(product);
             verify(productMapper).toResponse(product);
@@ -159,7 +159,7 @@ public class ProductServiceTests {
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
-            when(productRepository.existsByName(request.name()))
+            when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(true);
 
             //Act and Assert
@@ -168,7 +168,7 @@ public class ProductServiceTests {
                 .hasMessage(String.format("Product with name '%s' already exists", request.name()));
 
             verify(productRepository).findById(productId);
-            verify(productRepository).existsByName(request.name());
+            verify(productRepository).existsByNameAndDeletedAtNull(request.name());
         }
 
         @ParameterizedTest
@@ -201,7 +201,7 @@ public class ProductServiceTests {
             assertThat(response).isNotNull();
 
             verify(productRepository).findById(productId);
-            verify(productRepository, never()).existsByName(request.name());
+            verify(productRepository, never()).existsByNameAndDeletedAtNull(request.name());
             verify(productMapper).updateProduct(product, request);
             verify(productMapper).toResponse(product);
         }
@@ -215,7 +215,7 @@ public class ProductServiceTests {
 
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
-            when(productRepository.existsByName(request.name()))
+            when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(false);
             doNothing()
                 .when(productMapper).updateProduct(product, request);
@@ -233,7 +233,7 @@ public class ProductServiceTests {
             assertThat(response.name()).isEqualTo(productResponse.name());
 
             verify(productRepository).findById(productId);
-            verify(productRepository).existsByName(request.name());
+            verify(productRepository).existsByNameAndDeletedAtNull(request.name());
             verify(productMapper).updateProduct(product, request);
             verify(productMapper).toResponse(product);
         }
@@ -425,13 +425,13 @@ public class ProductServiceTests {
             long productId = 1L;
 
             doNothing()
-                .when(productRepository).deleteProductById(productId);
+                .when(productRepository).deleteProductById(productId, null);
 
             //Act
             productService.deleteProduct(productId);
 
             //Assert
-            verify(productRepository).deleteProductById(productId);
+            verify(productRepository).deleteProductById(productId, null);
         }
 
     }
