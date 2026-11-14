@@ -19,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,8 @@ public class ProductManagementE2EIT extends E2ETestContext {
 
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    protected TransactionTemplate transactionTemplate;
     private ProductRequestUtils requestUtils;
 
     private Product product;
@@ -77,7 +81,9 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Delete product
         requestUtils.performSuccessfulDeleteProduct(productId, accessToken);
 
-        assertThat(productRepository.existsById(productId)).isFalse();
+        Product deletedProduct = productRepository.findById(productId).orElseThrow();
+        assertThat(deletedProduct.getDeletedAt()).isNotNull();
+        assertThat(deletedProduct.getDeletedBy()).isNotNull();
     }
 
     @Test
@@ -121,12 +127,16 @@ public class ProductManagementE2EIT extends E2ETestContext {
         //Delete product
         requestUtils.performSuccessfulDeleteProduct(product.getId(), accessToken);
 
-        assertThat(productRepository.existsById(product.getId())).isFalse();
+        Product deletedProduct1 = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(deletedProduct1.getDeletedAt()).isNotNull();
+        assertThat(deletedProduct1.getDeletedBy()).isNotNull();
 
         //Delete product again
         requestUtils.performSuccessfulDeleteProduct(product.getId(), accessToken);
 
-        assertThat(productRepository.existsById(product.getId())).isFalse();
+        Product deletedProduct2 = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(deletedProduct2.getDeletedAt()).isNotNull();
+        assertThat(deletedProduct2.getDeletedBy()).isNotNull();
     }
 
     @Test
@@ -180,6 +190,40 @@ public class ProductManagementE2EIT extends E2ETestContext {
         assertThat(getResponse2.createdBy()).isNull();
         assertThat(getResponse2.modifiedAt()).isNull();
         assertThat(getResponse2.modifiedBy()).isNull();
+    }
+
+    @Test
+    @DisplayName("Operator logs in, gets deleted product, customer logs in, gets deleted product, user gets error response")
+    void operatorLogin_getDeletedProduct_customerLogin_getDeletedProduct_customerGetsErrorResponse(){
+        //Arrange
+        User customer = userRepository.save(UserTestDataFactory.defaults().username().password(passwordEncoder.encode(TestDataConstants.USER_PASSWORD)).build());
+
+        transactionTemplate.executeWithoutResult(status ->
+            productRepository.deleteProductById(product.getId(), TestDataConstants.USER_USERNAME)
+        );
+
+        //Operator login
+        LoginRequest operatorLoginRequest = UserTestDataFactory.DEFAULT_LOGIN_REQUEST;
+
+        AccessTokenResponse operatorLoginResponse = authRequestUtils.performSuccessfulLogin(operatorLoginRequest);
+        String operatorAccessToken = operatorLoginResponse.accessToken();
+
+        //Get deleted product
+        ProductResponse operatorResponse = requestUtils.performSuccessfulGetProductWithAuth(product.getId(), operatorAccessToken);
+
+        assertThat(operatorResponse.createdAt()).isNotNull();
+        assertThat(operatorResponse.createdBy()).isNotNull();
+        assertThat(operatorResponse.deletedAt()).isNotNull();
+        assertThat(operatorResponse.deletedBy()).isNotNull();
+
+        //Customer login
+        LoginRequest customerLoginRequest = new LoginRequest(customer.getUsername(), TestDataConstants.USER_PASSWORD);
+
+        AccessTokenResponse customerLoginResponse = authRequestUtils.performSuccessfulLogin(customerLoginRequest);
+        String customerAccessToken = customerLoginResponse.accessToken();
+
+        //Get deleted product
+        requestUtils.performErrorGetProduct(product.getId(), customerAccessToken, HttpStatus.NOT_FOUND, String.format("Product with id %s does not exist", product.getId()));
     }
 
 }

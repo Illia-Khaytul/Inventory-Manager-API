@@ -1,12 +1,14 @@
 package io.github.khaytul_illia.inventory_manager_api.support.utils.e2e;
 
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
+import io.github.khaytul_illia.inventory_manager_api.error.ErrorResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.request.CreateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.ModifyStockRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProductRequest;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.util.MultiValueMap;
@@ -113,6 +115,20 @@ public class ProductRequestUtils {
         return response;
     }
 
+    public void performErrorGetProduct(long productId, String accessToken, HttpStatus status, String errorMessage){
+        ErrorResponse errorResponse = restClient
+            .get()
+            .uri("/products/{productId}", productId)
+            .header("Authorization", "Bearer " + accessToken)
+            .exchange()
+            .expectStatus().isEqualTo(status.value())
+            .returnResult(ErrorResponse.class).getResponseBody();
+
+        assertThat(errorResponse).isNotNull();
+        assertThat(errorResponse.status()).isEqualTo(status.value());
+        assertThat(errorResponse.message()).isEqualTo(errorMessage);
+    }
+
     public PaginatedResponse<ProductShortResponse> performSuccessfulGetProducts(Map<String, String> paginationAndFiltering) {
         PaginatedResponse<ProductShortResponse> paginatedResponse = restClient
             .get()
@@ -123,8 +139,7 @@ public class ProductRequestUtils {
             )
             .exchange()
             .expectStatus().isOk()
-            .returnResult(new ParameterizedTypeReference<PaginatedResponse<ProductShortResponse>>() {
-            }).getResponseBody();
+            .returnResult(new ParameterizedTypeReference<PaginatedResponse<ProductShortResponse>>() {}).getResponseBody();
 
         assertThat(paginatedResponse).isNotNull();
         assertThat(paginatedResponse.content()).isNotNull();

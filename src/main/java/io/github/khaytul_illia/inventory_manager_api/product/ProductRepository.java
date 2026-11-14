@@ -6,10 +6,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
-    boolean existsByName(String name);
+    boolean existsByNameAndDeletedAtNull(String name);
+
+    Optional<Product> findByIdAndDeletedAtNull(long productId);
 
     @Modifying
     @Query("""
@@ -21,11 +24,20 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         where
             p.id = :productId
             and p.stock + :stockChange >= 0
+            and p.deletedAt is null
         """)
     int changeProductStock(long productId, int stockChange, Instant modifiedAt, String modifiedBy);
 
     @Modifying
-    @Query("delete from Product p where p.id = :productId")
-    void deleteProductById(long productId);
+    @Query("""
+        update Product p set
+            p.deletedAt = current_timestamp,
+            p.deletedBy = :deletedBy,
+            p.version = p.version + 1
+        where
+            p.id = :productId
+            and p.deletedAt is null
+        """)
+    void deleteProductById(long productId, String deletedBy);
 
 }

@@ -9,7 +9,6 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -390,8 +389,8 @@ public class ProductControllerTests extends ControllerTestContext {
 
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
-            when(securityUtils.getAuthenticatedUserRole())
-                .thenReturn(User.UserRole.OPERATOR.name());
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(true);
 
             //Act and Assert
             ResultActions result = mockMvc.perform(
@@ -404,18 +403,16 @@ public class ProductControllerTests extends ControllerTestContext {
             verify(productService).getProduct(anyLong());
         }
 
-        @ParameterizedTest
-        @NullSource
-        @ValueSource(strings = {"CUSTOMER"})
+        @Test
         @DisplayName("Should return 200 OK and no product audit fields when accessed not as OPERATOR")
-        void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator(String role) throws Exception {
+        void shouldReturn200WithNoAuditing_whenAccessedNotAsOperator() throws Exception {
             //Arrange
             ProductResponse response = ProductTestDataFactory.DEFAULT_RESPONSE;
 
             when(productService.getProduct(anyLong()))
                 .thenReturn(response);
-            when(securityUtils.getAuthenticatedUserRole())
-                .thenReturn(role);
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(false);
 
             //Act and Assert
             ResultActions result = mockMvc.perform(
@@ -457,12 +454,14 @@ public class ProductControllerTests extends ControllerTestContext {
         private final PaginatedResponse<ProductShortResponse> response = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;
 
         @Test
-        @WithMockUser
-        @DisplayName("Should return 200 OK when successfully gotten a page of products")
-        void shouldReturn200_whenSuccessfullyGottenPageOfProducts() throws Exception {
+        @WithMockUser(roles = "OPERATOR")
+        @DisplayName("Should return 200 OK with deleted flag when accessed as OPERATOR")
+        void shouldReturn200WithDeletedFlag_whenAccessedAsOperator() throws Exception {
             //Arrange
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(true);
 
             //Act and Assert
             ResultActions result = mockMvc.perform(
@@ -472,24 +471,35 @@ public class ProductControllerTests extends ControllerTestContext {
 
             assertPaginatedResponse(result, response);
             for(int i = 0; i < response.content().size(); i++){
-                result.andExpect(jsonPath("$.content[%s].id", i).value(response.content().get(i).id()));
+                result
+                    .andExpect(jsonPath("$.content[%s].id", i).value(response.content().get(i).id()))
+                    .andExpect(jsonPath("$.content[%s].deleted", i).isBoolean());
             }
 
             verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
         }
 
         @Test
-        @DisplayName("Should return 200 OK when accessed with no authentication")
-        void shouldReturn200_whenNoAuthentication() throws Exception {
+        @DisplayName("Should return 200 OK without deleted flag when accessed not as OPERATOR")
+        void shouldReturn200WithoutDeletedFlag_whenAccessedNotAsOperator() throws Exception {
             //Arrange
             when(productService.getProducts(any(Pageable.class), any(ProductFiltering.class)))
                 .thenReturn(response);
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(false);
 
             //Act and Assert
-            mockMvc.perform(
+            ResultActions result = mockMvc.perform(
                     get("/products")
                 )
                 .andExpect(status().isOk());
+
+            assertPaginatedResponse(result, response);
+            for(int i = 0; i < response.content().size(); i++){
+                result
+                    .andExpect(jsonPath("$.content[%s].id", i).value(response.content().get(i).id()))
+                    .andExpect(jsonPath("$.content[%s].deleted", i).doesNotExist());
+            }
 
             verify(productService).getProducts(any(Pageable.class), any(ProductFiltering.class));
         }
@@ -497,7 +507,7 @@ public class ProductControllerTests extends ControllerTestContext {
         @ParameterizedTest
         @MethodSource("provideInvalidPaginationAndFiltering")
         @WithMockUser(roles = "OPERATOR")
-        @DisplayName("Should return 400 Bad Request when invalid modify stock request fields")
+        @DisplayName("Should return 400 Bad Request when invalid filtering query parameters")
         void shouldReturn400_whenInvalidProductFiltering(
             MultiValueMap<String, String> queryParams,
             Map<String, String> errorMessages

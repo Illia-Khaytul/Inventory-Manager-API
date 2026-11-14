@@ -3,6 +3,7 @@ package io.github.khaytul_illia.inventory_manager_api.support.utils;
 import io.github.khaytul_illia.inventory_manager_api.support.data.TestDataConstants;
 import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -28,6 +29,10 @@ public class TestAuthenticationUtils {
         SecurityContextHolder.getContext().setAuthentication(
             buildOperatorAuthentication()
         );
+    }
+
+    public static void setAuthentication(Authentication authentication){
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
     
     public static void resetAuthentication(){

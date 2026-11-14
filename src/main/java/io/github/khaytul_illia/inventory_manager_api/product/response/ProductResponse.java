@@ -36,6 +36,10 @@ public record ProductResponse(
     @JsonView(ResponseViews.OperatorView.class)
     Instant modifiedAt,
     @JsonView(ResponseViews.OperatorView.class)
-    String modifiedBy
+    String modifiedBy,
+    @JsonView(ResponseViews.OperatorView.class)
+    Instant deletedAt,
+    @JsonView(ResponseViews.OperatorView.class)
+    String deletedBy
 ) {
 }

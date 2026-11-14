@@ -230,6 +230,7 @@ Requires authentication.
 - Integer `minStock`: optional, min 0
 - BigDecimal `minPrice`: optional, min 0, max integer limit, mapped from a String
 - BigDecimal `maxPrice`: optional, min 0, max integer limit, mapped from a String
+- Boolean `showDeleted`: optional
 
 **Response DTOs:**
 
@@ -243,12 +244,15 @@ Requires authentication.
 - String `createdBy`: only for operators
 - Instant `modifiedAt`: only for operators
 - String `modifiedBy`: only for operators
+- Instant `deletedAt`: only for operators
+- String `deletedBy`: only for operators
 
 `product short response`:
 - Long `id`
 - String `name`
 - int `stock`
 - BigDecimal `price`: returned as String
+- Boolean `deleted`: only for operators
 
 ### 3.1. Create product
 
@@ -288,7 +292,7 @@ Requires authentication as OPERATOR.
 - 400 Bad Request: request validation failed
 - 401 Unauthorized: not authenticated
 - 403 Forbidden: authenticated but not an OPERATOR
-- 404 Not Found: product does not exist by id
+- 404 Not Found: product does not exist by id or is deleted
 - 409 Conflict: new product name is not unique or product was modified concurrently
 
 ### 3.3. Change product stock
@@ -309,7 +313,7 @@ Requires authentication as OPERATOR.
 - 400 Bad Request: request validation failed
 - 401 Unauthorized: not authenticated
 - 403 Forbidden: authenticated but not an OPERATOR
-- 404 Not Found: product does not exist by id
+- 404 Not Found: product does not exist by id or is deleted
 - 409 Conflict: invalid product stock modification
 
 ### 3.4. Get product
@@ -327,7 +331,7 @@ Does not require authentication.
 **Responses:**
 - 200 OK: product found
 - 400 Bad Request: request validation failed
-- 404 Not Found: product does not exist by id
+- 404 Not Found: product does not exist by id or is deleted
 
 ### 3.5. Get products
 

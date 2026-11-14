@@ -29,6 +29,7 @@ public interface ProductMapper {
 
     ProductResponse toResponse(Product product);
 
+    @Mapping(target = "deleted", expression = "java(product.getDeletedAt() != null)")
     ProductShortResponse toShortResponse(Product product);
 
     @Mapping(target = "page", source = "number")

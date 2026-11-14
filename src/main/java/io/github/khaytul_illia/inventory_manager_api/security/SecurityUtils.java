@@ -29,6 +29,15 @@ public class SecurityUtils {
             .orElseThrow(() -> new EntityNotFoundException("Authenticated user '%s' does not exist", username));
     }
 
+    public boolean isAuthenticatedUserOperator(){
+        String authenticatedRole = null;
+        try {
+            authenticatedRole = getAuthenticatedUserRole();
+        }catch(Exception ignored){}
+
+        return authenticatedRole != null && authenticatedRole.equalsIgnoreCase(User.UserRole.OPERATOR.name());
+    }
+
     public String getAuthenticatedUsername(){
         Authentication authentication = getAuthenticationToken();
 

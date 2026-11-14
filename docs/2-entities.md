@@ -69,6 +69,8 @@ Stores the product data and auditing fields.
 - String `createdBy`: required, not updatable, auditing field
 - Instant `modifiedAt`: auditing field
 - String `modifiedBy`: auditing field
+- Instant `deletedAt`: deletion auditing field
+- String `deletedBy`: deletion auditing field
 - Integer `version`: version
 
 Notes:
@@ -79,4 +81,6 @@ Notes:
 - Created/modified by fields are String values and will contain the username of the authenticated user.
 Product management is protected and always requires authentication, so those fields cannot be null.
 This also helps with the user hard deletion, keeping the auditing fields intact.
+- Deletion auditing fields are used for product soft deletion.
+It simplifies foreign key resolution for order items.
 - Versioning for optimistic locking during concurrent modification.

@@ -46,6 +46,8 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             null,
+            null,
+            null,
             null
         );
         ErrorResponse createProduct400ResponseBlankCase = formatErrorResponse(
@@ -127,7 +129,9 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
         );
         ErrorResponse updateProduct400ResponseProductId = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -207,7 +211,7 @@ public class ProductEndpointResponseProvider {
             "update_product_404",
             buildApiResponse(
                 "ErrorResponse",
-                "Updated product does not exist",
+                "Updated product does not exist or is deleted",
                 new Example().value(updateProduct404Response)
             ),
             "update_product_409",
@@ -234,7 +238,9 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
         );
         ErrorResponse changeProductStock400ResponseProductId = formatErrorResponse(
             new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", Map.of(
@@ -258,7 +264,7 @@ public class ProductEndpointResponseProvider {
             new ErrorResponse(HttpStatus.FORBIDDEN, "Forbidden from accessing this resource")
         );
         ErrorResponse changeProductStock404Response = formatErrorResponse(
-            new ErrorResponse(HttpStatus.NOT_FOUND, "Product with id 1 does not exist")
+            new ErrorResponse(HttpStatus.NOT_FOUND, "Product with id 1 does not exist or is deleted")
         );
         ErrorResponse changeProductStock409Response = formatErrorResponse(
             new ErrorResponse(HttpStatus.CONFLICT, "Invalid stock modification", Map.of(
@@ -301,7 +307,7 @@ public class ProductEndpointResponseProvider {
             "change_product_stock_404",
             buildApiResponse(
                 "ErrorResponse",
-                "Target product does not exist",
+                "Target product does not exist or is deleted",
                 new Example().value(changeProductStock404Response)
             ),
             "change_product_stock_409",
@@ -323,7 +329,22 @@ public class ProductEndpointResponseProvider {
             fixedTime,
             "operator1",
             fixedTime.plus(100, ChronoUnit.MINUTES),
-            "operator2"
+            "operator2",
+            null,
+            null
+        );
+        ProductResponse getProductSuccessResponseDeleted = new ProductResponse(
+            1L,
+            "Original Product",
+            "product description if any",
+            110,
+            new BigDecimal("20.05"),
+            fixedTime,
+            "operator1",
+            fixedTime.plus(100, ChronoUnit.MINUTES),
+            "operator2",
+            fixedTime,
+            "operator3"
         );
         ProductResponse getProductSuccessResponseCustomer = new ProductResponse(
             1L,
@@ -331,6 +352,8 @@ public class ProductEndpointResponseProvider {
             "product description if any",
             110,
             new BigDecimal("20.05"),
+            null,
+            null,
             null,
             null,
             null,
@@ -351,10 +374,12 @@ public class ProductEndpointResponseProvider {
                 "ProductResponse",
                 "Successfully loaded product",
                 Map.of(
-                    "OPERATOR response",
+                    "Regular response",
+                    new Example().value(getProductSuccessResponseCustomer).description("Short response without audit fields for regular users"),
+                    "OPERATOR response (existing product)",
                     new Example().value(getProductSuccessResponseOperator).description("Full response with audit fields for OPERATOR users"),
-                    "Non OPERATOR response",
-                    new Example().value(getProductSuccessResponseCustomer).description("Short response without audit fields for non OPERATOR users")
+                    "OPERATOR response (deleted product)",
+                    new Example().value(getProductSuccessResponseDeleted).description("Deleted product response with deletion fields for OPERATOR users")
                 )
             ),
             "get_product_400",
@@ -366,22 +391,46 @@ public class ProductEndpointResponseProvider {
             "get_product_404",
             buildApiResponse(
                 "ErrorResponse",
-                "Target product does not exist",
+                "Target product does not exist or is deleted",
                 new Example().value(getProduct404Response)
             )
         );
     }
 
     private static Map<String, ApiResponse> provideGetProductsResponses() {
-        PaginatedResponse<ProductShortResponse> getProductsSuccessResponse = new PaginatedResponse<>(
+        PaginatedResponse<ProductShortResponse> getProductsSuccessResponseCustomer = new PaginatedResponse<>(
             0,
             10,
             1,
             3,
             List.of(
-                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99")),
-                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99")),
-                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"))
+                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99"), null),
+                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99"), null),
+                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"), null)
+            )
+        );
+        PaginatedResponse<ProductShortResponse> getProductsSuccessResponseOperator = new PaginatedResponse<>(
+            0,
+            10,
+            1,
+            3,
+            List.of(
+                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99"), false),
+                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99"), false),
+                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"), false)
+            )
+        );
+        PaginatedResponse<ProductShortResponse> getProductsSuccessResponseDeleted = new PaginatedResponse<>(
+            0,
+            10,
+            1,
+            3,
+            List.of(
+                new ProductShortResponse(1L, "Original Product v1", 10, new BigDecimal("100.99"), false),
+                new ProductShortResponse(2L, "Original Product v2", 59, new BigDecimal("159.99"), false),
+                new ProductShortResponse(3L, "Original Product v3", 20, new BigDecimal("27.50"), true),
+                new ProductShortResponse(4L, "Original Product v4", 95, new BigDecimal("30.99"), true),
+                new ProductShortResponse(5L, "Different Product", 15, new BigDecimal("60.5"), false)
             )
         );
         ErrorResponse getProducts400ResponseSizeCase1 = formatErrorResponse(
@@ -404,7 +453,14 @@ public class ProductEndpointResponseProvider {
             buildApiResponse(
                 "ProductResponse",
                 "Successfully loaded product page",
-                new Example().value(getProductsSuccessResponse)
+                Map.of(
+                    "Regular response",
+                    new Example().value(getProductsSuccessResponseCustomer).description("Regular response of existing products for regular users"),
+                    "OPERATOR response (do not show deleted products)",
+                    new Example().value(getProductsSuccessResponseOperator).description("Response of existing products only with deleted flag for OPERATOR users"),
+                    "OPERATOR response (show deleted products)",
+                    new Example().value(getProductsSuccessResponseDeleted).description("Existing and deleted products response with deletion flag for OPERATOR users")
+                )
             ),
             "get_products_400",
             buildApiResponse(

@@ -80,7 +80,7 @@ public class ProductController {
             - Returns with 400 Bad Request if the update product request is invalid.
             - Returns with 401 Unauthorized if user is not authenticated.
             - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
-            - Returns with 404 Not Found if the updated product does not exist.
+            - Returns with 404 Not Found if the updated product does not exist or was deleted.
             - Returns with 409 Conflict if the provided product name is not unique or the product has been modified concurrently.
             """
     )
@@ -109,7 +109,7 @@ public class ProductController {
             - Returns with 400 Bad Request if the modify stock request is invalid.
             - Returns with 401 Unauthorized if user is not authenticated.
             - Returns with 403 Forbidden if the authenticated user is not an OPERATOR.
-            - Returns with 404 Not Found if the target product does not exist.
+            - Returns with 404 Not Found if the target product does not exist or was deleted.
             - Returns with 409 Conflict if the product stock modification is invalid.
             """
     )
@@ -137,7 +137,7 @@ public class ProductController {
             Gets an existing product by provided id.
             - Returns with 200 OK on successfully loaded product.
             - Returns with 400 Bad Request if the provided id is invalid.
-            - Returns with 404 Not Found if the product does not exist.
+            - Returns with 404 Not Found if the product does not exist or was deleted.
             
             Note: Product auditing fields are hidden from all non OPERATOR users.
             """,
@@ -156,6 +156,7 @@ public class ProductController {
 
     @GetMapping(path = "")
     @ResponseStatus(HttpStatus.OK)
+    @RoleBasedJsonView
     @Operation(
         summary = "Get page of products",
         description = """

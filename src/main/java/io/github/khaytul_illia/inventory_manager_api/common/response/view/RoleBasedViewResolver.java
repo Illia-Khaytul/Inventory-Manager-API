@@ -2,7 +2,6 @@ package io.github.khaytul_illia.inventory_manager_api.common.response.view;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractJacksonHttpMessageConverter;
@@ -50,15 +49,8 @@ public class RoleBasedViewResolver implements ResponseBodyAdvice<Object> {
         MediaType selectedContentType,
         Class<? extends HttpMessageConverter<?>> selectedConverterType
     ) {
-        String role;
-        try {
-            role = securityUtils.getAuthenticatedUserRole();
-        } catch (Exception ignored) {
-            role = null;
-        }
-
         Class<?> view = ResponseViews.DefaultView.class;
-        if (User.UserRole.OPERATOR.name().equalsIgnoreCase(role)) {
+        if (securityUtils.isAuthenticatedUserOperator()) {
             view = ResponseViews.OperatorView.class;
         }
 

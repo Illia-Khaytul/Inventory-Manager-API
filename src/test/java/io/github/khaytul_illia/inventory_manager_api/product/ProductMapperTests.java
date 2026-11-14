@@ -56,6 +56,7 @@ public class ProductMapperTests {
         assertThat(product.getCreatedBy()).isNull();
         assertThat(product.getModifiedAt()).isNull();
         assertThat(product.getModifiedBy()).isNull();
+        assertThat(product.getDeletedAt()).isNull();
         assertThat(product.getVersion()).isNull();
     }
 
@@ -90,6 +91,8 @@ public class ProductMapperTests {
         assertThat(response.createdBy()).isEqualTo(product.getCreatedBy());
         assertThat(response.modifiedAt()).isEqualTo(product.getModifiedAt());
         assertThat(response.modifiedBy()).isEqualTo(product.getModifiedBy());
+        assertThat(response.deletedAt()).isEqualTo(product.getDeletedAt());
+        assertThat(response.deletedBy()).isEqualTo(product.getDeletedBy());
     }
 
     @ParameterizedTest
@@ -105,6 +108,7 @@ public class ProductMapperTests {
         assertThat(response.name()).isEqualTo(product.getName());
         assertThat(response.stock()).isEqualTo(product.getStock());
         assertThat(response.price()).isEqualTo(product.getPrice());
+        assertThat(response.deleted()).isEqualTo(product.getDeletedAt() != null);
     }
 
     @ParameterizedTest
@@ -128,6 +132,7 @@ public class ProductMapperTests {
         for (int i = 0; i < content.size(); i++) {
             assertThat(content.get(i).id()).isEqualTo(products.get(i).getId());
             assertThat(content.get(i).name()).isEqualTo(products.get(i).getName());
+            assertThat(content.get(i).deleted()).isEqualTo(products.get(i).getDeletedAt() != null);
         }
     }
 
@@ -144,6 +149,10 @@ public class ProductMapperTests {
             //Null description and modified at/by fields
             Arguments.of(
                 ProductTestDataFactory.defaults().audited().stock(1).price("19.99").build()
+            ),
+            //Deleted product
+            Arguments.of(
+                ProductTestDataFactory.existingDefaultDeletedProduct()
             )
         );
     }
@@ -202,8 +211,8 @@ public class ProductMapperTests {
                         ProductTestDataFactory.existingUniqueProduct(),
                         ProductTestDataFactory.existingUniqueProduct(),
                         ProductTestDataFactory.existingUniqueProduct(),
-                        ProductTestDataFactory.existingUniqueProduct(),
-                        ProductTestDataFactory.existingUniqueProduct()
+                        ProductTestDataFactory.existingUniqueDeletedProduct(),
+                        ProductTestDataFactory.existingUniqueDeletedProduct()
                     ),
                     PageRequest.of(1, 5),
                     10

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -48,7 +49,7 @@ public class ProductService {
 
         log.debug("Checking if the product name is unique");
 
-        if (productRepository.existsByName(request.name())) {
+        if (productRepository.existsByNameAndDeletedAtNull(request.name())) {
             throw new DuplicateEntryException("Product with name '%s' already exists", request.name());
         }
 
@@ -70,7 +71,7 @@ public class ProductService {
 
         log.debug("Loading product by id");
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtNull(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
 
         if (request.isEmpty()) {
@@ -82,7 +83,7 @@ public class ProductService {
         log.debug("Checking if the new product name is unique");
 
         String newName = request.name();
-        if (newName != null && !product.getName().equals(newName) && productRepository.existsByName(newName)) {
+        if (newName != null && !product.getName().equals(newName) && productRepository.existsByNameAndDeletedAtNull(newName)) {
             throw new DuplicateEntryException("Product with name '%s' already exists", newName);
         }
 
@@ -109,7 +110,7 @@ public class ProductService {
 
         log.debug("Loading modified product");
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtNull(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
 
         log.debug("Checking if the product's stock has been modified");
@@ -129,7 +130,14 @@ public class ProductService {
     public ProductResponse getProduct(long productId) {
         log.info("Getting product with id {}", productId);
 
-        Product product = productRepository.findById(productId)
+        Optional<Product> foundProduct;
+        if(securityUtils.isAuthenticatedUserOperator()){
+            foundProduct = productRepository.findById(productId);
+        }else{
+            foundProduct = productRepository.findByIdAndDeletedAtNull(productId);
+        }
+
+        Product product = foundProduct
             .orElseThrow(() -> new EntityNotFoundException("Product with id %s does not exist", productId));
 
         log.info("Successfully loaded product");
@@ -141,6 +149,8 @@ public class ProductService {
         log.info("Getting page N-{} of {} products", pagination.getPageNumber(), pagination.getPageSize());
 
         log.debug("Building product specification from filtering");
+
+        filtering = specificationBuilder.scopeFiltersByUserPermission(filtering);
 
         Specification<Product> spec = specificationBuilder.buildSpecificationFromFiltering(filtering);
         Page<Product> products = productRepository.findAll(spec, pagination);
@@ -154,7 +164,9 @@ public class ProductService {
     public void deleteProduct(long productId){
         log.info("Deleting product with id {}", productId);
 
-        productRepository.deleteProductById(productId);
+        String authenticatedUsername = securityUtils.getAuthenticatedUsername();
+
+        productRepository.deleteProductById(productId, authenticatedUsername);
 
         log.info("Successfully performed deletion for product");
     }
