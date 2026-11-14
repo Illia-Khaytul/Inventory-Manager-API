@@ -9,7 +9,6 @@ import io.github.khaytul_illia.inventory_manager_api.product.request.UpdateProdu
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.support.data.ProductTestDataFactory;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
