@@ -2,7 +2,6 @@ package io.github.khaytul_illia.inventory_manager_api.product;
 
 import io.github.khaytul_illia.inventory_manager_api.product.request.ProductFiltering;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 

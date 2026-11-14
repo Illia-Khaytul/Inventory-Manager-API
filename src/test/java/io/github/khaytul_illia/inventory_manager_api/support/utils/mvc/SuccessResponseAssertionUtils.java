@@ -3,6 +3,7 @@ package io.github.khaytul_illia.inventory_manager_api.support.utils.mvc;
 import io.github.khaytul_illia.inventory_manager_api.auth.response.AccessTokenResponse;
 import io.github.khaytul_illia.inventory_manager_api.common.response.pagination.PaginatedResponse;
 import io.github.khaytul_illia.inventory_manager_api.product.response.ProductResponse;
+import io.github.khaytul_illia.inventory_manager_api.product.response.ProductShortResponse;
 import io.github.khaytul_illia.inventory_manager_api.user.response.UserResponse;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -31,7 +32,9 @@ public class SuccessResponseAssertionUtils {
             .andExpect(jsonPath("$.created_at").value(expected.createdAt().toString()))
             .andExpect(jsonPath("$.created_by").value(expected.createdBy()))
             .andExpect(jsonPath("$.modified_at").value(expected.modifiedAt().toString()))
-            .andExpect(jsonPath("$.modified_by").value(expected.modifiedBy()));
+            .andExpect(jsonPath("$.modified_by").value(expected.modifiedBy()))
+            .andExpect(jsonPath("$.deleted_at").value(expected.deletedAt().toString()))
+            .andExpect(jsonPath("$.deleted_by").value(expected.deletedBy()));
     }
 
     public static void assertCustomerProductResponse(ResultActions result, ProductResponse expected) throws Exception{
@@ -42,7 +45,9 @@ public class SuccessResponseAssertionUtils {
             .andExpect(jsonPath("$.created_at").doesNotExist())
             .andExpect(jsonPath("$.created_by").doesNotExist())
             .andExpect(jsonPath("$.modified_at").doesNotExist())
-            .andExpect(jsonPath("$.modified_by").doesNotExist());
+            .andExpect(jsonPath("$.modified_by").doesNotExist())
+            .andExpect(jsonPath("$.deleted_at").doesNotExist())
+            .andExpect(jsonPath("$.deleted_by").doesNotExist());
     }
 
     public static void assertUserResponse(ResultActions result, UserResponse expected) throws Exception{

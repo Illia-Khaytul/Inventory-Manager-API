@@ -2,7 +2,6 @@ package io.github.khaytul_illia.inventory_manager_api.common.response.view;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,8 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -115,30 +112,12 @@ public class RoleBasedViewResolverTests {
             selectedConverterType = (Class<? extends HttpMessageConverter<?>>) (Class<?>) AbstractJacksonHttpMessageConverter.class;
         }
 
-        @ParameterizedTest
-        @NullSource
-        @ValueSource(strings = {"CUSTOMER"})
-        @DisplayName("Should return no view hint when authenticated user is not an OPERATOR")
-        void shouldReturnNoViewHint_whenRoleNotOperator(String role) {
-            //Arrange
-            when(securityUtils.getAuthenticatedUserRole())
-                .thenReturn(role);
-
-            //Act
-            Map<String, Object> hints = viewResolver.determineWriteHints(body, returnType, selectedContentType, selectedConverterType);
-
-            //Assert
-            assertThat(hints).isNotNull();
-            assertThat(hints).containsKey(JsonView.class.getName());
-            assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
-        }
-
         @Test
-        @DisplayName("Should return no view hint when SecurityUtils throws")
-        void shouldReturnNoViewHint_whenSecurityUtilsThrows() {
+        @DisplayName("Should return DefaultView hint when authenticated user is not an OPERATOR")
+        void shouldReturnDefaultViewHint_whenRoleNotOperator() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserRole())
-                .thenThrow(new RuntimeException());
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(false);
 
             //Act
             Map<String, Object> hints = viewResolver.determineWriteHints(body, returnType, selectedContentType, selectedConverterType);
@@ -147,14 +126,16 @@ public class RoleBasedViewResolverTests {
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
             assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.DefaultView.class);
+
+            verify(securityUtils).isAuthenticatedUserOperator();
         }
 
         @Test
         @DisplayName("Should return OperatorView hint when authenticated user is OPERATOR")
-        void shouldReturnNoViewHint_whenRoleOperator() {
+        void shouldReturnOperatorViewHint_whenRoleOperator() {
             //Arrange
-            when(securityUtils.getAuthenticatedUserRole())
-                .thenReturn(User.UserRole.OPERATOR.name());
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(true);
 
             //Act
             Map<String, Object> hints = viewResolver.determineWriteHints(body, returnType, selectedContentType, selectedConverterType);
@@ -163,6 +144,8 @@ public class RoleBasedViewResolverTests {
             assertThat(hints).isNotNull();
             assertThat(hints).containsKey(JsonView.class.getName());
             assertThat(hints.get(JsonView.class.getName())).isEqualTo(ResponseViews.OperatorView.class);
+
+            verify(securityUtils).isAuthenticatedUserOperator();
         }
 
     }

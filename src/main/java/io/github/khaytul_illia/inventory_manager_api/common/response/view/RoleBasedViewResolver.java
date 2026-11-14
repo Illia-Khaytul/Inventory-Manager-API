@@ -2,7 +2,6 @@ package io.github.khaytul_illia.inventory_manager_api.common.response.view;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.github.khaytul_illia.inventory_manager_api.security.SecurityUtils;
-import io.github.khaytul_illia.inventory_manager_api.user.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractJacksonHttpMessageConverter;

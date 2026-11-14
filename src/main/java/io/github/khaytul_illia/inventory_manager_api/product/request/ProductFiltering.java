@@ -36,17 +36,17 @@ public record ProductFiltering(
     @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
     BigDecimal maxPrice,
 
-    boolean showDeleted
+    Boolean showDeleted
 
 ) {
 
     @ConstructorProperties({"name_contains", "min_stock", "min_price", "max_price", "show_deleted"})
-    public ProductFiltering(String nameContains, Integer minStock, BigDecimal minPrice, BigDecimal maxPrice, boolean showDeleted){
+    public ProductFiltering(String nameContains, Integer minStock, BigDecimal minPrice, BigDecimal maxPrice, Boolean showDeleted){
         this.nameContains = nameContains;
         this.minStock = minStock;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
-        this.showDeleted = showDeleted;
+        this.showDeleted = showDeleted != null && showDeleted;
     }
 
     public boolean isEmpty(){

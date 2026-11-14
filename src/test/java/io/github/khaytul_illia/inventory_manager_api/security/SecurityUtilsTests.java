@@ -98,6 +98,60 @@ public class SecurityUtilsTests {
     }
 
     @Nested
+    @DisplayName("isAuthenticatedUserOperator tests")
+    class IsAuthenticatedUserOperatorTests{
+
+        @Test
+        @DisplayName("Should return false when failed to get authenticated user role")
+        void shouldReturnFalse_whenFailedToGetRole(){
+            //Arrange
+            doThrow(new RuntimeException())
+                .when(securityUtilsSpy).getAuthenticatedUserRole();
+
+            //Act
+            boolean result = securityUtilsSpy.isAuthenticatedUserOperator();
+
+            //Assert
+            assertThat(result).isFalse();
+
+            verify(securityUtilsSpy).getAuthenticatedUserRole();
+        }
+
+        @Test
+        @DisplayName("Should return false when authenticated user role does not match")
+        void shouldReturnFalse_whenUserRoleDoesNotMatch(){
+            //Arrange
+            doReturn(User.UserRole.CUSTOMER.name())
+                .when(securityUtilsSpy).getAuthenticatedUserRole();
+
+            //Act
+            boolean result = securityUtilsSpy.isAuthenticatedUserOperator();
+
+            //Assert
+            assertThat(result).isFalse();
+
+            verify(securityUtilsSpy).getAuthenticatedUserRole();
+        }
+
+        @Test
+        @DisplayName("Should return true when authenticated user role matches")
+        void shouldReturnTrue_whenUserRoleMatches(){
+            //Arrange
+            doReturn(User.UserRole.OPERATOR.name())
+                .when(securityUtilsSpy).getAuthenticatedUserRole();
+
+            //Act
+            boolean result = securityUtilsSpy.isAuthenticatedUserOperator();
+
+            //Assert
+            assertThat(result).isTrue();
+
+            verify(securityUtilsSpy).getAuthenticatedUserRole();
+        }
+
+    }
+
+    @Nested
     @DisplayName("getAuthenticatedUsername tests")
     class GetAuthenticatedUsernameTests{
 

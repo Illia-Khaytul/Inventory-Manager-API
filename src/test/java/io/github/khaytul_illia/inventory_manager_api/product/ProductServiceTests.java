@@ -115,7 +115,7 @@ public class ProductServiceTests {
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
         void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
             //Arrange
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.empty());
 
             //Act and Assert
@@ -123,7 +123,7 @@ public class ProductServiceTests {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage(String.format("Product with id %s does not exist", productId));
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
         }
 
         @Test
@@ -134,7 +134,7 @@ public class ProductServiceTests {
             Product product = ProductTestDataFactory.existingDefaultProduct();
             ProductResponse productResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
             when(productMapper.toResponse(product))
                 .thenReturn(productResponse);
@@ -147,7 +147,7 @@ public class ProductServiceTests {
             assertThat(response.id()).isEqualTo(productResponse.id());
             assertThat(response.name()).isEqualTo(productResponse.name());
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
             verify(productMapper).toResponse(product);
         }
 
@@ -157,7 +157,7 @@ public class ProductServiceTests {
             //Arrange
             Product product = ProductTestDataFactory.existingDefaultProduct();
 
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
             when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(true);
@@ -167,7 +167,7 @@ public class ProductServiceTests {
                 .isInstanceOf(DuplicateEntryException.class)
                 .hasMessage(String.format("Product with name '%s' already exists", request.name()));
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
             verify(productRepository).existsByNameAndDeletedAtNull(request.name());
         }
 
@@ -185,7 +185,7 @@ public class ProductServiceTests {
             Product product = ProductTestDataFactory.defaults().name(oldName).build();
             ProductResponse productResponse = ProductTestDataFactory.defaults().id(1L).name(newName).toResponse();
 
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
             doNothing()
                 .when(productMapper).updateProduct(product, request);
@@ -200,7 +200,7 @@ public class ProductServiceTests {
             //Assert
             assertThat(response).isNotNull();
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
             verify(productRepository, never()).existsByNameAndDeletedAtNull(request.name());
             verify(productMapper).updateProduct(product, request);
             verify(productMapper).toResponse(product);
@@ -213,7 +213,7 @@ public class ProductServiceTests {
             Product product = ProductTestDataFactory.existingDefaultProduct();
             ProductResponse productResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
             when(productRepository.existsByNameAndDeletedAtNull(request.name()))
                 .thenReturn(false);
@@ -232,7 +232,7 @@ public class ProductServiceTests {
             assertThat(response.id()).isEqualTo(productResponse.id());
             assertThat(response.name()).isEqualTo(productResponse.name());
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
             verify(productRepository).existsByNameAndDeletedAtNull(request.name());
             verify(productMapper).updateProduct(product, request);
             verify(productMapper).toResponse(product);
@@ -255,7 +255,7 @@ public class ProductServiceTests {
                 .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.empty());
 
             //Act and Assert
@@ -265,7 +265,7 @@ public class ProductServiceTests {
 
             verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
         }
 
         @Test
@@ -278,7 +278,7 @@ public class ProductServiceTests {
                 .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(0);
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
 
             //Act and Assert
@@ -295,7 +295,7 @@ public class ProductServiceTests {
 
             verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
         }
 
         @Test
@@ -309,7 +309,7 @@ public class ProductServiceTests {
                 .thenReturn(TestDataConstants.USER_USERNAME);
             when(productRepository.changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString()))
                 .thenReturn(1);
-            when(productRepository.findById(productId))
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.of(product));
             when(productMapper.toResponse(product))
                 .thenReturn(expectedResponse);
@@ -324,7 +324,7 @@ public class ProductServiceTests {
 
             verify(securityUtils).getAuthenticatedUsername();
             verify(productRepository).changeProductStock(anyLong(), anyInt(), any(Instant.class), anyString());
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
             verify(productMapper).toResponse(product);
         }
 
@@ -340,7 +340,9 @@ public class ProductServiceTests {
         @DisplayName("Should throw EntityNotFoundException when product does not exist by id")
         void shouldThrowEntityNotFoundException_whenProductDoesNotExist() {
             //Arrange
-            when(productRepository.findById(productId))
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(false);
+            when(productRepository.findByIdAndDeletedAtNull(productId))
                 .thenReturn(Optional.empty());
 
             //Act and Assert
@@ -348,7 +350,7 @@ public class ProductServiceTests {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage(String.format("Product with id %s does not exist", productId));
 
-            verify(productRepository).findById(productId);
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
         }
 
         @Test
@@ -358,6 +360,34 @@ public class ProductServiceTests {
             Product product = ProductTestDataFactory.existingDefaultProduct();
             ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
 
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(false);
+            when(productRepository.findByIdAndDeletedAtNull(productId))
+                .thenReturn(Optional.of(product));
+            when(productMapper.toResponse(product))
+                .thenReturn(expectedResponse);
+
+            //Act
+            ProductResponse response = productService.getProduct(productId);
+
+            //Assert
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(expectedResponse.id());
+            assertThat(response.name()).isEqualTo(expectedResponse.name());
+
+            verify(productRepository).findByIdAndDeletedAtNull(productId);
+            verify(productMapper).toResponse(product);
+        }
+
+        @Test
+        @DisplayName("Should load deleted product when authenticated user is OPERATOR")
+        void shouldLoadDeletedProduct_whenUserIsOperator() {
+            //Arrange
+            Product product = ProductTestDataFactory.existingDefaultProduct();
+            ProductResponse expectedResponse = ProductTestDataFactory.DEFAULT_RESPONSE;
+
+            when(securityUtils.isAuthenticatedUserOperator())
+                .thenReturn(true);
             when(productRepository.findById(productId))
                 .thenReturn(Optional.of(product));
             when(productMapper.toResponse(product))
@@ -391,6 +421,8 @@ public class ProductServiceTests {
             Page<Product> page = new PageImpl<>(List.of(), pagination, 0);
             PaginatedResponse<ProductShortResponse> expectedResponse = ProductTestDataFactory.DEFAULT_PAGINATED_RESPONSE;
 
+            when(specificationBuilder.scopeFiltersByUserPermission(filtering))
+                .thenReturn(filtering);
             when(specificationBuilder.buildSpecificationFromFiltering(filtering))
                 .thenReturn(spec);
             when(productRepository.findAll(spec, pagination))
@@ -407,6 +439,7 @@ public class ProductServiceTests {
             assertThat(response.pageSize()).isEqualTo(expectedResponse.pageSize());
             assertThat(response.content()).hasSize(expectedResponse.content().size());
 
+            verify(specificationBuilder).scopeFiltersByUserPermission(filtering);
             verify(specificationBuilder).buildSpecificationFromFiltering(filtering);
             verify(productRepository).findAll(spec, pagination);
             verify(productMapper).toPaginatedResponse(page);

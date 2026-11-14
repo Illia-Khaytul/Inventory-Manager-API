@@ -24,12 +24,13 @@ public class ProductTestDataFactory {
         .toModifyStockRequest();
     public static final ProductResponse DEFAULT_RESPONSE = defaults()
         .id(1L)
-        .modification(Instant.now(), TestDataConstants.USER_USERNAME)
+        .audited()
+        .deleted()
         .toResponse();
     public static final PaginatedResponse<ProductShortResponse> DEFAULT_PAGINATED_RESPONSE = new PaginatedResponse<>(0, 10, 1, 3, List.of(
         defaults().id().name().toShortResponse(),
         defaults().id().name().toShortResponse(),
-        defaults().id().name().toShortResponse()
+        defaults().id().name().deleted().toShortResponse()
     ));
 
     public static Product newUniqueProduct(){
@@ -40,10 +41,18 @@ public class ProductTestDataFactory {
         return defaults().name().stock(stock).price(price).build();
     }
 
+    public static Product newUniqueDeletedProduct(){
+        return defaults().name().deleted().build();
+    }
+    
     public static Product newDefaultProduct(){
         return defaults().build();
     }
 
+    public static Product newDefaultDeletedProduct(){
+        return defaults().deleted().build();
+    }
+    
     public static Product newProduct(String name, int stock, String price){
         return defaults().name(name).stock(stock).price(price).build();
     }
@@ -52,8 +61,16 @@ public class ProductTestDataFactory {
         return defaults().id().name().build();
     }
 
+    public static Product existingUniqueDeletedProduct(){
+        return defaults().id().name().deleted().build();
+    }
+
     public static Product existingDefaultProduct(){
         return defaults().id(1L).build();
+    }
+
+    public static Product existingDefaultDeletedProduct(){
+        return defaults().id(1L).deleted().build();
     }
 
     public static CreateProductRequest uniqueCreateProductRequest(){
@@ -83,6 +100,8 @@ public class ProductTestDataFactory {
         private String createdBy;
         private Instant modifiedAt;
         private String modifiedBy;
+        private Instant deletedAt;
+        private String deletedBy;
 
         public ProductTestDataBuilder id(Long id) {
             this.id = id;
@@ -141,24 +160,34 @@ public class ProductTestDataFactory {
         }
 
         public ProductTestDataBuilder audited() {
-            this.createdAt = Instant.now();
-            this.createdBy = TestDataConstants.USER_USERNAME;
-            this.modifiedAt = Instant.now();
-            this.modifiedBy = TestDataConstants.USER_USERNAME;
+            Instant timestamp = Instant.now().minusSeconds(3600);
+            String auditor = TestDataConstants.USER_USERNAME + "_" + TestDataConstants.uniqueValue.getAndIncrement();
+
+            this.createdAt = timestamp;
+            this.createdBy = auditor;
+            this.modifiedAt = timestamp;
+            this.modifiedBy = auditor;
+
+            return this;
+        }
+
+        public ProductTestDataBuilder deleted(){
+            this.deletedAt = Instant.now().minusSeconds(3600);
+            this.deletedBy = TestDataConstants.USER_USERNAME + "_" + TestDataConstants.uniqueValue.getAndIncrement();
 
             return this;
         }
 
         public Product build(){
-            return new Product(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, null, null, 1);
+            return new Product(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, deletedAt, deletedBy, 1);
         }
 
         public ProductResponse toResponse(){
-            return new ProductResponse(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, null, null);
+            return new ProductResponse(id, name, description, stock, price, createdAt, createdBy, modifiedAt, modifiedBy, deletedAt, deletedBy);
         }
 
         public ProductShortResponse toShortResponse(){
-            return new ProductShortResponse(id, name, stock, price, false);
+            return new ProductShortResponse(id, name, stock, price, deletedAt != null);
         }
 
         public CreateProductRequest toCreateRequest(){

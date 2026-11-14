@@ -24,12 +24,20 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         where
             p.id = :productId
             and p.stock + :stockChange >= 0
-            and p.deletedAt = null
+            and p.deletedAt is null
         """)
     int changeProductStock(long productId, int stockChange, Instant modifiedAt, String modifiedBy);
 
     @Modifying
-    @Query("update Product p set p.deletedAt = current_timestamp, p.deletedBy = :deletedBy where p.id = :productId and p.deletedAt = null")
+    @Query("""
+        update Product p set
+            p.deletedAt = current_timestamp,
+            p.deletedBy = :deletedBy,
+            p.version = p.version + 1
+        where
+            p.id = :productId
+            and p.deletedAt is null
+        """)
     void deleteProductById(long productId, String deletedBy);
 
 }

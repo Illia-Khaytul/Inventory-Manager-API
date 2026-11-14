@@ -5,7 +5,6 @@ import io.github.khaytul_illia.inventory_manager_api.common.response.view.Respon
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 @Schema(
     description = "Response containing reduced product data for paginated responses",
@@ -24,6 +23,6 @@ public record ProductShortResponse(
     int stock,
     BigDecimal price,
     @JsonView(ResponseViews.OperatorView.class)
-    boolean deleted
+    Boolean deleted
 ) {
 }
