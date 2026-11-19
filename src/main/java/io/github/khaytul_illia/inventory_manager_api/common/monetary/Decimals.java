@@ -24,4 +24,16 @@ public class Decimals {
         return of(new BigDecimal(value));
     }
 
+    public static BigDecimal add(BigDecimal a, BigDecimal b){
+        return of(a.add(b));
+    }
+
+    public static BigDecimal subtract(BigDecimal a, BigDecimal b){
+        return of(a.subtract(b));
+    }
+
+    public static BigDecimal multiply(BigDecimal a, int b){
+        return of(a.multiply(new BigDecimal(b)));
+    }
+
 }
