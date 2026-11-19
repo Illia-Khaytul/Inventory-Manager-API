@@ -24,12 +24,12 @@ public class ValidationProperties {
         int productNameMaxLength,
         @Value("${app.product.description.max-length}")
         int productDescriptionMaxLength,
-        @Value("${app.product.price.max-value}")
-        String productPriceMaxValue,
         @Value("${app.user.password.max-length}")
         int userPasswordMaxLength,
         @Value("${app.user.username.max-length}")
-        int userUsernameMaxLength
+        int userUsernameMaxLength,
+        @Value("${app.common.price.max-value}")
+        String priceMaxValue
     ) {
         valueLimitsProperties = Map.of(
             PropertyKey.REFRESH_TOKEN, new ValueLimits(0, refreshTokenMaxLength),
@@ -39,7 +39,7 @@ public class ValidationProperties {
             PropertyKey.USER_USERNAME, new ValueLimits(0, userUsernameMaxLength)
         );
         numericLimitsProperties = Map.of(
-            PropertyKey.PRODUCT_PRICE, new NumericLimits("0", productPriceMaxValue)
+            PropertyKey.PRICE_RANGE, new NumericLimits("0", priceMaxValue)
         );
     }
 
@@ -55,9 +55,9 @@ public class ValidationProperties {
         REFRESH_TOKEN,
         PRODUCT_NAME,
         PRODUCT_DESCRIPTION,
-        PRODUCT_PRICE,
         USER_USERNAME,
-        USER_PASSWORD
+        USER_PASSWORD,
+        PRICE_RANGE
     }
     
     public record ValueLimits(

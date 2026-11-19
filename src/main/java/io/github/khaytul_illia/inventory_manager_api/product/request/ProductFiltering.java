@@ -30,10 +30,10 @@ public record ProductFiltering(
     @PositiveOrZero
     Integer minStock,
 
-    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRICE_RANGE)
     BigDecimal minPrice,
 
-    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRICE_RANGE)
     BigDecimal maxPrice,
 
     Boolean showDeleted
@@ -50,7 +50,7 @@ public record ProductFiltering(
     }
 
     public boolean isEmpty(){
-        return (nameContains == null || nameContains.isBlank()) && minStock == null && minPrice == null && maxPrice == null && !showDeleted;
+        return nameContains == null && minStock == null && minPrice == null && maxPrice == null && !showDeleted;
     }
 
 }

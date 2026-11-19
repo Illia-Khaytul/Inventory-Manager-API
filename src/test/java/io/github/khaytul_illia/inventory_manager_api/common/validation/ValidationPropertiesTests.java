@@ -37,7 +37,7 @@ public class ValidationPropertiesTests {
         @ParameterizedTest
         @EnumSource(
             value = ValidationProperties.PropertyKey.class,
-            names = "PRODUCT_PRICE",
+            names = "PRICE_RANGE",
             mode = EnumSource.Mode.INCLUDE
         )
         @DisplayName("Should return no properties when properties do no exist for that key")
@@ -100,7 +100,7 @@ public class ValidationPropertiesTests {
         @ParameterizedTest
         @EnumSource(
             value = ValidationProperties.PropertyKey.class,
-            names = "PRODUCT_PRICE",
+            names = "PRICE_RANGE",
             mode = EnumSource.Mode.EXCLUDE
         )
         @DisplayName("Should return no properties when properties do no exist for that key")
@@ -132,7 +132,7 @@ public class ValidationPropertiesTests {
         static Stream<Arguments> provideNumericLimits(){
             return Stream.of(
                 Arguments.of(
-                    ValidationProperties.PropertyKey.PRODUCT_PRICE,
+                    ValidationProperties.PropertyKey.PRICE_RANGE,
                     new ValidationProperties.NumericLimits("0", productPriceMaxValue)
                 )
             );

@@ -29,7 +29,7 @@ public record UpdateProductRequest(
     @SizeProperty(key = ValidationProperties.PropertyKey.PRODUCT_DESCRIPTION)
     String description,
 
-    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRICE_RANGE)
     BigDecimal price
 
 ) {

@@ -31,7 +31,7 @@ public record CreateProductRequest(
     String description,
 
     @NotNull
-    @RangeProperty(key = ValidationProperties.PropertyKey.PRODUCT_PRICE)
+    @RangeProperty(key = ValidationProperties.PropertyKey.PRICE_RANGE)
     BigDecimal price
 
 ) {

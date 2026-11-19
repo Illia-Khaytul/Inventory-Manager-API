@@ -93,7 +93,7 @@ public class ProductController {
         @ApiResponse(responseCode = "409", ref = "#/components/responses/products_update_product_409")
     })
     public ProductResponse updateProduct(
-        @PathVariable @Valid @Positive long productId,
+        @PathVariable @Positive long productId,
         @RequestBody @Valid UpdateProductRequest request
     ) {
         return productService.updateProduct(productId, request);
@@ -122,7 +122,7 @@ public class ProductController {
         @ApiResponse(responseCode = "409", ref = "#/components/responses/products_change_product_stock_409")
     })
     public ProductResponse changeProductStock(
-        @PathVariable @Valid @Positive long productId,
+        @PathVariable @Positive long productId,
         @RequestBody @Valid ModifyStockRequest request
     ) {
         return productService.changeProductStock(productId, request);
@@ -149,7 +149,7 @@ public class ProductController {
         @ApiResponse(responseCode = "404", ref = "#/components/responses/products_get_product_404")
     })
     public ProductResponse getProduct(
-        @PathVariable @Valid @Positive long productId
+        @PathVariable @Positive long productId
     ) {
         return productService.getProduct(productId);
     }
@@ -196,7 +196,7 @@ public class ProductController {
         @ApiResponse(responseCode = "403", ref = "#/components/responses/products_delete_product_403")
     })
     public void deleteProduct(
-        @PathVariable @Valid @Positive long productId
+        @PathVariable @Positive long productId
     ) {
         productService.deleteProduct(productId);
     }

@@ -3,6 +3,9 @@ server:
 
 app:
   auth:
+    common:
+      price:
+        max-value: 2147483647
     user-session:
       limit: 10
       lifetime: 5184000 #60 days
@@ -18,8 +21,6 @@ app:
       max-length: 100
     description:
       max-length: 1000
-    price:
-      max-value: 2147483647
     update:
       max-retries: 2
   user:
