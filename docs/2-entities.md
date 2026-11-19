@@ -77,10 +77,59 @@ Notes:
 - Price is BigDecimal because it is a monetary value, it must be precise.
 - Uses Spring's entity auditing. 
 - The created at/by fields are set once for new entities and cannot be modified.
-- Modified at/by fields are not set on creation, only on modification.
-- Created/modified by fields are String values and will contain the username of the authenticated user.
-Product management is protected and always requires authentication, so those fields cannot be null.
-This also helps with the user hard deletion, keeping the auditing fields intact.
 - Deletion auditing fields are used for product soft deletion.
 It simplifies foreign key resolution for order items.
 - Versioning for optimistic locking during concurrent modification.
+
+## 5. Order
+
+Stores the order status, total price, it's items and auditing fields. Serves as the aggregate root for order items.
+
+**Fields:**
+- Long `id`: primary key, identity
+- OrderStatus `status`: required, saved as String
+- BigDecimal `totalPrice`: required
+- User `customer`: foreign key for User, LAZY fetching, optional, on delete set null
+- int `totalItems`: transient, formula
+- List<OrderItem> `items`: LAZY fetching, ordered by `totalPrice` descending
+- Instant `createdAt`: required, not updatable, auditing field
+- String `createdBy`: required, not updatable, auditing field
+- Instant `modifiedAt`: auditing field
+- String `modifiedBy`: auditing field
+- Integer `version`: version
+
+Notes:
+- The total price is BigDecimal because it is a monetary value, it must be precise.
+- Customer foreign key is nullable.
+Some orders must remain persisted on user deletion for record keeping.
+- The total items field is transient and required to avoid additional count queries when mapping the order to a response.
+Uses Hibernate's Formula annotation to load the total item value with the order directly.
+- Uses Spring's entity auditing.
+- The created at/by fields are set once for new entities and cannot be modified.
+- Versioning for optimistic locking during concurrent modification.
+The order is the aggregate root, so all order item operations use its versioning and audit fields.
+
+## 6. OrderItem
+
+Stores the referenced product id and the item data.
+
+**Fields:**
+- OrderItemId `id`: composite primary key, consists of the referenced order and product ids
+- BigDecimal `totalPrice`: transient
+- int `quantity`: required
+- int `reserved`: required
+- String `productName`: required
+- BigDecimal `productPrice`: required
+- Order `order`: foreign key for Order, maps id, LAZY fetching, required, on delete cascade
+- Product `product`: foreign key for Product, maps id, LAZY fetching, required, on delete no action (default)
+
+Notes:
+- Order items depend on both their related order and product to exist, and they cannot be viewed individually.
+A composite primary key is used combining the order and product ids.
+This additionally ensures that a product can be added to an order only once.
+- The total price is transient because it can be calculated from the product price and quantity fields.
+It is calculated on load (uses PostLoad).
+- Product price and name fields are used as snapshots of the product's values when the order is no longer modifiable.
+- When an order gets deleted all of its items get deleted with it.
+Items depend on their order and cannot exist independently.
+- Products are soft-deleted, their relationship to related order items does not change.

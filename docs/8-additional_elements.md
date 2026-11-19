@@ -39,13 +39,22 @@ This is not an application error and therefore should not return a 500 Internal 
 ## Entity auditing
 
 Entities that have auditing fields use Spring's provided entity auditing.
-A custom `AuditorAware` implementation is used for created/modified by fields.
+Modified at/by fields are not set on creation, only on modification.
+
+A custom `AuditorAware` implementation is used for the auditing fields.
 It uses the `security utils` to get the authenticated username.
+All endpoints that operate on audited entities are protected and require authentication, so `security utils` never throws.
 
 ## Decimals
 
 Provides methods for consistent `BigDecimal` operations across the application.
 Always returns `BigDecimal` with a scale of 2 and half up rounding following the application price value format.
+
+Available methods:
+- `of`: Turns the provided numeric value into a normalized `BigDecimal` following the application price value format.
+- `add`: Adds two numeric values and returns a normalized result.
+- `subtract`: Subtracts one numeric value from another and returns a normalized result.
+- `multiply`: Multiplies two numeric values and returns a normalized result.
 
 ## Response view resolvers
 
