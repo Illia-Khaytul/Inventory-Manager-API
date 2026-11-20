@@ -205,9 +205,9 @@ Requires authentication.
 **Endpoints:**
 1. **Create product** : creates a new product, does not set the stock
 2. **Update product** : partial update, updates existing product, does not modify stock
-3. **Change product stock** : modify existing product stock
-4. **Get product** : get an existing product
-5. **Get products** : get a page of existing products
+3. **Change product stock** : modifies existing product stock
+4. **Get product** : gets an existing product
+5. **Get products** : gets a page of existing products
 6. **Delete product** : idempotent deletion, deletes an existing product
 
 **Request DTOs:**
@@ -340,7 +340,7 @@ Does not require authentication.
 Does not require authentication.
 
 **Receives:**
-- Query parameters: Pageable `pagination`: default page 0, page size 10
+- Query parameters: Pageable `pagination`
 - Query parameters: `product filtering`
 
 **Returns:**
@@ -366,3 +366,230 @@ Requires authentication as OPERATOR.
 - 400 Bad Request: request validation failed
 - 401 Unauthorized: not authenticated
 - 403 Forbidden: authenticated but not an OPERATOR
+
+## 4. Order management API
+
+**Endpoints:**
+1. **Create order** : creates a new order, does not allow to add any items
+2. **Get order** : gets an owned order
+3. **Get orders** : gets a page of owned orders
+4. **Delete order** : idempotent deletion, deletes an owned order
+
+**Request DTOs:**
+
+`order filtering`:
+- BigDecimal `minTotalPrice`: optional, min 0, max integer limit, mapped from a String
+- BigDecimal `maxTotalPrice`: optional, min 0, max integer limit, mapped from a String
+- Integer `minItems`: optional, min 0
+- Integer `maxItems`: optional, min 0
+- List<OrderStatus> `orderStatus`: optional
+- Long `ownerId`: optional, above 0
+- String `ownerUsernameContains`: optional, not blank, max length 50
+
+**Response DTOs:**
+
+`order response`:
+- Long `id`
+- OrderStatus `status`
+- BigDecimal `totalPrice`
+- UserResponse `customer`: only for operators
+- List<OrderItemResponse> `items`
+- Instant `createdAt`
+- String `createdBy`
+- Instant `modifiedAt`
+- String `modifiedBy`
+
+`product short response`:
+- Long `id`
+- OrderStatus `status`
+- BigDecimal `totalPrice`
+- Long `customerId`: only for operators
+- int `totalItems`
+
+### 4.1. Create order
+
+**POST** `/orders`
+
+Requires authentication as CUSTOMER.
+
+**Receives:** nothing
+
+**Returns:**
+- Header: Location: `/api/v1/orders/{orderId}`
+- Body: `order response`
+
+**Responses:**
+- 201 Created: new order created successfully
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+- 409 Conflict: exceeds max active order limit
+
+### 4.2. Get order
+
+**GET** `/orders/{orderId}`
+
+Requires authentication.
+
+**Receives:**
+- Path variable: long `orderId`
+
+**Returns:**
+- Body: `order response`
+
+**Responses:**
+- 200 OK: order found
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 404 Not Found: order does not exist by id or accessing CUSTOMER is not the owner
+
+### 4.3. Get orders
+
+**GET** `/orders`
+
+Requires authentication.
+
+**Receives:**
+- Query parameters: Pageable `pagination`
+- Query parameters: `order filtering`
+
+**Returns:**
+- Body: `paginated response` of `order short response`
+
+**Responses:**
+- 200 OK: orders page returned
+- 401 Unauthorized: not authenticated
+- 400 Bad Request: request validation failed
+
+### 4.4. Delete order
+
+**DELETE** `/order/{orderId}`
+
+Requires authentication as CUSTOMER.
+
+**Receives:**
+- Path variable: long `orderId`
+
+**Returns:** nothing
+
+**Responses:**
+- 204 No Content: performed delete operation
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+
+## 5. Order item management API
+
+**Endpoints:**
+1. **Add item** : adds a new item to an owned order
+2. **Change item quantity** : modifies owned order item quantity
+3. **Remove item** : removes an item from an owned order
+4. **Clear items** : removes all items from an owned order
+
+**Request DTOs:**
+
+`create order item request`:
+- Long `productId`: required, positive
+- Integer `quantity`: required, positive
+
+`modify quantity request`:
+- Integer `quantityChange`: required, not 0
+
+**Response DTOs:**
+
+`order item response`:
+- BigDecimal `totalPrice`
+- int `quantity`
+- int `reserved`
+- String `productName`
+- BigDecimal `productPrice`
+- Long `productId`
+
+`order item change response`:
+- Long `id`
+- BigDecimal `totalPrice`
+- int `totalItems`
+- OrderItemResponse `item`
+
+### 5.1. Add item
+
+**POST** `/orders/{orderId}/items`
+
+Requires authentication as CUSTOMER.
+
+**Receives:**
+- Path variable: long `orderId`
+- Body: `create order item request`
+
+**Returns:**
+- Body: `order item change response` with `order item response`
+
+**Responses:**
+- 200 OK: new item added to order successfully
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+- 404 Not Found: order does not exist or does not belong to CUSTOMER, or product does not exist or is deleted
+- 409 Conflict: exceeds max order items limit, order is not a DRAFT or concurrent order modification
+
+### 5.2. Change item quantity
+
+**PATCH** `/orders/{orderId}/items/{productId}`
+
+Requires authentication as CUSTOMER.
+
+**Receives:**
+- Path variable: long `orderId`
+- Path variable: long `productId`
+- Body: `modify quantity request`
+
+**Returns:**
+- Body: `order item change response` with `order item response`
+
+**Responses:**
+- 200 OK: item quantity modified successfully
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+- 404 Not Found: order or item do not exist or does not belong to CUSTOMER, or product does not exist or is deleted
+- 409 Conflict: invalid quantity modification, order is not a DRAFT or concurrent order modification
+
+### 5.3. Remove item
+
+**DELETE** `/orders/{orderId}/items/{productId}`
+
+Requires authentication as CUSTOMER.
+
+**Receives:**
+- Path variable: long `orderId`
+- Path variable: long `productId`
+
+**Returns:**
+- Body: `order item change response` without `order item response`
+
+**Responses:**
+- 200 OK: item removed from order successfully
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+- 404 Not Found: order or item do not exist or does not belong to CUSTOMER
+- 409 Conflict: order is not a DRAFT or concurrent order modification
+
+### 5.4. Clear items
+
+**DELETE** `/orders/{orderId}/items`
+
+Requires authentication as CUSTOMER.
+
+**Receives:**
+- Path variable: long `orderId`
+
+**Returns:**
+- Body: `order item change response` without `order item response`
+
+**Responses:**
+- 200 OK: items cleared from order successfully
+- 400 Bad Request: request validation failed
+- 401 Unauthorized: not authenticated
+- 403 Forbidden: authenticated but not a CUSTOMER
+- 404 Not Found: order does not exist or does not belong to CUSTOMER
+- 409 Conflict: order is not a DRAFT or concurrent order modification

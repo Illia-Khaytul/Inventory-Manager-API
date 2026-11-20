@@ -75,13 +75,14 @@ The project follows a domain oriented structure:
 ## 6. Application Properties
 
 The project defines multiple custom application properties used as both validation and constant values:
+- `app.common.price.*`: value limits for incoming price validation.
 - `app.auth.user-session.limit`: maximum amount of open sessions a user can have at once.
 - `app.auth.user-session.lifetime`: how long can a session remain open in seconds.
 - `app.auth.refres-token.*`: value limits for incoming refresh token validation.
 - `app.auth.jwt.private/public_key_source`: URIs of the private and public keys used for access token (JWT) encoding/decoding, must follow Spring's Resource property format.
 - `app.auth.jwt.lifetime`: how long is an access token valid for in seconds.
 - `app.auth.jwt.issuer`: issuer of the access token (this application).
-- `app.product.name/description/price.*`: value limits for incoming product data validation.
+- `app.product.name/description.*`: value limits for incoming product data validation.
 - `app.product.update.max-retries`: max retries allowed on the update product operation.
 - `app.user.password.*`: constraints used for password validation.
 - `app.user.password.bcrypt.strength`: password encoding strength using BCrypt.
